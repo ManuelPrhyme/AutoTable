@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AutoTable.Controls.StatusFooterBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Border
+        Background="{StaticResource SurfaceWhiteBrush}"
+        BorderBrush="{StaticResource BorderLightBrush}"
+        BorderThickness="0,1,0,0"
+        Padding="24,0"
+        Height="36">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- DB Status -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,24,0">
+                <Ellipse Width="7" Height="7" Fill="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" />
+                <TextBlock Style="{StaticResource MutedTextStyle}" Text="PostgreSQL 15.6 · Connected" FontSize="12" />
+            </StackPanel>
+
+            <!-- Last Backup -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,24,0">
+                <FontIcon Glyph="&#xE8C8;" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                <TextBlock Style="{StaticResource MutedTextStyle}" Text="Backup: Today 08:30" FontSize="12" />
+            </StackPanel>
+
+            <!-- Sync Queue -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <FontIcon Glyph="&#xE895;" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                <TextBlock Style="{StaticResource MutedTextStyle}" Text="Sync: 12 pending" FontSize="12" />
+            </StackPanel>
+
+            <!-- Storage -->
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,24,0">
+                <TextBlock Style="{StaticResource MutedTextStyle}" Text="Storage: 24.6 / 100 GB" FontSize="12" />
+                <ProgressBar Width="72" Height="5" Value="24" Maximum="100" CornerRadius="3"
+                             Background="{StaticResource SurfaceGray2Brush}" />
+            </StackPanel>
+
+            <!-- Health -->
+            <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <FontIcon Glyph="&#xE72E;" FontSize="12" Foreground="{StaticResource SuccessGreenBrush}" />
+                <TextBlock Style="{StaticResource MutedTextStyle}" Text="System: Excellent" FontSize="12" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

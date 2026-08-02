@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AutoTable.Views.AiInsightsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource SurfaceGrayBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="24" Spacing="16">
+
+            <!-- HEADER CARD -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="48" Height="48" CornerRadius="12"
+                            Background="{StaticResource AccentPurpleBrush}" VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE946;" FontSize="22" Foreground="White"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="AI Insights &amp; Recommendations" />
+                        <TextBlock Style="{StaticResource MutedTextStyle}"
+                                   Text="Powered by AutoTable AI — updated automatically based on current marks data." />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="Refresh Insights" VerticalAlignment="Center"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding RefreshCommand}" />
+                </Grid>
+            </Border>
+
+            <!-- INSIGHTS GRID -->
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- At-Risk Alerts -->
+                <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE7BA;" FontSize="16" Foreground="{StaticResource DangerRedBrush}" VerticalAlignment="Center" />
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="At-Risk Alerts" />
+                        </StackPanel>
+                        <ListView ItemsSource="{Binding AtRiskAlerts}" SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource DangerRedLightBrush}"
+                                            CornerRadius="8" Padding="12,8">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE7BA;" FontSize="13"
+                                                      Foreground="{StaticResource DangerRedBrush}"
+                                                      VerticalAlignment="Top" Margin="0,1,0,0" />
+                                            <TextBlock Text="{Binding}" TextWrapping="WrapWholeWords"
+                                                       FontSize="13" Foreground="{StaticResource DangerRedBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recommendations -->
+                <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource AccentPurpleBrush}" VerticalAlignment="Center" />
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Recommendations" />
+                        </StackPanel>
+                        <ListView ItemsSource="{Binding Recommendations}" SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource SurfaceGrayBrush}"
+                                            CornerRadius="8" Padding="12,8">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE946;" FontSize="13"
+                                                      Foreground="{StaticResource AccentPurpleBrush}"
+                                                      VerticalAlignment="Top" Margin="0,1,0,0" />
+                                            <TextBlock Text="{Binding}" TextWrapping="WrapWholeWords"
+                                                       FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- WORKFLOW AUTOMATIONS -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="12">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Workflow Automations" />
+                    <ListView ItemsSource="{Binding Automations}" SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource SurfaceGrayBrush}"
+                                        CornerRadius="8" Padding="16,10">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="36" Height="36" CornerRadius="8"
+                                                Background="{StaticResource InfoBlueLightBrush}"
+                                                VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE9F5;" FontSize="16"
+                                                      Foreground="{StaticResource InfoBlueBrush}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource MutedTextStyle}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Content="Run" VerticalAlignment="Center"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Padding="12,6" FontSize="13" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "AutoTable (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "AutoTable (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

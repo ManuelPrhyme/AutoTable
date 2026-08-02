@@ -1,0 +1,27 @@
+## Visual Studio
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+*.log
+*.vsix
+*.nupkg
+
+## Rider
+/.idea/
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Packages
+*.nupkg
+packages/
+
+## Others
+*.cache

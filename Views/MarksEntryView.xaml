@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AutoTable.Views.MarksEntryView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource SurfaceGrayBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="24" Spacing="16">
+
+            <!-- FILTER BAR -->
+            <Border Style="{StaticResource FilterBarStyle}">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Column="0" Header="Class" MinWidth="100"
+                              ItemsSource="{Binding Classes}"
+                              SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
+                    <ComboBox Grid.Column="1" Header="Subject" MinWidth="160"
+                              ItemsSource="{Binding Subjects}"
+                              SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
+                    <ComboBox Grid.Column="2" Header="Assessment" MinWidth="150"
+                              ItemsSource="{Binding Assessments}"
+                              SelectedItem="{Binding SelectedAssessment, Mode=TwoWay}" />
+                    <Button Grid.Column="4" VerticalAlignment="Bottom"
+                            Content="Load Marks" Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding LoadMarksCommand}" />
+                </Grid>
+            </Border>
+
+            <!-- COMPLETION STATUS CARD -->
+            <Border Style="{StaticResource CardBorderStyle}">
+                <Grid ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="160" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE73E;" FontSize="14"
+                                      Foreground="{StaticResource SuccessGreenBrush}"
+                                      VerticalAlignment="Center" />
+                            <TextBlock Style="{StaticResource BodyTextStyle}"
+                                       Text="{Binding StatusMessage}" />
+                        </StackPanel>
+                        <ProgressBar Value="{Binding CompletionPercent}" Maximum="100"
+                                     Height="8" CornerRadius="4"
+                                     Background="{StaticResource SurfaceGray2Brush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Style="{StaticResource MutedTextStyle}"
+                                   Text="Completion" HorizontalAlignment="Right" />
+                        <TextBlock FontSize="28" FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryBlueBrush}"
+                                   HorizontalAlignment="Right"
+                                   Text="{Binding CompletionPercent}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- MARKS TABLE -->
+            <Border Style="{StaticResource TableCardStyle}">
+                <StackPanel>
+                    <Border Style="{StaticResource CardHeaderBorderStyle}">
+                        <Grid>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                       Text="Student Marks" VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                        HorizontalAlignment="Right">
+                                <Button Content="Save Draft"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding SaveDraftCommand}" />
+                                <Button Content="Submit Marks"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Command="{Binding SubmitMarksCommand}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Column Headers -->
+                    <Border Style="{StaticResource TableHeaderRowStyle}">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="#" />
+                            <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="STUDENT NAME" />
+                            <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="CLASS" />
+                            <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="MARK (/100)" />
+                            <TextBlock Grid.Column="5" Style="{StaticResource TableHeaderStyle}" Text="GRADE" />
+                            <TextBlock Grid.Column="6" Style="{StaticResource TableHeaderStyle}" Text="REMARKS" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Data Rows -->
+                    <ListView ItemsSource="{Binding StudentMarks}" SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="12" Padding="16,7">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="36" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="70" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="70" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Style="{StaticResource MutedTextStyle}"
+                                               Text="{Binding StudentId}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource TableCellStyle}"
+                                               Text="{Binding StudentName}" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="2" Style="{StaticResource TableCellStyle}"
+                                               Text="{Binding AdmissionNumber}" />
+                                    <TextBlock Grid.Column="3" Style="{StaticResource TableCellStyle}"
+                                               Text="{Binding ClassName}" />
+                                    <TextBox Grid.Column="4" Text="{Binding MarkDisplay}"
+                                             IsEnabled="{Binding IsEditable}"
+                                             FontSize="14" FontWeight="SemiBold"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="5" Style="{StaticResource NumericCellStyle}"
+                                               Text="{Binding Grade}" />
+                                    <TextBox Grid.Column="6" Text="{Binding Remarks}"
+                                             IsEnabled="{Binding IsEditable}"
+                                             FontSize="13" PlaceholderText="Optional..."
+                                             VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

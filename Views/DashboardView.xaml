@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AutoTable.Views.DashboardView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:AutoTable.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{StaticResource SurfaceGrayBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="24" Spacing="20">
+
+            <!-- ── KPI CARDS ROW ── -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Auto" VerticalScrollBarVisibility="Disabled">
+                <StackPanel x:Name="KpiPanel" Orientation="Horizontal" Spacing="12" />
+            </ScrollViewer>
+
+            <!-- ── ROW 2: Assessment Progress + Quick Actions ── -->
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Assessment Progress Table -->
+                <Border Grid.Column="0" Style="{StaticResource TableCardStyle}">
+                    <StackPanel>
+                        <!-- Card Header -->
+                        <Border Style="{StaticResource CardHeaderBorderStyle}">
+                            <Grid>
+                                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Assessment Progress" VerticalAlignment="Center" />
+                                <HyperlinkButton HorizontalAlignment="Right" Content="View all →" FontSize="13" Foreground="{StaticResource PrimaryBlueBrush}" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Table Header -->
+                        <Border Style="{StaticResource TableHeaderRowStyle}">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="80" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="ASSESSMENT" />
+                                <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="CLASS" />
+                                <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="PROGRESS" HorizontalAlignment="Right" />
+                                <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="" />
+                                <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="STATUS" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Rows -->
+                        <StackPanel x:Name="AssessmentProgressPanel" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Quick Actions -->
+                <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Quick Actions" />
+                        <ItemsControl x:Name="QuickActionsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        Margin="0,0,0,8"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ── ROW 3: Trend + AI Insights + Recent Activity ── -->
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Performance Trend Chart Placeholder -->
+                <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="12">
+                        <Grid>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Performance Trend" />
+                            <TextBlock HorizontalAlignment="Right" Style="{StaticResource MutedTextStyle}" Text="8-week" VerticalAlignment="Center" />
+                        </Grid>
+                        <Border Height="160" Background="{StaticResource SurfaceGrayBrush}" CornerRadius="8">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                                <!-- Mini bar chart illustration -->
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                    <Border Width="14" Height="40" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" Opacity="0.6" />
+                                    <Border Width="14" Height="62" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" Opacity="0.7" />
+                                    <Border Width="14" Height="48" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" Opacity="0.8" />
+                                    <Border Width="14" Height="75" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" Opacity="0.9" />
+                                    <Border Width="14" Height="55" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" />
+                                    <Border Width="14" Height="80" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" />
+                                    <Border Width="14" Height="68" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" />
+                                    <Border Width="14" Height="90" Background="{StaticResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" />
+                                </StackPanel>
+                                <TextBlock HorizontalAlignment="Center" Style="{StaticResource MutedTextStyle}" Text="Class average over 8 weeks" />
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource MutedTextStyle}" Text="This Term" />
+                                <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBlueBrush}" Text="67.4%" />
+                            </StackPanel>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource MutedTextStyle}" Text="Last Term" />
+                                <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}" Text="63.1%" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- AI Insights -->
+                <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource AccentPurpleBrush}" VerticalAlignment="Center" />
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="AI Insights" />
+                        </StackPanel>
+                        <ListView x:Name="AiInsightsList" IsItemClickEnabled="False" SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource SurfaceGrayBrush}" CornerRadius="8" Padding="10,8">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE946;" FontSize="13" Foreground="{StaticResource AccentPurpleBrush}" VerticalAlignment="Top" Margin="0,1,0,0" />
+                                            <TextBlock Text="{Binding}" TextWrapping="WrapWholeWords" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recent Activity -->
+                <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Recent Activity" />
+                        <ListView x:Name="RecentActivityList" IsItemClickEnabled="False" SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,4" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="10" Padding="0,6">
+                                        <Ellipse Width="6" Height="6" Fill="{StaticResource PrimaryBlueBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding}" Style="{StaticResource MutedTextStyle}" TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

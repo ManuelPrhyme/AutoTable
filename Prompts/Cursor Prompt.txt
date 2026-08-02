@@ -1,0 +1,527 @@
+# Auto Table design plan
+
+## User
+
+Using this prompt to design a plan, and use the images in the uplaods as the inteface templates. The Active folder is the project folder
+```
+Auto Table is Marks and Performance Management Application for Primary Schools.
+It handles data entry, date retrieval via standard and custom queries and database views. It can create Student Performance Reports and Hierachical Performance Analytics across class hierachy and across time. It can print and Analysis reports and more. Users get access with specifi Roles and rights. Use Two Roles for now. An Administrator and a Data Entrant. Its Embeded with AI assistance at all levels of its InApp action workflows, automations from guidance and agentic task executions using VBA and Power Automante. Design for me an Interface with the MVVM Pattern, basing on the two images uploaded. The Infograpraphic, focus on imlementing the white part section fir the UI Interface and use the Midmap as a reference to guide on the pages needed to be created. It Should have a Login Page as The image with the Phone here, except replace the phone with a picture of sheets and graphs. Start with the Login, SignUp Page th User Dash board and go on.
+```
+
+## Assistant
+
+Exploring the Active project folder and any existing structure so we can draft an MVVM UI plan aligned with your mockups.
+
+### Tool Ripgrep Raw Search
+
+```
+{}
+```
+
+### Tool Glob File Search
+
+```
+{}
+```
+
+### Tool Run Terminal Command V2
+
+```
+{"command":"Get-ChildItem -Path \"C:\\Users\\manue\" -Directory -ErrorAction SilentlyContinue | Select-Object Name, FullName | Format-Table -AutoSize","workingDirectory":"","timeout":30000,"toolCallId":"tool_ba3be049-84c1-4bcc-b13b-a84b1a4ee81","simpleCommands":["Get-ChildItem","Select-Object","Format-Table"],"hasInputRedirect":false,"hasOutputRedirect":false,"parsingResult":{"parsingFailed":false,"executableCommands":[{"name":"Get-ChildItem","args":[{"type":"word","value":"-Path"},{"type":"string","value":"\"C:\\Users\\manue\""},{"type":"word","value":"-Directory"},{"type":"word","value":"-ErrorAction"},{"type":"word","value":"SilentlyContinue"}],"fullText":"Get-ChildItem -Path \"C:\\Users\\manue\" -Directory -ErrorAction SilentlyContinue"},{"name":"Select-Object","args":[{"type":"word","value":"Name,"},{"type":"word","value":"FullName"}],"fullText":"Select-Object Name, FullName"},{"name":"Format-Table","args":[{"type":"word","value":"-AutoSize"}],"fullText":"Format-Table -AutoSize"}],"hasRedirects":false,"hasCommandSubstitution":false,"redirects":[]},"fileOutputThresholdBytes":"40000","isBackground":false,"skipApproval":false,"timeoutBehavior":"TIMEOUT_BEHAVIOR_BACKGROUND","hardTimeout":86400000,"description":"List user home directories","closeStdin":true,"conversationId":"30e0655e-fff9-4457-9554-a8af2f72454e"}
+```
+
+### Tool Glob File Search
+
+```
+{}
+```
+
+### Tool Ripgrep Raw Search
+
+```
+{}
+```
+
+### Tool Run Terminal Command V2
+
+```
+{"command":"Get-ChildItem -Path \"C:\\Users\\manue\\Documents\",\"C:\\Users\\manue\\Desktop\",\"C:\\Users\\manue\\source\" -Directory -Recurse -Depth 2 -Filter \"*Active*\" -ErrorAction SilentlyContinue | Select-Object FullName; Get-ChildItem -Path \"C:\\Users\\manue\\Documents\",\"C:\\Users\\manue\\Desktop\",\"C:\\Users\\manue\\source\" -Directory -Recurse -Depth 2 -Filter \"*Auto*\" -ErrorAction SilentlyContinue | Select-Object FullName","workingDirectory":"","timeout":30000,"toolCallId":"tool_e622c444-95e2-4c75-a95a-967509f20fc","simpleCommands":["Get-ChildItem","Select-Object","Get-ChildItem","Select-Object"],"hasInputRedirect":false,"hasOutputRedirect":false,"parsingResult":{"parsingFailed":false,"executableCommands":[{"name":"Get-ChildItem","args":[{"type":"word","value":"-Path"},{"type":"concatenation","value":"\"C:\\Users\\manue\\Documents\",\"C:\\Users\\manue\\Desktop\",\"C:\\Users\\manue\\source\""},{"type":"word","value":"-Directory"},{"type":"word","value":"-Recurse"},{"type":"word","value":"-Depth"},{"type":"number","value":"2"},{"type":"word","value":"-Filter"},{"type":"string","value":"\"*Active*\""},{"type":"word","value":"-ErrorAction"},{"type":"word","value":"SilentlyContinue"}],"fullText":"Get-ChildItem -Path \"C:\\Users\\manue\\Documents\",\"C:\\Users\\manue\\Desktop\",\"C:\\Users\\manue\\source\" -Directory -Recurse -Depth 2 -Filter \"*Active*\" -ErrorAction SilentlyContinue"},{"name":"Select-Object","args":[{"type":"word","value":"FullName"}],"fullText":"Select-Object FullName"},{"name":"Get-ChildItem","args":[{"type":"word","value":"-Path"},{"type":"concatenation","value":"\"C:\\Users\\manue\\Documents\",\"C:\\Users\\manue\\Desktop\",\"C:\\Users\\manue\\source\""},{"type":"word","value":"-Directory"},{"type":"word","value":"-Recurse"},{"type":"word","value":"-Depth"},{"type":"number","value":"2"},{"type":"word","value":"-Filter"},{"type":"string","value":"\"*Auto*\""},{"type":"word","value":"-ErrorAction"},{"type":"word","value":"SilentlyContinue"}],"fullText":"Get-ChildItem -Path \"C:\\Users\\manue\\Documents\",\"C:\\Users\\manue\\Desktop\",\"C:\\Users\\manue\\source\" -Directory -Recurse -Depth 2 -Filter \"*Auto*\" -ErrorAction SilentlyContinue"},{"name":"Select-Object","args":[{"type":"word","value":"FullName"}],"fullText":"Select-Object FullName"}],"hasRedirects":false,"hasCommandSubstitution":false,"redirects":[]},"fileOutputThresholdBytes":"40000","isBackground":false,"skipApproval":false,"timeoutBehavior":"TIMEOUT_BEHAVIOR_BACKGROUND","hardTimeout":86400000,"description":"Search for Active or Auto Table project folders","closeStdin":true,"conversationId":"30e0655e-fff9-4457-9554-a8af2f72454e"}
+```
+
+### Tool Glob File Search
+
+```
+{"targetDirectory":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable","globPattern":"*"}
+```
+
+### Tool Glob File Search
+
+```
+{"targetDirectory":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\Auto_Table","globPattern":"*"}
+```
+
+### Tool Run Terminal Command V2
+
+```
+{"command":"Get-ChildItem -Path \"C:\\Users\\manue\\Desktop\\Desktop_Apps\" -Directory | Select-Object Name, FullName; Get-ChildItem -Path \"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\" -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem -Path \"C:\\Users\\manue\\Desktop\\Desktop_Apps\\Auto_Table\" -ErrorAction SilentlyContinue | Select-Object Name","workingDirectory":"","timeout":30000,"toolCallId":"tool_43198b30-140c-4a8b-9ad4-8b4d96a5e91","simpleCommands":["Get-ChildItem","Select-Object","Get-ChildItem","Select-Object","Get-ChildItem","Select-Object"],"hasInputRedirect":false,"hasOutputRedirect":false,"parsingResult":{"parsingFailed":false,"executableCommands":[{"name":"Get-ChildItem","args":[{"type":"word","value":"-Path"},{"type":"string","value":"\"C:\\Users\\manue\\Desktop\\Desktop_Apps\""},{"type":"word","value":"-Directory"}],"fullText":"Get-ChildItem -Path \"C:\\Users\\manue\\Desktop\\Desktop_Apps\" -Directory"},{"name":"Select-Object","args":[{"type":"word","value":"Name,"},{"type":"word","value":"FullName"}],"fullText":"Select-Object Name, FullName"},{"name":"Get-ChildItem","args":[{"type":"word","value":"-Path"},{"type":"string","value":"\"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\""},{"type":"word","value":"-ErrorAction"},{"type":"word","value":"SilentlyContinue"}],"fullText":"Get-ChildItem -Path \"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\" -ErrorAction SilentlyContinue"},{"name":"Select-Object","args":[{"type":"word","value":"Name"}],"fullText":"Select-Object Name"},{"name":"Get-ChildItem","args":[{"type":"word","value":"-Path"},{"type":"string","value":"\"C:\\Users\\manue\\Desktop\\Desktop_Apps\\Auto_Table\""},{"type":"word","value":"-ErrorAction"},{"type":"word","value":"SilentlyContinue"}],"fullText":"Get-ChildItem -Path \"C:\\Users\\manue\\Desktop\\Desktop_Apps\\Auto_Table\" -ErrorAction SilentlyContinue"},{"name":"Select-Object","args":[{"type":"word","value":"Name"}],"fullText":"Select-Object Name"}],"hasRedirects":false,"hasCommandSubstitution":false,"redirects":[]},"fileOutputThresholdBytes":"40000","isBackground":false,"skipApproval":false,"timeoutBehavior":"TIMEOUT_BEHAVIOR_BACKGROUND","hardTimeout":86400000,"description":"Explore AutoTable project structure","closeStdin":true,"conversationId":"30e0655e-fff9-4457-9554-a8af2f72454e"}
+```
+
+## Assistant
+
+Found the AutoTable WinUI project. Reviewing its structure and existing views to align the MVVM plan with your mockups.
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\AutoTable.csproj"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\LoginView.xaml"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\DashboardView.xaml"}
+```
+
+### Tool Glob File Search
+
+```
+{"targetDirectory":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable","globPattern":"**/*.{xaml,cs,md}"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\MainWindow.xaml"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\MainWindow.xaml.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\ViewModels\\LoginViewModel.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Services\\NavigationService.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\SignUpView.xaml"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\Controls\\WhitePanel.xaml"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\Auto_Table\\Auto_Books\\Architecture\\Chat with Q.md","limit":150}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\LoginView.xaml.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Services\\AuthService.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\App.xaml"}
+```
+
+### Tool Get Mcp Tools
+
+```
+{"server":"cursor-app-control","toolName":"move_agent_to_root","toolCallId":"tool_bc2677af-30f9-40f7-863a-bf1e3d708b1"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\Auto_Table\\Auto_Books\\Architecture\\Chat with Q.md","offset":140}
+```
+
+### Tool Mcp
+
+```
+{"name":"cursor-app-control-move_agent_to_root","args":{"rootPath":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable"},"toolCallId":"tool_be4be5f3-10f6-4413-bbc9-f8114d8e6a6","providerIdentifier":"cursor-app-control","toolName":"move_agent_to_root","smartModeApprovalOnly":false,"skipApproval":false,"serverIdentifier":"cursor-app-control"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\ViewModels\\BaseViewModel.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Commands\\RelayCommand.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\App.xaml.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\Controls\\WhitePanel.xaml.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\SignUpView.xaml.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\DashboardView.xaml.cs"}
+```
+
+## Assistant
+
+Implementing the MVVM foundation and Login, SignUp, and Dashboard UI from your mockups.
+
+### Tool Todo Write
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+## Assistant
+
+Building the auth pages and dashboard shell UI.
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Run Terminal Command V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Run Terminal Command V2
+
+### Tool Edit File V2
+
+### Tool Run Terminal Command V2
+
+### Tool Await
+
+```
+{"taskId":"738451","blockUntilMs":120000}
+```
+
+### Tool Todo Write
+
+## Assistant
+
+# AutoTable UI Plan & Phase 1 Implementation
+
+I've designed the MVVM architecture from your mockups and implemented **Phase 1: Login → SignUp → Marks Dashboard** in `C:\Users\manue\Desktop\Desktop_Apps\AutoTable`. The project builds successfully.
+
+---
+
+## Application Mindmap (Pages & Modules)
+
+Based on your Marks Management, Students, Financials, and Finova templates — scoped to **Marks & Performance** with two roles:
+
+```mermaid
+flowchart TB
+    subgraph Auth["Authentication"]
+        Login["Login Page"]
+        SignUp["Sign Up Page"]
+    end
+
+    subgraph Shell["App Shell (Post-Login)"]
+        Header["Header: Search · Term · Notifications · Profile"]
+        Sidebar["Dark Sidebar Navigation"]
+        Footer["Status Bar: DB · Backup · Sync · Storage · Health"]
+        WhiteArea["White Workspace (Cards, Charts, Tables)"]
+    end
+
+    subgraph Performance["Marks & Performance Module"]
+        PDash["Dashboard ✓"]
+        Assess["Assessments"]
+        Marks["Marks Entry"]
+        Grade["Gradebook"]
+        Perf["Student Performance"]
+        Analytics["Analytics"]
+        Mod["Moderation (Admin only)"]
+        Reports["Report Cards"]
+        AI["AI Insights"]
+        Settings["Settings"]
+    end
+
+    subgraph Roles["Role Access"]
+        Admin["Administrator — Full access"]
+        Entrant["Data Entrant — Entry + limited views"]
+    end
+
+    Login --> Shell
+    SignUp --> Shell
+    Sidebar --> Performance
+    Admin --> Mod
+    Admin --> Analytics
+    Entrant --> Marks
+    Entrant --> Assess
+```
+
+---
+
+## MVVM Architecture
+
+| Layer | Responsibility | Key Files |
+|-------|----------------|-----------|
+| **Models** | Domain data | `User`, `UserRole`, `KpiMetric`, `NavMenuItem` |
+| **ViewModels** | UI state, commands | `LoginViewModel`, `SignUpViewModel`, `DashboardViewModel` |
+| **Views** | XAML only (white workspace focus) | `LoginView`, `SignUpView`, `DashboardView` |
+| **Services** | Auth, session, navigation | `AuthService`, `SessionService`, `NavigationService` |
+| **Controls** | Reusable UI | `AuthIllustration`, `KpiCard`, `StatusFooterBar`, `WhitePanel` |
+| **Resources** | Design tokens | `Resources/DesignTokens.xaml` |
+
+---
+
+## UI Design Mapping (From Your Mockups)
+
+| Mockup | Applied To |
+|--------|------------|
+| **Finova login split** | Login/SignUp: navy left panel + white form right |
+| **Phone → Sheets/Graphs** | `AuthIllustration` control (spreadsheet grid, bar chart, trend line) |
+| **Marks Management dashboard** | KPI row, Assessment Progress table, Quick Actions, AI Insights, Recent Activity |
+| **Bright Future sidebar** | `NavigationView` with module links + school branding |
+| **Students dashboard** | KPI card pattern, chart placeholders (next phase) |
+| **Financials dashboard** | Status footer bar pattern (DB, backup, sync, health) |
+
+**White workspace focus:** All data cards, tables, and lists live in the scrollable white content area — sidebar and footer are shell chrome.
+
+---
+
+## Roles (Phase 1)
+
+| Role | Access |
+|------|--------|
+| **Administrator** | All nav items including Moderation, Publish Results |
+| **Data Entrant** | Dashboard, Marks Entry, Assessments; Moderation hidden |
+
+**Demo login:**
+- `admin@school.edu` → Administrator  
+- Any other email → Data Entrant  
+
+---
+
+## What's Implemented Now
+
+1. **Login Page** — Split layout with sheets/graphs illustration, email/password, error feedback  
+2. **Sign Up Page** — Full name, email, password, role picker (Administrator / Data Entrant)  
+3. **Marks Dashboard** — Full shell with:
+   - 7 KPI cards (Students, Subjects, Pending, Marks Entered %, etc.)
+   - Assessment Progress table
+   - Quick Actions (role-filtered)
+   - Performance Trend placeholder
+   - AI Insights list
+   - Recent Activity feed
+   - System status footer
+
+---
+
+## Recommended Build Phases (Next)
+
+| Phase | Pages | Priority |
+|-------|-------|----------|
+| **2** | Assessments, Marks Entry, Gradebook | High — core data entry |
+| **3** | Student Performance, Analytics, Report Cards | Medium — reporting |
+| **4** | Moderation, AI Insights panel (agentic workflows) | Medium — admin + AI |
+| **5** | Settings, Sync Queue, Backup & Restore | Lower — system tools |
+| **6** | PostgreSQL integration, VBA/Power Automate hooks | Backend |
+
+Each page follows the same pattern:
+- `Views/Performance/{Page}View.xaml`
+- `ViewModels/{Page}ViewModel.cs`
+- White card layout inside the existing shell
+
+---
+
+## Project Structure (Current)
+
+```
+AutoTable/
+├── Models/           User, UserRole, KpiMetric, NavMenuItem
+├── ViewModels/       Login, SignUp, Dashboard
+├── Views/
+│   ├── LoginView.xaml
+│   ├── SignUpView.xaml
+│   ├── DashboardView.xaml
+│   └── Controls/     AuthIllustration, KpiCard, StatusFooterBar, WhitePanel
+├── Services/         Auth, Session, Navigation
+├── Commands/         RelayCommand
+└── Resources/        DesignTokens.xaml
+```
+
+---
+
+## Run the App
+
+Open the solution in Visual Studio and run **x64 Debug**, or from terminal:
+
+```powershell
+dotnet run --project "C:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj" -p:Platform=x64
+```
+
+---
+
+If you want to continue, the natural next step is **Phase 2: Assessments + Marks Entry** pages with the same white-card layout and role-based field locking for Data Entrants. Say which module you'd like built next.
+
+## User
+
+continue to phase 2
+
+## Assistant
+
+Implementing Phase 2: Assessments, Marks Entry, and Gradebook with shared shell navigation. Reviewing the current structure first.
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\DashboardView.xaml"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Views\\DashboardView.xaml.cs"}
+```
+
+### Tool Read File V2
+
+```
+{"path":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable\\Services\\NavigationService.cs"}
+```
+
+### Tool Glob File Search
+
+```
+{"targetDirectory":"C:\\Users\\manue\\Desktop\\Desktop_Apps\\AutoTable","globPattern":"**/*.{xaml,cs}"}
+```
+
+## Assistant
+
+Refactoring into a shared app shell, then adding Assessments, Marks Entry, and Gradebook pages with MVVM and role-based access.
+
+### Tool Todo Write
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+## Assistant
+
+Creating ShellView and Phase 2 content pages, and slimming down DashboardView.
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
+
+### Tool Edit File V2
