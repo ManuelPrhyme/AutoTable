@@ -8,16 +8,16 @@ namespace AutoTable.Services
         private static AuthService? _instance;
         public static AuthService Instance => _instance ??= new AuthService();
 
-        public Task<bool> SignInAsync(string email, string password)
+        public Task<bool> SignInAsync(string username, string password)
         {
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 return Task.FromResult(false);
 
             var user = new User
             {
-                Email = email.Trim(),
-                FullName = email.Contains('@') ? email.Split('@')[0] : email,
-                Role = email.StartsWith("admin", System.StringComparison.OrdinalIgnoreCase)
+                Email = username.Trim(),
+                FullName = username,
+                Role = username.StartsWith("admin", System.StringComparison.OrdinalIgnoreCase)
                     ? UserRole.Administrator
                     : UserRole.DataEntrant
             };
@@ -26,17 +26,17 @@ namespace AutoTable.Services
             return Task.FromResult(true);
         }
 
-        public Task<bool> SignUpAsync(string fullName, string email, string password, UserRole role)
+        public Task<bool> SignUpAsync(string fullName, string username, string password, UserRole role)
         {
             if (string.IsNullOrWhiteSpace(fullName) ||
-                string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(username) ||
                 string.IsNullOrWhiteSpace(password))
                 return Task.FromResult(false);
 
             SessionService.Instance.SetUser(new User
             {
                 FullName = fullName.Trim(),
-                Email = email.Trim(),
+                Email = username.Trim(),
                 Role = role
             });
 

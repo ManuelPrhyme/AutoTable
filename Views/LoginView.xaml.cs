@@ -24,11 +24,20 @@ namespace AutoTable.Views
                 }
             };
 
-            SignInButton.Click += (_, _) =>
+            SignInButton.Click += async (_, _) =>
             {
-                ViewModel.Email = EmailBox.Text;
+                ViewModel.Username = UsernameBox.Text;
                 ViewModel.Password = PasswordBox.Password;
-                ViewModel.SignInCommand.Execute(null);
+                try
+                {
+                    // Await the async command so we can observe failures and ensure navigation occurs
+                    await ViewModel.SignInCommand.ExecuteAsync(null);
+                }
+                catch (System.Exception ex)
+                {
+                    ErrorText.Text = "Sign in failed: " + ex.Message;
+                    ErrorText.Visibility = Visibility.Visible;
+                }
                 //NavigationService.Instance.Navigate(typeof(Views.AssessmentsView));
             };
             SignUpLink.Click += (_, _) => ViewModel.GoToSignUpCommand.Execute(null);

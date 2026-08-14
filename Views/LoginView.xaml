@@ -60,10 +60,10 @@
                         Text="Sign in to continue to your school dashboard." />
 
                     <TextBox
-                        x:Name="EmailBox"
-                        Header="Email"
-                        PlaceholderText="name@school.edu"
-                        InputScope="EmailNameOrAddress" />
+                        x:Name="UsernameBox"
+                        Header="Username"
+                        PlaceholderText="username"
+                        InputScope="Text" />
 
                     <PasswordBox
                         x:Name="PasswordBox"

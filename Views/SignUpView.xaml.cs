@@ -27,7 +27,7 @@ namespace AutoTable.Views
             CreateButton.Click += (_, _) =>
             {
                 ViewModel.FullName = FullNameBox.Text;
-                ViewModel.Email = EmailBox.Text;
+                ViewModel.Username = UsernameBox.Text;
                 ViewModel.Password = PasswordBox.Password;
                 ViewModel.SelectedRole = RoleBox.SelectedIndex == 0
                     ? UserRole.Administrator : UserRole.DataEntrant;

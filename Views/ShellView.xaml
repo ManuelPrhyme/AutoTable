@@ -189,7 +189,7 @@
                         <TextBlock x:Name="SidebarUserName" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextOnDarkBrush}" />
                         <TextBlock x:Name="SidebarUserRole" FontSize="11" Foreground="{StaticResource TextOnDarkMutedBrush}" />
                     </StackPanel>
-                    <Button Style="{StaticResource IconButtonStyle}" Margin="auto,0,0,0" ToolTipService.ToolTip="Sign Out" Click="SignOut_Click">
+                    <Button Style="{StaticResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Sign Out" Click="SignOut_Click">
                         <FontIcon Glyph="&#xE8FB;" FontSize="14" Foreground="{StaticResource TextOnDarkMutedBrush}" />
                     </Button>
                 </StackPanel>

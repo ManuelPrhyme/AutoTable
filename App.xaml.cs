@@ -36,9 +36,9 @@ namespace AutoTable
         public App()
         {
             InitializeComponent();
-            // Global exception handlers to capture runtime errors during startup
-            //this.UnhandledException += App_UnhandledException;
-            //AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        // Global exception handlers to capture runtime errors during startup and at runtime
+        this.UnhandledException += App_UnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
         /// <summary>

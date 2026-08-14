@@ -9,7 +9,7 @@ namespace AutoTable.ViewModels
     public partial class SignUpViewModel : BaseViewModel
     {
         [ObservableProperty] private string _fullName = string.Empty;
-        [ObservableProperty] private string _email = string.Empty;
+        [ObservableProperty] private string _username = string.Empty;
         [ObservableProperty] private string _password = string.Empty;
         [ObservableProperty] private UserRole _selectedRole = UserRole.DataEntrant;
         [ObservableProperty] private string _errorMessage = string.Empty;
@@ -20,7 +20,7 @@ namespace AutoTable.ViewModels
         {
             IsBusy = true;
             ErrorMessage = string.Empty;
-            var ok = await AuthService.Instance.SignUpAsync(FullName, Email, Password, SelectedRole);
+            var ok = await AuthService.Instance.SignUpAsync(FullName, Username, Password, SelectedRole);
             IsBusy = false;
 
             if (ok)
