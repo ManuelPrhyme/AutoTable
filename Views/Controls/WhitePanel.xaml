@@ -7,7 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     mc:Ignorable="d"
     Padding="24">
-    <Border Background="White" CornerRadius="12" Padding="20">
+    <Border Background="{ThemeResource SurfaceWhiteBrush}" CornerRadius="12" Padding="20">
         <ContentPresenter />
     </Border>
 </UserControl>
+

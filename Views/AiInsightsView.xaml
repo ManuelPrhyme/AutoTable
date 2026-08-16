@@ -6,13 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource SurfaceGrayBrush}">
+    Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
 
             <!-- HEADER CARD -->
-            <Border Style="{StaticResource CardBorderStyle}">
+            <Border Style="{ThemeResource CardBorderStyle}">
                 <Grid ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -20,17 +20,17 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Border Width="48" Height="48" CornerRadius="12"
-                            Background="{StaticResource AccentPurpleBrush}" VerticalAlignment="Center">
+                            Background="{ThemeResource AccentPurpleBrush}" VerticalAlignment="Center">
                         <FontIcon Glyph="&#xE946;" FontSize="22" Foreground="White"
                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="AI Insights &amp; Recommendations" />
-                        <TextBlock Style="{StaticResource MutedTextStyle}"
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="AI Insights &amp; Recommendations" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}"
                                    Text="Powered by AutoTable AI — updated automatically based on current marks data." />
                     </StackPanel>
                     <Button Grid.Column="2" Content="Refresh Insights" VerticalAlignment="Center"
-                            Style="{StaticResource PrimaryButtonStyle}"
+                            Style="{ThemeResource PrimaryButtonStyle}"
                             Command="{Binding RefreshCommand}" />
                 </Grid>
             </Border>
@@ -43,11 +43,11 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- At-Risk Alerts -->
-                <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
+                <Border Grid.Column="0" Style="{ThemeResource CardBorderStyle}">
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE7BA;" FontSize="16" Foreground="{StaticResource DangerRedBrush}" VerticalAlignment="Center" />
-                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="At-Risk Alerts" />
+                            <FontIcon Glyph="&#xE7BA;" FontSize="16" Foreground="{ThemeResource DangerRedBrush}" VerticalAlignment="Center" />
+                            <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="At-Risk Alerts" />
                         </StackPanel>
                         <ListView ItemsSource="{Binding AtRiskAlerts}" SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -59,14 +59,14 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource DangerRedLightBrush}"
+                                    <Border Background="{ThemeResource DangerRedLightBrush}"
                                             CornerRadius="8" Padding="12,8">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <FontIcon Glyph="&#xE7BA;" FontSize="13"
-                                                      Foreground="{StaticResource DangerRedBrush}"
+                                                      Foreground="{ThemeResource DangerRedBrush}"
                                                       VerticalAlignment="Top" Margin="0,1,0,0" />
                                             <TextBlock Text="{Binding}" TextWrapping="WrapWholeWords"
-                                                       FontSize="13" Foreground="{StaticResource DangerRedBrush}" />
+                                                       FontSize="13" Foreground="{ThemeResource DangerRedBrush}" />
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -76,11 +76,11 @@
                 </Border>
 
                 <!-- Recommendations -->
-                <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+                <Border Grid.Column="1" Style="{ThemeResource CardBorderStyle}">
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource AccentPurpleBrush}" VerticalAlignment="Center" />
-                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Recommendations" />
+                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{ThemeResource AccentPurpleBrush}" VerticalAlignment="Center" />
+                            <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Recommendations" />
                         </StackPanel>
                         <ListView ItemsSource="{Binding Recommendations}" SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -92,14 +92,14 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource SurfaceGrayBrush}"
+                                    <Border Background="{ThemeResource SurfaceGrayBrush}"
                                             CornerRadius="8" Padding="12,8">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <FontIcon Glyph="&#xE946;" FontSize="13"
-                                                      Foreground="{StaticResource AccentPurpleBrush}"
+                                                      Foreground="{ThemeResource AccentPurpleBrush}"
                                                       VerticalAlignment="Top" Margin="0,1,0,0" />
                                             <TextBlock Text="{Binding}" TextWrapping="WrapWholeWords"
-                                                       FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" />
+                                                       FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -110,9 +110,9 @@
             </Grid>
 
             <!-- WORKFLOW AUTOMATIONS -->
-            <Border Style="{StaticResource CardBorderStyle}">
+            <Border Style="{ThemeResource CardBorderStyle}">
                 <StackPanel Spacing="12">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Workflow Automations" />
+                    <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Workflow Automations" />
                     <ListView ItemsSource="{Binding Automations}" SelectionMode="None">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
@@ -123,7 +123,7 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{StaticResource SurfaceGrayBrush}"
+                                <Border Background="{ThemeResource SurfaceGrayBrush}"
                                         CornerRadius="8" Padding="16,10">
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
@@ -132,19 +132,19 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border Width="36" Height="36" CornerRadius="8"
-                                                Background="{StaticResource InfoBlueLightBrush}"
+                                                Background="{ThemeResource InfoBlueLightBrush}"
                                                 VerticalAlignment="Center">
                                             <FontIcon Glyph="&#xE9F5;" FontSize="16"
-                                                      Foreground="{StaticResource InfoBlueBrush}"
+                                                      Foreground="{ThemeResource InfoBlueBrush}"
                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                             <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextPrimaryBrush}" />
-                                            <TextBlock Text="{Binding Description}" Style="{StaticResource MutedTextStyle}" />
+                                                       Foreground="{ThemeResource TextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding Description}" Style="{ThemeResource MutedTextStyle}" />
                                         </StackPanel>
                                         <Button Grid.Column="2" Content="Run" VerticalAlignment="Center"
-                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Style="{ThemeResource SecondaryButtonStyle}"
                                                 Padding="12,6" FontSize="13" />
                                     </Grid>
                                 </Border>
@@ -157,3 +157,4 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
+

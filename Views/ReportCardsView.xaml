@@ -6,12 +6,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource SurfaceGrayBrush}">
+    Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
 
-            <Border Style="{StaticResource FilterBarStyle}">
+            <Border Style="{ThemeResource FilterBarStyle}">
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -26,45 +26,45 @@
                               ItemsSource="{Binding Terms}"
                               SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" />
                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                        <Button Content="Generate All" Style="{StaticResource SecondaryButtonStyle}"
+                        <Button Content="Generate All" Style="{ThemeResource SecondaryButtonStyle}"
                                 Command="{Binding GenerateAllCommand}" />
-                        <Button Content="Print All" Style="{StaticResource PrimaryButtonStyle}"
+                        <Button Content="Print All" Style="{ThemeResource PrimaryButtonStyle}"
                                 Command="{Binding PrintAllCommand}" />
                     </StackPanel>
                 </Grid>
             </Border>
 
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="150">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Total Students" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}" Text="{Binding TotalStudents}" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Students" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}" Text="{Binding TotalStudents}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="150">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Generated" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource SuccessGreenBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Generated" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource SuccessGreenBrush}"
                                    Text="{Binding GeneratedCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="150">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Printed" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource PrimaryBlueBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Printed" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource PrimaryBlueBrush}"
                                    Text="{Binding PrintedCount}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
 
-            <Border Style="{StaticResource TableCardStyle}">
+            <Border Style="{ThemeResource TableCardStyle}">
                 <StackPanel>
-                    <Border Style="{StaticResource CardHeaderBorderStyle}">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Report Cards" />
+                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Report Cards" />
                     </Border>
-                    <Border Style="{StaticResource TableHeaderRowStyle}">
+                    <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="36" />
@@ -75,13 +75,13 @@
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="#" />
-                            <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="STUDENT" />
-                            <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="ADM NO." />
-                            <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="CLASS" />
-                            <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="AVERAGE" />
-                            <TextBlock Grid.Column="5" Style="{StaticResource TableHeaderStyle}" Text="STATUS" />
-                            <TextBlock Grid.Column="6" Style="{StaticResource TableHeaderStyle}" Text="ACTIONS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="AVERAGE" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
                         </Grid>
                     </Border>
                     <ListView ItemsSource="{Binding ReportCards}" SelectionMode="None">
@@ -105,24 +105,24 @@
                                         <ColumnDefinition Width="100" />
                                         <ColumnDefinition Width="120" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource MutedTextStyle}"
+                                    <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
                                                Text="{Binding Rank}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding StudentName}" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding AdmissionNumber}" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding ClassName}" />
                                     <TextBlock Grid.Column="4" FontSize="14" FontWeight="Bold"
-                                               Foreground="{StaticResource PrimaryBlueBrush}"
+                                               Foreground="{ThemeResource PrimaryBlueBrush}"
                                                VerticalAlignment="Center"
                                                Text="{Binding Average, Converter={StaticResource PercentConverter}}" />
-                                    <TextBlock Grid.Column="5" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="5" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding Status}" />
                                     <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
-                                        <Button Content="View" Style="{StaticResource SecondaryButtonStyle}"
+                                        <Button Content="View" Style="{ThemeResource SecondaryButtonStyle}"
                                                 Padding="8,4" FontSize="12" />
-                                        <Button Content="Print" Style="{StaticResource PrimaryButtonStyle}"
+                                        <Button Content="Print" Style="{ThemeResource PrimaryButtonStyle}"
                                                 Padding="8,4" FontSize="12" />
                                     </StackPanel>
                                 </Grid>
@@ -135,3 +135,4 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
+

@@ -19,7 +19,7 @@
         <!-- ═══════════════════════════════════════════════════
              DARK SIDEBAR
         ═══════════════════════════════════════════════════ -->
-        <Grid Grid.Column="0" Background="{StaticResource NavySidebarBrush}">
+        <Grid Grid.Column="0" Background="{ThemeResource NavySidebarBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -27,15 +27,15 @@
             </Grid.RowDefinitions>
 
             <!-- Logo / School Brand -->
-            <Border Grid.Row="0" Padding="20,24,20,16" BorderBrush="#1E3A5F" BorderThickness="0,0,0,1">
+            <Border Grid.Row="0" Padding="20,24,20,16" BorderBrush="{ThemeResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
                 <StackPanel Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Border Width="32" Height="32" CornerRadius="8" Background="{StaticResource PrimaryBlueBrush}">
-                            <FontIcon Glyph="&#xE8A5;" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Border Width="32" Height="32" CornerRadius="8" Background="{ThemeResource PrimaryBlueBrush}">
+                            <FontIcon Glyph="&#xE8A5;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <StackPanel VerticalAlignment="Center" Spacing="1">
-                            <TextBlock Text="AutoTable" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Bright Future Primary" FontSize="11" Foreground="{StaticResource TextOnDarkMutedBrush}" />
+                            <TextBlock Text="AutoTable" FontSize="15" FontWeight="Bold" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Bright Future Primary" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
@@ -50,131 +50,131 @@
                         Text="PERFORMANCE"
                         FontSize="10"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextOnDarkMutedBrush}"
+                        Foreground="{ThemeResource TextOnDarkMutedBrush}"
                         Margin="8,0,0,6"
                         CharacterSpacing="80" />
 
-                    <Button x:Name="NavDashboard" Tag="Dashboard" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavDashboard" Tag="Dashboard" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE80F;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Dashboard" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE80F;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Dashboard" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavAssessments" Tag="Assessments" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavAssessments" Tag="Assessments" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE9D5;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Assessments" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE9D5;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Assessments" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavMarksEntry" Tag="MarksEntry" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavMarksEntry" Tag="MarksEntry" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8D3;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Marks Entry" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE8D3;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Marks Entry" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavGradebook" Tag="Gradebook" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavGradebook" Tag="Gradebook" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Gradebook" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Gradebook" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavStudentPerformance" Tag="StudentPerformance" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavStudentPerformance" Tag="StudentPerformance" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE77B;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Student Performance" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE77B;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Student Performance" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavAnalytics" Tag="Analytics" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavAnalytics" Tag="Analytics" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE9D2;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Analytics" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE9D2;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Analytics" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavModeration" Tag="Moderation" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavModeration" Tag="Moderation" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9" Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE72E;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Moderation" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE72E;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Moderation" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavReportCards" Tag="ReportCards" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavReportCards" Tag="ReportCards" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8A5;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Report Cards" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE8A5;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Report Cards" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
                     <!-- SEPARATOR -->
-                    <Border Height="1" Background="#1E3A5F" Margin="8,12,8,12" />
+                    <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
                     <!-- MODULE: FINANCIALS -->
                     <TextBlock
                         Text="FINANCIALS"
                         FontSize="10"
                         FontWeight="SemiBold"
-                        Foreground="{StaticResource TextOnDarkMutedBrush}"
+                        Foreground="{ThemeResource TextOnDarkMutedBrush}"
                         Margin="8,0,0,6"
                         CharacterSpacing="80" />
 
-                    <Button x:Name="NavFinDashboard" Tag="FinDashboard" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavFinDashboard" Tag="FinDashboard" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE825;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Fin. Dashboard" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE825;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Fin. Dashboard" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavFeeCollection" Tag="FeeCollection" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavFeeCollection" Tag="FeeCollection" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8C7;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Fee Collection" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE8C7;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Fee Collection" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavBudget" Tag="Budget" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavBudget" Tag="Budget" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8B7;" FontSize="16" Foreground="{StaticResource TextOnDarkBrush}" />
-                            <TextBlock Text="Budget" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE8B7;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Budget" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
                     <!-- SEPARATOR -->
-                    <Border Height="1" Background="#1E3A5F" Margin="8,12,8,12" />
+                    <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
                     <!-- AI INSIGHTS -->
-                    <Button x:Name="NavAiInsights" Tag="AiInsights" Style="{StaticResource IconButtonStyle}"
+                    <Button x:Name="NavAiInsights" Tag="AiInsights" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource AccentPurpleBrush}" />
-                            <TextBlock Text="AI Insights" Style="{StaticResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{ThemeResource AccentPurpleBrush}" />
+                            <TextBlock Text="AI Insights" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
@@ -182,15 +182,15 @@
             </ScrollViewer>
 
             <!-- User Profile Footer -->
-            <Border Grid.Row="2" Padding="16,12" BorderBrush="#1E3A5F" BorderThickness="0,1,0,0">
+            <Border Grid.Row="2" Padding="16,12" BorderBrush="{ThemeResource SidebarBorderBrush}" BorderThickness="0,1,0,0">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <PersonPicture x:Name="SidebarAvatar" Width="32" Height="32" />
                     <StackPanel VerticalAlignment="Center" Spacing="1">
-                        <TextBlock x:Name="SidebarUserName" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextOnDarkBrush}" />
-                        <TextBlock x:Name="SidebarUserRole" FontSize="11" Foreground="{StaticResource TextOnDarkMutedBrush}" />
+                        <TextBlock x:Name="SidebarUserName" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextOnDarkBrush}" />
+                        <TextBlock x:Name="SidebarUserRole" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                     </StackPanel>
-                    <Button Style="{StaticResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Sign Out" Click="SignOut_Click">
-                        <FontIcon Glyph="&#xE8FB;" FontSize="14" Foreground="{StaticResource TextOnDarkMutedBrush}" />
+                    <Button Style="{ThemeResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Sign Out" Click="SignOut_Click">
+                        <FontIcon Glyph="&#xE8FB;" FontSize="14" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                     </Button>
                 </StackPanel>
             </Border>
@@ -199,7 +199,7 @@
         <!-- ═══════════════════════════════════════════════════
              MAIN CONTENT AREA
         ═══════════════════════════════════════════════════ -->
-        <Grid Grid.Column="1" Background="{StaticResource SurfaceGrayBrush}">
+        <Grid Grid.Column="1" Background="{ThemeResource SurfaceGrayBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -209,8 +209,8 @@
             <!-- Top Header Bar -->
             <Border
                 Grid.Row="0"
-                Background="{StaticResource SurfaceWhiteBrush}"
-                BorderBrush="{StaticResource BorderLightBrush}"
+                Background="{ThemeResource SurfaceWhiteBrush}"
+                BorderBrush="{ThemeResource BorderLightBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="24,0">
                 <Grid Height="60">
@@ -222,8 +222,8 @@
 
                     <!-- Page Title -->
                     <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock x:Name="PageTitleText" Style="{StaticResource PageTitleStyle}" />
-                        <TextBlock x:Name="PageSubtitleText" Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock x:Name="PageTitleText" Style="{ThemeResource PageTitleStyle}" />
+                        <TextBlock x:Name="PageSubtitleText" Style="{ThemeResource MutedTextStyle}" />
                     </StackPanel>
 
                     <!-- Search -->
@@ -236,14 +236,14 @@
 
                     <!-- Right Controls -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <ComboBox x:Name="TermSelector" MinWidth="140" SelectedIndex="0" VerticalAlignment="Center">
+                    <ComboBox x:Name="TermSelector" MinWidth="140" Style="{ThemeResource ComboBoxStyle}" SelectedIndex="0" VerticalAlignment="Center">
                             <ComboBoxItem Content="Term 2, 2025" />
                             <ComboBoxItem Content="Term 1, 2025" />
                         </ComboBox>
-                        <Button Style="{StaticResource IconButtonStyle}" ToolTipService.ToolTip="Notifications">
-                            <FontIcon Glyph="&#xE7ED;" FontSize="16" Foreground="{StaticResource TextSecondaryBrush}" />
+                        <Button Style="{ThemeResource IconButtonStyle}" ToolTipService.ToolTip="Notifications">
+                            <FontIcon Glyph="&#xE7ED;" FontSize="16" Foreground="{ThemeResource TextSecondaryBrush}" />
                         </Button>
-                        <TextBlock x:Name="HeaderUserName" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock x:Name="HeaderUserName" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -256,3 +256,4 @@
         </Grid>
     </Grid>
 </Page>
+

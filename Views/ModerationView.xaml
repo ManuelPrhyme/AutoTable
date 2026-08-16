@@ -6,13 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource SurfaceGrayBrush}">
+    Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
 
             <!-- FILTER BAR -->
-            <Border Style="{StaticResource FilterBarStyle}">
+            <Border Style="{ThemeResource FilterBarStyle}">
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -27,56 +27,56 @@
                               ItemsSource="{Binding Subjects}"
                               SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
                     <Button Grid.Column="3" VerticalAlignment="Bottom"
-                            Content="Load" Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Load" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding LoadCommand}" />
                 </Grid>
             </Border>
 
             <!-- STATUS STRIP -->
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="150">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Pending Review" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource WarningAmberBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Pending Review" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource WarningAmberBrush}"
                                    Text="{Binding PendingCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="150">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Approved" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource SuccessGreenBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Approved" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource SuccessGreenBrush}"
                                    Text="{Binding ApprovedCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="150">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Rejected" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource DangerRedBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Rejected" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource DangerRedBrush}"
                                    Text="{Binding RejectedCount}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
 
             <!-- MODERATION TABLE -->
-            <Border Style="{StaticResource TableCardStyle}">
+            <Border Style="{ThemeResource TableCardStyle}">
                 <StackPanel>
-                    <Border Style="{StaticResource CardHeaderBorderStyle}">
+                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
                         <Grid>
-                            <TextBlock Style="{StaticResource SectionTitleStyle}"
+                            <TextBlock Style="{ThemeResource SectionTitleStyle}"
                                        Text="Marks Pending Moderation" VerticalAlignment="Center" />
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                <Button Content="Approve All" Style="{StaticResource PrimaryButtonStyle}"
+                                <Button Content="Approve All" Style="{ThemeResource PrimaryButtonStyle}"
                                         Command="{Binding ApproveAllCommand}" />
-                                <Button Content="Publish Results" Style="{StaticResource DangerButtonStyle}"
+                                <Button Content="Publish Results" Style="{ThemeResource DangerButtonStyle}"
                                         Command="{Binding PublishCommand}" />
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <Border Style="{StaticResource TableHeaderRowStyle}">
+                    <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*" />
@@ -87,13 +87,13 @@
                                 <ColumnDefinition Width="120" />
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="ASSESSMENT" />
-                            <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="CLASS" />
-                            <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="SUBJECT" />
-                            <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="ENTRIES" />
-                            <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="SUBMITTED BY" />
-                            <TextBlock Grid.Column="5" Style="{StaticResource TableHeaderStyle}" Text="STATUS" />
-                            <TextBlock Grid.Column="6" Style="{StaticResource TableHeaderStyle}" Text="ACTIONS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="ASSESSMENT" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECT" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="ENTRIES" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="SUBMITTED BY" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
                         </Grid>
                     </Border>
 
@@ -118,22 +118,22 @@
                                         <ColumnDefinition Width="120" />
                                         <ColumnDefinition Width="120" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding AssessmentName}" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding ClassName}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding Subject}" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource NumericCellStyle}"
+                                    <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding EntryCount}" />
-                                    <TextBlock Grid.Column="4" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="4" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding SubmittedBy}" />
-                                    <TextBlock Grid.Column="5" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="5" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding Status}" />
                                     <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
-                                        <Button Content="Approve" Style="{StaticResource PrimaryButtonStyle}"
+                                        <Button Content="Approve" Style="{ThemeResource PrimaryButtonStyle}"
                                                 Padding="8,4" FontSize="12" />
-                                        <Button Content="Reject" Style="{StaticResource DangerButtonStyle}"
+                                        <Button Content="Reject" Style="{ThemeResource DangerButtonStyle}"
                                                 Padding="8,4" FontSize="12" />
                                     </StackPanel>
                                 </Grid>
@@ -146,3 +146,4 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
+

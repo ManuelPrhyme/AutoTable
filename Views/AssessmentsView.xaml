@@ -6,13 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource SurfaceGrayBrush}">
+    Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
 
             <!-- ── FILTER BAR ── -->
-            <Border Style="{StaticResource FilterBarStyle}">
+            <Border Style="{ThemeResource FilterBarStyle}">
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -28,11 +28,11 @@
                               ItemsSource="{Binding Subjects}"
                               SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
                     <Button Grid.Column="2" VerticalAlignment="Bottom"
-                            Content="Refresh" Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding RefreshFilterCommand}" />
                     <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                         <Button Content="+ New Assessment"
-                                Style="{StaticResource PrimaryButtonStyle}"
+                                Style="{ThemeResource PrimaryButtonStyle}"
                                 Command="{Binding NewAssessmentCommand}" />
                     </StackPanel>
                 </Grid>
@@ -40,42 +40,42 @@
 
             <!-- ── KPI SUMMARY STRIP ── -->
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="140">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Total Assessments" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}" Text="{Binding TotalCount}" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Assessments" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}" Text="{Binding TotalCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="140">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Pending Entry" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource WarningAmberBrush}" Text="{Binding PendingCount}" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Pending Entry" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}" Foreground="{ThemeResource WarningAmberBrush}" Text="{Binding PendingCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="140">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Verified" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource SuccessGreenBrush}" Text="{Binding VerifiedCount}" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Verified" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}" Foreground="{ThemeResource SuccessGreenBrush}" Text="{Binding VerifiedCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="140">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Published" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}" Foreground="{StaticResource PrimaryBlueBrush}" Text="{Binding PublishedCount}" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Published" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}" Foreground="{ThemeResource PrimaryBlueBrush}" Text="{Binding PublishedCount}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
 
             <!-- ── ASSESSMENTS TABLE ── -->
-            <Border Style="{StaticResource TableCardStyle}">
+            <Border Style="{ThemeResource TableCardStyle}">
                 <StackPanel>
                     <!-- Table Header -->
-                    <Border Style="{StaticResource CardHeaderBorderStyle}">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="All Assessments" />
+                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="All Assessments" />
                     </Border>
 
                     <!-- Column Headers -->
-                    <Border Style="{StaticResource TableHeaderRowStyle}">
+                    <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="12" Padding="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*" />
@@ -86,13 +86,13 @@
                                 <ColumnDefinition Width="120" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="ASSESSMENT" />
-                            <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="CLASS" />
-                            <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="SUBJECT" />
-                            <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="WT%" />
-                            <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="DUE DATE" />
-                            <TextBlock Grid.Column="5" Style="{StaticResource TableHeaderStyle}" Text="PROGRESS" />
-                            <TextBlock Grid.Column="6" Style="{StaticResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="ASSESSMENT" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECT" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="WT%" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="DUE DATE" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PROGRESS" />
+                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
                         </Grid>
                     </Border>
 
@@ -121,19 +121,19 @@
                                         <ColumnDefinition Width="120" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource TableCellStyle}" Text="{Binding ClassName}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource TableCellStyle}" Text="{Binding Subject}" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource NumericCellStyle}" Text="{Binding WeightPercent}" />
-                                    <TextBlock Grid.Column="4" Style="{StaticResource TableCellStyle}" Text="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" />
+                                    <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}" Text="{Binding ClassName}" />
+                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}" Text="{Binding Subject}" />
+                                    <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}" Text="{Binding WeightPercent}" />
+                                    <TextBlock Grid.Column="4" Style="{ThemeResource TableCellStyle}" Text="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" />
                                     <StackPanel Grid.Column="5" Spacing="3" VerticalAlignment="Center">
                                         <ProgressBar Value="{Binding MarksEnteredPercent}" Maximum="100"
                                                      Height="6" CornerRadius="3"
-                                                     Background="{StaticResource SurfaceGray2Brush}" />
+                                                     Background="{ThemeResource SurfaceGray2Brush}" />
                                         <TextBlock Text="{Binding MarksEnteredPercent}" FontSize="11"
-                                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                                   Foreground="{ThemeResource TextSecondaryBrush}" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="6" Style="{StaticResource TableCellStyle}" Text="{Binding StatusLabel}" />
+                                    <TextBlock Grid.Column="6" Style="{ThemeResource TableCellStyle}" Text="{Binding StatusLabel}" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -142,8 +142,9 @@
             </Border>
 
             <!-- Status message -->
-            <TextBlock Style="{StaticResource MutedTextStyle}" Text="{Binding StatusMessage}" Margin="4,0" />
+            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="{Binding StatusMessage}" Margin="4,0" />
 
         </StackPanel>
     </ScrollViewer>
 </Page>
+

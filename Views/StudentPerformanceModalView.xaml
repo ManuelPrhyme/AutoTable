@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AutoTable.Views.StudentPerformanceModalView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    mc:Ignorable="d"
+    Background="{ThemeResource SurfaceGrayBrush}">
+
+    <!-- Modal container: 90% of screen, centrally aligned -->
+    <Border Background="{ThemeResource SurfaceWhiteBrush}"
+            BorderBrush="{ThemeResource BorderLightBrush}"
+            BorderThickness="1"
+            CornerRadius="{ThemeResource CardCornerRadiusValue}"
+            Padding="24">
+
+        <Grid>
+            <!-- Close button in top-right corner -->
+            <Button Style="{ThemeResource DialogCloseButtonStyle}"
+                    Grid.Row="0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,0,0,0"
+                    Command="{Binding CloseCommand}">
+                <FontIcon Glyph="&#xE711;"
+                          FontSize="16"
+                          Foreground="{ThemeResource TextSecondaryBrush}" />
+            </Button>
+
+            <!-- Main content (offset to leave room for close button) -->
+            <Grid Grid.Row="0" Margin="0,40,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}"
+                                   Text="Student Performance" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}"
+                                   Text="{Binding StudentName}"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextPrimaryBrush}" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}"
+                                   Text="{Binding AdmissionNumber}" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Content="Close"
+                            Style="{ThemeResource SecondaryButtonStyle}"
+                            Command="{Binding CloseCommand}"
+                            VerticalAlignment="Center" />
+                </Grid>
+
+                <!-- Student Meta -->
+                <Grid Grid.Row="1" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Class" />
+                        <TextBlock Style="{ThemeResource BodyTextStyle}" Text="{Binding ClassName}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="24,0,0,0" Spacing="2">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Stream" />
+                        <TextBlock Style="{ThemeResource BodyTextStyle}" Text="{Binding Stream}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="24,0,0,0" Spacing="2">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Academic Year" />
+                        <TextBlock Style="{ThemeResource BodyTextStyle}" Text="{Binding AcademicYear}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Margin="24,0,0,0" Spacing="2">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Term" />
+                        <TextBlock Style="{ThemeResource BodyTextStyle}" Text="{Binding Term}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Margin="24,0,0,0" Spacing="2">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Rank" />
+                        <TextBlock Style="{ThemeResource BodyTextStyle}" Text="{Binding Rank}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- KPI Cards -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+                    <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Overall Average" />
+                            <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                       Foreground="{ThemeResource BlueBrush}"
+                                       Text="{Binding OverallAverage, Converter={StaticResource PercentConverter}}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Overall Grade" />
+                            <TextBlock FontSize="28" FontWeight="Bold"
+                                       Foreground="{Binding OverallGrade, Converter={StaticResource GradeColorConverter}}"
+                                       Text="{Binding OverallGrade}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Status" />
+                            <TextBlock FontSize="20" FontWeight="SemiBold"
+                                       Text="{Binding Status}"
+                                       Foreground="{Binding Status, Converter={StaticResource StatusColorConverter}}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{ThemeResource KpiCardStyle}" MinWidth="140">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Subjects" />
+                            <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                       Foreground="{ThemeResource PurpleBrush}"
+                                       Text="{Binding TotalSubjects}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Subject Breakdown Table -->
+                <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{ThemeResource CardHeaderBorderStyle}">
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}"
+                                   Text="Subject Breakdown" VerticalAlignment="Center" />
+                    </Border>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ListView ItemsSource="{Binding SubjectPerformances}" SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="MinHeight" Value="0" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnSpacing="12" Padding="16,9">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="60" />
+                                            <ColumnDefinition Width="80" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}"
+                                                   Text="{Binding Subject}" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Style="{ThemeResource NumericCellStyle}"
+                                                   Text="{Binding Cat1, Converter={StaticResource DecimalConverter}}" />
+                                        <TextBlock Grid.Column="2" Style="{ThemeResource NumericCellStyle}"
+                                                   Text="{Binding Cat2, Converter={StaticResource DecimalConverter}}" />
+                                        <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}"
+                                                   Text="{Binding MidTerm, Converter={StaticResource DecimalConverter}}" />
+                                        <TextBlock Grid.Column="4" Style="{ThemeResource NumericCellStyle}"
+                                                   Text="{Binding EndTerm, Converter={StaticResource DecimalConverter}}" />
+                                        <TextBlock Grid.Column="5" FontSize="14" FontWeight="Bold"
+                                                   Foreground="{ThemeResource BlueBrush}"
+                                                   Text="{Binding Average, Converter={StaticResource PercentConverter}}"
+                                                   VerticalAlignment="Center" />
+                                        <Border Grid.Column="6" CornerRadius="6" Padding="6,2"
+                                                Background="{ThemeResource BlueLightBrush}"
+                                                VerticalAlignment="Center" HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding Grade}" FontSize="13" FontWeight="Bold"
+                                                       Foreground="{ThemeResource BlueBrush}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="7" Style="{ThemeResource TableCellStyle}"
+                                                   Text="{Binding Status}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
+

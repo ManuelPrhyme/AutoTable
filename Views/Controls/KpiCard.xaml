@@ -6,12 +6,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Width="172"
-    MinHeight="100">
+    Width="260"
+    MinHeight="110">
 
     <Border
-        Background="{StaticResource SurfaceWhiteBrush}"
-        BorderBrush="{StaticResource BorderLightBrush}"
+        Background="{ThemeResource SurfaceWhiteBrush}"
+        BorderBrush="{ThemeResource BorderLightBrush}"
         BorderThickness="1"
         CornerRadius="10">
         <Grid>
@@ -25,18 +25,18 @@
                 x:Name="AccentBar"
                 Grid.Column="0"
                 CornerRadius="10,0,0,10"
-                Background="{StaticResource PrimaryBlueBrush}" />
+                Background="{ThemeResource PrimaryBlueBrush}" />
 
             <!-- Content -->
-            <StackPanel Grid.Column="1" Padding="14,14,14,14" Spacing="4">
+            <StackPanel Grid.Column="1" Padding="18,16,18,16" Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon
                         x:Name="IconBlock"
                         FontSize="15"
-                        Foreground="{StaticResource PrimaryBlueBrush}" />
+                        Foreground="{ThemeResource PrimaryBlueBrush}" />
                     <TextBlock
                         x:Name="TitleBlock"
-                        Style="{StaticResource MutedTextStyle}"
+                        Style="{ThemeResource MutedTextStyle}"
                         TextWrapping="Wrap"
                         MaxWidth="120" />
                 </StackPanel>
@@ -44,12 +44,13 @@
                     x:Name="ValueBlock"
                     FontSize="26"
                     FontWeight="Bold"
-                    Foreground="{StaticResource TextPrimaryBrush}" />
+                    Foreground="{ThemeResource TextPrimaryBrush}" />
                 <TextBlock
                     x:Name="SubtitleBlock"
-                    Style="{StaticResource MutedTextStyle}"
+                    Style="{ThemeResource MutedTextStyle}"
                     TextWrapping="Wrap" />
             </StackPanel>
         </Grid>
     </Border>
 </UserControl>
+

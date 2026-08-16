@@ -6,12 +6,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource SurfaceGrayBrush}">
+    Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
 
-            <Border Style="{StaticResource FilterBarStyle}">
+            <Border Style="{ThemeResource FilterBarStyle}">
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -27,49 +27,49 @@
                     <ComboBox Grid.Column="2" Header="Status" MinWidth="120"
                               ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus, Mode=TwoWay}" />
                     <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                        <Button Content="Refresh" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding RefreshCommand}" />
-                        <Button Content="Record Payment" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding RecordPaymentCommand}" />
+                        <Button Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}" Command="{Binding RefreshCommand}" />
+                        <Button Content="Record Payment" Style="{ThemeResource PrimaryButtonStyle}" Command="{Binding RecordPaymentCommand}" />
                     </StackPanel>
                 </Grid>
             </Border>
 
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Total Expected" />
-                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Expected" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
                                    Text="{Binding TotalExpected, Converter={StaticResource CurrencyConverter}}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Collected" />
-                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessGreenBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Collected" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource SuccessGreenBrush}"
                                    Text="{Binding TotalCollected, Converter={StaticResource CurrencyConverter}}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Outstanding" />
-                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource DangerRedBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Outstanding" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource DangerRedBrush}"
                                    Text="{Binding TotalOutstanding, Converter={StaticResource CurrencyConverter}}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Collection Rate" />
-                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBlueBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Collection Rate" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource PrimaryBlueBrush}"
                                    Text="{Binding CollectionRate, Converter={StaticResource PercentConverter}}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
 
-            <Border Style="{StaticResource TableCardStyle}">
+            <Border Style="{ThemeResource TableCardStyle}">
                 <StackPanel>
-                    <Border Style="{StaticResource CardHeaderBorderStyle}">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Fee Collection Register" />
+                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Fee Collection Register" />
                     </Border>
-                    <Border Style="{StaticResource TableHeaderRowStyle}">
+                    <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="36" />
@@ -81,14 +81,14 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="#" />
-                            <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="STUDENT" />
-                            <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="ADM NO." />
-                            <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="CLASS" />
-                            <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="EXPECTED" />
-                            <TextBlock Grid.Column="5" Style="{StaticResource TableHeaderStyle}" Text="PAID" />
-                            <TextBlock Grid.Column="6" Style="{StaticResource TableHeaderStyle}" Text="BALANCE" />
-                            <TextBlock Grid.Column="7" Style="{StaticResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="EXPECTED" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PAID" />
+                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="BALANCE" />
+                            <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
                         </Grid>
                     </Border>
                     <ListView ItemsSource="{Binding FeeRecords}" SelectionMode="None">
@@ -113,23 +113,23 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource MutedTextStyle}"
+                                    <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
                                                Text="{Binding RowNumber}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding StudentName}" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding AdmissionNumber}" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding ClassName}" />
-                                    <TextBlock Grid.Column="4" Style="{StaticResource NumericCellStyle}"
+                                    <TextBlock Grid.Column="4" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding ExpectedAmount, Converter={StaticResource CurrencyConverter}}" />
                                     <TextBlock Grid.Column="5" FontSize="14" FontWeight="Bold"
-                                               Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center"
+                                               Foreground="{ThemeResource SuccessGreenBrush}" VerticalAlignment="Center"
                                                Text="{Binding PaidAmount, Converter={StaticResource CurrencyConverter}}" />
                                     <TextBlock Grid.Column="6" FontSize="14" FontWeight="Bold"
-                                               Foreground="{StaticResource DangerRedBrush}" VerticalAlignment="Center"
+                                               Foreground="{ThemeResource DangerRedBrush}" VerticalAlignment="Center"
                                                Text="{Binding Balance, Converter={StaticResource CurrencyConverter}}" />
-                                    <TextBlock Grid.Column="7" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="7" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding PaymentStatus}" />
                                 </Grid>
                             </DataTemplate>
@@ -141,3 +141,4 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
+

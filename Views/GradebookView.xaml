@@ -6,13 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{StaticResource SurfaceGrayBrush}">
+    Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
 
             <!-- FILTER BAR -->
-            <Border Style="{StaticResource FilterBarStyle}">
+            <Border Style="{ThemeResource FilterBarStyle}">
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -27,9 +27,9 @@
                               ItemsSource="{Binding Subjects}"
                               SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                        <Button Content="Refresh" Style="{StaticResource SecondaryButtonStyle}"
+                        <Button Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}"
                                 Command="{Binding RefreshCommand}" />
-                        <Button Content="Export" Style="{StaticResource PrimaryButtonStyle}"
+                        <Button Content="Export" Style="{ThemeResource PrimaryButtonStyle}"
                                 Command="{Binding ExportCommand}" />
                     </StackPanel>
                 </Grid>
@@ -37,45 +37,45 @@
 
             <!-- KPI SUMMARY STRIP -->
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Class Average" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource PrimaryBlueBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Class Average" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource PrimaryBlueBrush}"
                                    Text="{Binding ClassAverage, Converter={StaticResource PercentConverter}}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="At Risk (&lt;40%)" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource DangerRedBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="At Risk (&lt;40%)" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource DangerRedBrush}"
                                    Text="{Binding AtRiskCount}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource KpiCardStyle}" MinWidth="160">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="160">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Top Performers (≥80%)" />
-                        <TextBlock Style="{StaticResource KpiValueStyle}"
-                                   Foreground="{StaticResource SuccessGreenBrush}"
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Top Performers (≥80%)" />
+                        <TextBlock Style="{ThemeResource KpiValueStyle}"
+                                   Foreground="{ThemeResource SuccessGreenBrush}"
                                    Text="{Binding TopPerformers}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
 
             <!-- GRADEBOOK TABLE -->
-            <Border Style="{StaticResource TableCardStyle}">
+            <Border Style="{ThemeResource TableCardStyle}">
                 <StackPanel>
-                    <Border Style="{StaticResource CardHeaderBorderStyle}">
+                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
                         <Grid>
-                            <TextBlock Style="{StaticResource SectionTitleStyle}"
+                            <TextBlock Style="{ThemeResource SectionTitleStyle}"
                                        Text="Gradebook" VerticalAlignment="Center" />
-                            <TextBlock HorizontalAlignment="Right" Style="{StaticResource MutedTextStyle}"
+                            <TextBlock HorizontalAlignment="Right" Style="{ThemeResource MutedTextStyle}"
                                        Text="{Binding StatusMessage}" VerticalAlignment="Center" />
                         </Grid>
                     </Border>
 
-                    <Border Style="{StaticResource TableHeaderRowStyle}">
+                    <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="36" />
@@ -89,16 +89,16 @@
                                 <ColumnDefinition Width="60" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{StaticResource TableHeaderStyle}" Text="#" />
-                            <TextBlock Grid.Column="1" Style="{StaticResource TableHeaderStyle}" Text="STUDENT" />
-                            <TextBlock Grid.Column="2" Style="{StaticResource TableHeaderStyle}" Text="ADM NO." />
-                            <TextBlock Grid.Column="3" Style="{StaticResource TableHeaderStyle}" Text="CAT 1" />
-                            <TextBlock Grid.Column="4" Style="{StaticResource TableHeaderStyle}" Text="CAT 2" />
-                            <TextBlock Grid.Column="5" Style="{StaticResource TableHeaderStyle}" Text="MID TERM" />
-                            <TextBlock Grid.Column="6" Style="{StaticResource TableHeaderStyle}" Text="END TERM" />
-                            <TextBlock Grid.Column="7" Style="{StaticResource TableHeaderStyle}" Text="AVERAGE" />
-                            <TextBlock Grid.Column="8" Style="{StaticResource TableHeaderStyle}" Text="GRADE" />
-                            <TextBlock Grid.Column="9" Style="{StaticResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CAT 1" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="CAT 2" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="MID TERM" />
+                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="END TERM" />
+                            <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="AVERAGE" />
+                            <TextBlock Grid.Column="8" Style="{ThemeResource TableHeaderStyle}" Text="GRADE" />
+                            <TextBlock Grid.Column="9" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
                         </Grid>
                     </Border>
 
@@ -126,31 +126,31 @@
                                         <ColumnDefinition Width="60" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource MutedTextStyle}"
+                                    <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
                                                Text="{Binding Rank}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding StudentName}" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding AdmissionNumber}" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource NumericCellStyle}"
+                                    <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding Cat1}" />
-                                    <TextBlock Grid.Column="4" Style="{StaticResource NumericCellStyle}"
+                                    <TextBlock Grid.Column="4" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding Cat2}" />
-                                    <TextBlock Grid.Column="5" Style="{StaticResource NumericCellStyle}"
+                                    <TextBlock Grid.Column="5" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding MidTerm}" />
-                                    <TextBlock Grid.Column="6" Style="{StaticResource NumericCellStyle}"
+                                    <TextBlock Grid.Column="6" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding EndTerm}" />
                                     <TextBlock Grid.Column="7" FontSize="14" FontWeight="Bold"
-                                               Foreground="{StaticResource PrimaryBlueBrush}"
+                                               Foreground="{ThemeResource PrimaryBlueBrush}"
                                                VerticalAlignment="Center"
                                                Text="{Binding Average, Converter={StaticResource DecimalConverter}}" />
                                     <Border Grid.Column="8" CornerRadius="6" Padding="6,2"
-                                            Background="{StaticResource InfoBlueLightBrush}"
+                                            Background="{ThemeResource InfoBlueLightBrush}"
                                             VerticalAlignment="Center" HorizontalAlignment="Left">
                                         <TextBlock Text="{Binding Grade}" FontSize="13" FontWeight="Bold"
-                                                   Foreground="{StaticResource InfoBlueBrush}" />
+                                                   Foreground="{ThemeResource InfoBlueBrush}" />
                                     </Border>
-                                    <TextBlock Grid.Column="9" Style="{StaticResource TableCellStyle}"
+                                    <TextBlock Grid.Column="9" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding Status}" />
                                 </Grid>
                             </DataTemplate>
@@ -162,3 +162,4 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
+

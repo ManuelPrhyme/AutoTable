@@ -5,6 +5,10 @@ namespace AutoTable.Models
         public string StudentName { get; set; } = string.Empty;
         public string AdmissionNumber { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
+        public string Stream { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string AcademicYear { get; set; } = string.Empty;
+        public string Term { get; set; } = string.Empty;
         public double Cat1 { get; set; }
         public double Cat2 { get; set; }
         public double MidTerm { get; set; }

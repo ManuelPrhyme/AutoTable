@@ -15,6 +15,9 @@
             <converters:CurrencyConverter      x:Key="CurrencyConverter" />
             <converters:PercentConverter       x:Key="PercentConverter" />
             <converters:DecimalConverter       x:Key="DecimalConverter" />
+            <converters:GradeColorConverter    x:Key="GradeColorConverter" />
+            <converters:StatusColorConverter   x:Key="StatusColorConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
+

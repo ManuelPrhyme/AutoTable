@@ -15,7 +15,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Left: illustration panel (sheets & graphs instead of phone) -->
-        <Grid Grid.Column="0" Background="{StaticResource NavyDarkBrush}">
+        <Grid Grid.Column="0" Background="{ThemeResource NavyDarkBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -32,31 +32,32 @@
                 <TextBlock
                     FontSize="32"
                     FontWeight="Bold"
-                    Foreground="White"
+                    Foreground="{ThemeResource TextOnDarkBrush}"
                     Text="AutoTable" />
                 <TextBlock
                     MaxWidth="420"
-                    Foreground="#CBD5E1"
+                    Foreground="{ThemeResource TextOnDarkMutedBrush}"
                     Text="Marks &amp; Performance Management for Primary Schools. Enter marks, analyze trends, and generate reports with AI assistance."
                     TextWrapping="WrapWholeWords" />
             </StackPanel>
         </Grid>
 
         <!-- Right: white auth panel -->
-        <Grid Grid.Column="1" Background="{StaticResource SurfaceWhiteBrush}">
+        <Grid Grid.Column="1" Background="{ThemeResource SurfaceGrayBrush}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel
-                    MaxWidth="360"
-                    Margin="0,80,0,40"
-                    HorizontalAlignment="Center"
-                    Spacing="16">
+                <Border Style="{ThemeResource CardBorderStyle}" Margin="24,48,24,40" MaxWidth="480">
+                    <StackPanel
+                        MaxWidth="360"
+                        Margin="0,24,0,24"
+                        HorizontalAlignment="Center"
+                        Spacing="16">
                     <TextBlock
                         FontSize="28"
                         FontWeight="Bold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="Welcome back" />
                     <TextBlock
-                        Style="{StaticResource MutedTextStyle}"
+                        Style="{ThemeResource MutedTextStyle}"
                         Text="Sign in to continue to your school dashboard." />
 
                     <TextBox
@@ -72,7 +73,7 @@
 
                     <TextBlock
                         x:Name="ErrorText"
-                        Foreground="{StaticResource DangerRedBrush}"
+                        Foreground="{ThemeResource DangerRedBrush}"
                         TextWrapping="WrapWholeWords"
                         Visibility="Collapsed" />
 
@@ -80,28 +81,30 @@
                         x:Name="SignInButton"
                         HorizontalAlignment="Stretch"
                         Content="Sign In"
-                        Style="{StaticResource PrimaryButtonStyle}" />
+                        Style="{ThemeResource PrimaryButtonStyle}" />
 
                     <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
-                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="Don't have an account?" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Don't have an account?" />
                         <HyperlinkButton x:Name="SignUpLink" Content="Sign up" />
                     </StackPanel>
 
                     <Border
-                        Background="{StaticResource SurfaceGrayBrush}"
+                        Background="{ThemeResource SurfaceGrayBrush}"
                         CornerRadius="8"
                         Padding="12">
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
-                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Foreground="{ThemeResource TextPrimaryBrush}"
                                 Text="Demo roles" />
-                            <TextBlock Style="{StaticResource MutedTextStyle}" Text="admin@school.edu → Administrator" />
-                            <TextBlock Style="{StaticResource MutedTextStyle}" Text="Any other email → Data Entrant" />
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="admin@school.edu → Administrator" />
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Any other email → Data Entrant" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
+                    </StackPanel>
+                </Border>
             </ScrollViewer>
         </Grid>
     </Grid>
 </Page>
+

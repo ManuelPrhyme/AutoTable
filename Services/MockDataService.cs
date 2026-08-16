@@ -13,6 +13,31 @@ namespace AutoTable.Services
         public IReadOnlyList<string> Classes { get; } = new[] { "P1", "P2", "P3", "P4", "P5", "P6", "P7" };
         public IReadOnlyList<string> Subjects { get; } = new[] { "Mathematics", "English", "Science", "Social Studies", "Religious Education" };
         public IReadOnlyList<string> Terms { get; } = new[] { "Term 2, 2025", "Term 1, 2025" };
+        public IReadOnlyList<string> AcademicYears { get; } = new[] { "2024-2025", "2025-2026" };
+        public IReadOnlyList<string> Streams { get; } = new[] { "Stream A", "Stream B", "Stream C" };
+
+        public IReadOnlyList<string> AllStudents { get; } = new[]
+        {
+            "Amina Nakato", "Brian Okello", "Carol Namukasa", "David Ssempijja",
+            "Esther Akello", "Francis Muwonge", "Grace Nabwire", "Henry Tumusiime",
+            "Irene Mbabazi", "Jacob Ssebunya", "Karen Wamalwa", "Lawrence Ochieng",
+        };
+
+        private static readonly Dictionary<string, string> StudentAdmissionNumbers = new()
+        {
+            ["Amina Nakato"] = "BF-1042",
+            ["Brian Okello"] = "BF-1043",
+            ["Carol Namukasa"] = "BF-1044",
+            ["David Ssempijja"] = "BF-1045",
+            ["Esther Akello"] = "BF-1046",
+            ["Francis Muwonge"] = "BF-1047",
+            ["Grace Nabwire"] = "BF-1048",
+            ["Henry Tumusiime"] = "BF-1049",
+            ["Irene Mbabazi"] = "BF-1050",
+            ["Jacob Ssebunya"] = "BF-1051",
+            ["Karen Wamalwa"] = "BF-1052",
+            ["Lawrence Ochieng"] = "BF-1053",
+        };
 
         public List<AssessmentItem> GetAssessments()
         {
@@ -55,9 +80,12 @@ namespace AutoTable.Services
             }).ToList();
         }
 
-        public List<GradebookRow> GetGradebook(string className, string subject)
+        public List<GradebookRow> GetGradebook(string? className = null, string? subject = null,
+            string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
         {
-            var marks = GetStudentMarks(className, subject, "Combined");
+            var cls = className ?? "P5";
+            var subj = subject ?? "Mathematics";
+            var marks = GetStudentMarks(cls, subj, "Combined");
             var rows = marks.Select((m, i) =>
             {
                 var cat1 = m.Mark ?? 0;
@@ -69,7 +97,11 @@ namespace AutoTable.Services
                 {
                     StudentName = m.StudentName,
                     AdmissionNumber = m.AdmissionNumber,
-                    ClassName = className,
+                    ClassName = cls,
+                    Stream = stream ?? "Stream A",
+                    Subject = subj,
+                    AcademicYear = academicYear ?? "2024-2025",
+                    Term = term ?? "Term 2, 2025",
                     Cat1 = cat1,
                     Cat2 = cat2,
                     MidTerm = mid,
@@ -84,7 +116,63 @@ namespace AutoTable.Services
             for (var i = 0; i < rows.Count; i++)
                 rows[i].Rank = i + 1;
 
+            // Filter by student name if provided
+            if (!string.IsNullOrWhiteSpace(studentName))
+            {
+                rows = rows.Where(r => r.StudentName.Contains(studentName, StringComparison.OrdinalIgnoreCase)).ToList();
+                for (var i = 0; i < rows.Count; i++)
+                    rows[i].Rank = i + 1;
+            }
+
             return rows;
+        }
+
+        public StudentPerformanceDetail GetStudentPerformanceDetail(string studentName, string className,
+            string subject, string academicYear, string term, string stream)
+        {
+            var admissionNumber = StudentAdmissionNumbers.TryGetValue(studentName, out var adm) ? adm : "BF-0000";
+            var random = new Random(studentName.GetHashCode() ^ className.GetHashCode());
+
+            var subjectPerformances = new System.Collections.ObjectModel.ObservableCollection<StudentSubjectPerformance>();
+            var allSubjects = Subjects;
+
+            foreach (var subj in allSubjects)
+            {
+                var cat1 = random.Next(35, 98);
+                var cat2 = Math.Min(100, cat1 + 4);
+                var mid = Math.Min(100, cat1 + 2);
+                var end = Math.Min(100, cat1 - 3);
+                var avg = Math.Round((cat1 + cat2 + mid + end) / 4.0, 1);
+                subjectPerformances.Add(new StudentSubjectPerformance
+                {
+                    Subject = subj,
+                    Cat1 = cat1,
+                    Cat2 = cat2,
+                    MidTerm = mid,
+                    EndTerm = end,
+                    Average = avg,
+                    Grade = GradeFromMark(avg),
+                    Status = avg < 40 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
+                });
+            }
+
+            var overallAvg = Math.Round(subjectPerformances.Average(s => s.Average), 1);
+            var rank = random.Next(1, 25);
+
+            return new StudentPerformanceDetail
+            {
+                StudentName = studentName,
+                AdmissionNumber = admissionNumber,
+                ClassName = className,
+                Stream = stream,
+                AcademicYear = academicYear,
+                Term = term,
+                SubjectPerformances = subjectPerformances,
+                OverallAverage = overallAvg,
+                OverallGrade = GradeFromMark(overallAvg),
+                Rank = rank,
+                Status = overallAvg < 40 ? "At Risk" : overallAvg >= 70 ? "Excellent" : "On Track"
+            };
         }
 
         private static string GradeFromMark(double mark) => mark switch

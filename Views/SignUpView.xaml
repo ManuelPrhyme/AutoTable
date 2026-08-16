@@ -14,7 +14,7 @@
             <ColumnDefinition Width="520" />
         </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="0" Background="{StaticResource NavyDarkBrush}">
+        <Grid Grid.Column="0" Background="{ThemeResource NavyDarkBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -31,30 +31,31 @@
                 <TextBlock
                     FontSize="32"
                     FontWeight="Bold"
-                    Foreground="White"
+                    Foreground="{ThemeResource TextOnDarkBrush}"
                     Text="Join AutoTable" />
                 <TextBlock
                     MaxWidth="420"
-                    Foreground="#CBD5E1"
+                    Foreground="{ThemeResource TextOnDarkMutedBrush}"
                     Text="Create an account to manage marks entry, performance analytics, and student reports."
                     TextWrapping="WrapWholeWords" />
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Column="1" Background="{StaticResource SurfaceWhiteBrush}">
+        <Grid Grid.Column="1" Background="{ThemeResource SurfaceGrayBrush}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel
-                    MaxWidth="380"
-                    Margin="0,60,0,40"
-                    HorizontalAlignment="Center"
-                    Spacing="16">
+                <Border Style="{ThemeResource CardBorderStyle}" Margin="24,40,24,40" MaxWidth="520">
+                    <StackPanel
+                        MaxWidth="380"
+                        Margin="0,24,0,24"
+                        HorizontalAlignment="Center"
+                        Spacing="16">
                     <TextBlock
                         FontSize="28"
                         FontWeight="Bold"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{ThemeResource TextPrimaryBrush}"
                         Text="Create account" />
                     <TextBlock
-                        Style="{StaticResource MutedTextStyle}"
+                        Style="{ThemeResource MutedTextStyle}"
                         Text="Choose your role and set up access." />
 
                     <TextBox
@@ -84,7 +85,7 @@
 
                     <TextBlock
                         x:Name="ErrorText"
-                        Foreground="{StaticResource DangerRedBrush}"
+                        Foreground="{ThemeResource DangerRedBrush}"
                         TextWrapping="WrapWholeWords"
                         Visibility="Collapsed" />
 
@@ -92,15 +93,17 @@
                         x:Name="CreateButton"
                         HorizontalAlignment="Stretch"
                         Content="Create Account"
-                        Style="{StaticResource PrimaryButtonStyle}" />
+                        Style="{ThemeResource PrimaryButtonStyle}" />
 
                     <Button
                         x:Name="CancelButton"
                         HorizontalAlignment="Stretch"
                         Content="Back to Sign In"
-                        Style="{StaticResource GhostButtonStyle}" />
-                </StackPanel>
+                        Style="{ThemeResource GhostButtonStyle}" />
+                    </StackPanel>
+                </Border>
             </ScrollViewer>
         </Grid>
     </Grid>
 </Page>
+
