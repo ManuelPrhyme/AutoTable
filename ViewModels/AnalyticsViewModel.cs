@@ -4,16 +4,19 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class AnalyticsViewModel : BaseViewModel
     {
+        private readonly IDataService _dataService;
+
         [ObservableProperty] private string _selectedTerm = "Term 2, 2025";
         [ObservableProperty] private string _selectedSubject = "Mathematics";
         [ObservableProperty] private double _schoolAverage;
-        [ObservableProperty] private string _bestClass = "P4";
-        [ObservableProperty] private string _needsAttentionClass = "P6";
+        [ObservableProperty] private string _bestClass = "-";
+        [ObservableProperty] private string _needsAttentionClass = "-";
         [ObservableProperty] private string _trendLabel = "+4.3%";
 
         public ObservableCollection<string> Terms { get; }
@@ -22,29 +25,43 @@ namespace AutoTable.ViewModels
 
         public AnalyticsViewModel()
         {
-            Terms = new ObservableCollection<string>(MockDataService.Instance.Terms);
-            Subjects = new ObservableCollection<string>(MockDataService.Instance.Subjects);
-            Load();
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Terms = new ObservableCollection<string>();
+            Subjects = new ObservableCollection<string>();
+            _ = InitializeAsync();
         }
 
-        partial void OnSelectedTermChanged(string value) => Load();
-        partial void OnSelectedSubjectChanged(string value) => Load();
+        partial void OnSelectedTermChanged(string value) => _ = Load();
+        partial void OnSelectedSubjectChanged(string value) => _ = Load();
 
         [RelayCommand]
-        private void Refresh() => Load();
+        private async Task Refresh() => await Load();
 
-        private void Load()
+        private async Task InitializeAsync()
+        {
+            var terms = await _dataService.GetTermsAsync();
+            foreach (var t in terms) Terms.Add(t);
+
+            var subjects = await _dataService.GetSubjectsAsync();
+            foreach (var s in subjects) Subjects.Add(s.Name);
+
+            await Load();
+        }
+
+        private async Task Load()
         {
             ClassBreakdown.Clear();
             double total = 0;
-            foreach (var cls in MockDataService.Instance.Classes)
+
+            var classes = await _dataService.GetClassesAsync();
+            foreach (var cls in classes)
             {
-                var rows = MockDataService.Instance.GetGradebook(cls, SelectedSubject);
+                var rows = await _dataService.GetGradebookAsync(cls.Name, SelectedSubject, term: SelectedTerm);
                 var avg = rows.Count == 0 ? 0 : rows.Average(r => r.Average);
                 total += avg;
                 ClassBreakdown.Add(new ClassBreakdown
                 {
-                    ClassName = cls,
+                    ClassName = cls.Name,
                     StudentCount = rows.Count,
                     Average = avg,
                     AtRisk = rows.Count(r => r.Average < 40),

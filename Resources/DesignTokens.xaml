@@ -4,27 +4,31 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ═══════════════════════════════════════════════════════════
-         THEME DICTIONARIES — Light & Dark
+         THEME DICTIONARIES — Light & Dark & Default
          Colors and brushes that change per theme live here.
          Styles in the main dictionary reference brushes via
          {ThemeResource} so they update on theme switch.
     ═══════════════════════════════════════════════════════════ -->
     <ResourceDictionary.ThemeDictionaries>
 
-        <!-- ── LIGHT THEME ── -->
-        <ResourceDictionary x:Key="Light">
+        <!-- ── DEFAULT THEME (Safe Light fallback) ── -->
+        <ResourceDictionary x:Key="Default">
 
             <!-- ═══ BASE COLORS ═══ -->
-            <!-- Background -->
             <Color x:Key="BackgroundColor">#F5F5F5</Color>
             <Color x:Key="SurfaceWhiteColor">#FFFFFF</Color>
             <Color x:Key="SurfaceGrayColor">#F5F5F5</Color>
             <Color x:Key="SurfaceGray2Color">#EEEEEE</Color>
+            <Color x:Key="SurfaceElevatedColor">#FFFFFF</Color>
+            <Color x:Key="SurfaceSunkenColor">#E9E9E9</Color>
+            <Color x:Key="SurfaceDisabledColor">#F0F0F0</Color>
 
             <!-- Text -->
             <Color x:Key="TextPrimaryColor">#2D2D2D</Color>
             <Color x:Key="TextSecondaryColor">#666666</Color>
             <Color x:Key="TextMutedColor">#9E9E9E</Color>
+            <Color x:Key="TextDisabledColor">#BDBDBD</Color>
+            <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
             <Color x:Key="TextOnDarkColor">#FFFFFF</Color>
             <Color x:Key="TextOnDarkMutedColor">#CCCCCC</Color>
 
@@ -33,12 +37,20 @@
             <Color x:Key="SidebarHoverColor">#2A2A2A</Color>
             <Color x:Key="SidebarBorderColor">#2A2A2A</Color>
 
-            <!-- Dividers / Lines -->
+            <!-- Dividers / Lines / Borders -->
             <Color x:Key="DividerColor">#DDDDDD</Color>
             <Color x:Key="BorderLightColor">#DDDDDD</Color>
             <Color x:Key="BorderMediumColor">#CCCCCC</Color>
+            <Color x:Key="BorderStrongColor">#AFAFAF</Color>
+            <Color x:Key="FocusBorderColor">#1976D2</Color>
 
-            <!-- Hover / Focus States -->
+            <!-- Interactive States -->
+            <Color x:Key="HoverColor">#F0F0F0</Color>
+            <Color x:Key="PressedColor">#E5E5E5</Color>
+            <Color x:Key="SelectedColor">#E3F2FD</Color>
+            <Color x:Key="SelectedHoverColor">#D7EBFC</Color>
+            <Color x:Key="DisabledColor">#F0F0F0</Color>
+            <Color x:Key="DisabledBorderColor">#D6D6D6</Color>
             <Color x:Key="HoverBlueColor">#E3F2FD</Color>
             <Color x:Key="HoverGrayColor">#EEEEEE</Color>
 
@@ -52,6 +64,8 @@
 
             <!-- Overlay (semi-transparent black, 40% opacity) -->
             <Color x:Key="OverlayColor">#66000000</Color>
+            <Color x:Key="ScrimColor">#66000000</Color>
+            <Color x:Key="CardShadowColor">#0A000000</Color>
 
             <!-- Chart gridlines -->
             <Color x:Key="ChartGridlineColor">#DDDDDD</Color>
@@ -63,43 +77,55 @@
             <!-- ═══ ACCENT PALETTE (semantic mapping) ═══ -->
             <!-- Blue: Information, students, search highlights, analytics -->
             <Color x:Key="BlueColor">#2196F3</Color>
-            <Color x:Key="BlueLightColor">#E3F2FD</Color>
             <Color x:Key="BlueHoverColor">#1976D2</Color>
+            <Color x:Key="BluePressedColor">#1565C0</Color>
+            <Color x:Key="BlueSubtleColor">#E3F2FD</Color>
+            <Color x:Key="BlueLightColor">#E3F2FD</Color>
 
             <!-- Green: Success, teachers, positive states, "Present" -->
             <Color x:Key="GreenColor">#4CAF50</Color>
-            <Color x:Key="GreenLightColor">#E8F5E9</Color>
             <Color x:Key="GreenHoverColor">#388E3C</Color>
+            <Color x:Key="GreenSubtleColor">#E8F5E9</Color>
+            <Color x:Key="GreenLightColor">#E8F5E9</Color>
 
             <!-- Orange: Activity, classes, caution, "Late" -->
             <Color x:Key="OrangeColor">#FF9800</Color>
-            <Color x:Key="OrangeLightColor">#FFF3E0</Color>
             <Color x:Key="OrangeHoverColor">#F57C00</Color>
+            <Color x:Key="OrangeSubtleColor">#FFF3E0</Color>
+            <Color x:Key="OrangeLightColor">#FFF3E0</Color>
 
             <!-- Red: Errors, warnings, "Absent" -->
             <Color x:Key="RedColor">#F44336</Color>
-            <Color x:Key="RedLightColor">#FFEBEE</Color>
             <Color x:Key="RedHoverColor">#D32F2F</Color>
+            <Color x:Key="RedSubtleColor">#FFEBEE</Color>
+            <Color x:Key="RedLightColor">#FFEBEE</Color>
 
-            <!-- Purple: Secondary highlights -->
+            <!-- Purple: Accent -->
             <Color x:Key="PurpleColor">#673AB7</Color>
-            <Color x:Key="PurpleLightColor">#F3E5F5</Color>
             <Color x:Key="PurpleHoverColor">#512DA8</Color>
+            <Color x:Key="PurpleSubtleColor">#EDE7F6</Color>
+            <Color x:Key="PurpleLightColor">#EDE7F6</Color>
 
             <!-- Teal: Finance, fees -->
             <Color x:Key="TealColor">#009688</Color>
-            <Color x:Key="TealLightColor">#E0F2F2</Color>
             <Color x:Key="TealHoverColor">#00796B</Color>
+            <Color x:Key="TealSubtleColor">#E0F2F1</Color>
+            <Color x:Key="TealLightColor">#E0F2F1</Color>
 
-            <!-- ═══ BRUSHES (Light) ═══ -->
+            <!-- ═══ BRUSHES (Default) ═══ -->
             <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
             <SolidColorBrush x:Key="SurfaceWhiteBrush" Color="{StaticResource SurfaceWhiteColor}" />
             <SolidColorBrush x:Key="SurfaceGrayBrush" Color="{StaticResource SurfaceGrayColor}" />
             <SolidColorBrush x:Key="SurfaceGray2Brush" Color="{StaticResource SurfaceGray2Color}" />
+            <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}" />
+            <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="{StaticResource SurfaceSunkenColor}" />
+            <SolidColorBrush x:Key="SurfaceDisabledBrush" Color="{StaticResource SurfaceDisabledColor}" />
 
             <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
             <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
             <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
+            <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccentColor}" />
             <SolidColorBrush x:Key="TextOnDarkBrush" Color="{StaticResource TextOnDarkColor}" />
             <SolidColorBrush x:Key="TextOnDarkMutedBrush" Color="{StaticResource TextOnDarkMutedColor}" />
 
@@ -110,6 +136,15 @@
             <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}" />
             <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource BorderLightColor}" />
             <SolidColorBrush x:Key="BorderMediumBrush" Color="{StaticResource BorderMediumColor}" />
+            <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
+            <SolidColorBrush x:Key="FocusBorderBrush" Color="{StaticResource FocusBorderColor}" />
+
+            <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}" />
+            <SolidColorBrush x:Key="PressedBrush" Color="{StaticResource PressedColor}" />
+            <SolidColorBrush x:Key="SelectedBrush" Color="{StaticResource SelectedColor}" />
+            <SolidColorBrush x:Key="SelectedHoverBrush" Color="{StaticResource SelectedHoverColor}" />
+            <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource DisabledColor}" />
+            <SolidColorBrush x:Key="DisabledBorderBrush" Color="{StaticResource DisabledBorderColor}" />
 
             <SolidColorBrush x:Key="HoverBlueBrush" Color="{StaticResource HoverBlueColor}" />
             <SolidColorBrush x:Key="HoverGrayBrush" Color="{StaticResource HoverGrayColor}" />
@@ -121,6 +156,8 @@
             <SolidColorBrush x:Key="DisabledButtonTextBrush" Color="{StaticResource DisabledButtonTextColor}" />
 
             <SolidColorBrush x:Key="OverlayBrush" Color="{StaticResource OverlayColor}" />
+            <SolidColorBrush x:Key="ScrimBrush" Color="{StaticResource ScrimColor}" />
+            <SolidColorBrush x:Key="CardShadowBrush" Color="{StaticResource CardShadowColor}" />
 
             <SolidColorBrush x:Key="ChartGridlineBrush" Color="{StaticResource ChartGridlineColor}" />
 
@@ -129,42 +166,263 @@
 
             <!-- Accent brushes -->
             <SolidColorBrush x:Key="BlueBrush" Color="{StaticResource BlueColor}" />
-            <SolidColorBrush x:Key="BlueLightBrush" Color="{StaticResource BlueLightColor}" />
             <SolidColorBrush x:Key="BlueHoverBrush" Color="{StaticResource BlueHoverColor}" />
+            <SolidColorBrush x:Key="BluePressedBrush" Color="{StaticResource BluePressedColor}" />
+            <SolidColorBrush x:Key="BlueSubtleBrush" Color="{StaticResource BlueSubtleColor}" />
+            <SolidColorBrush x:Key="BlueLightBrush" Color="{StaticResource BlueLightColor}" />
 
             <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
-            <SolidColorBrush x:Key="GreenLightBrush" Color="{StaticResource GreenLightColor}" />
             <SolidColorBrush x:Key="GreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
+            <SolidColorBrush x:Key="GreenSubtleBrush" Color="{StaticResource GreenSubtleColor}" />
+            <SolidColorBrush x:Key="GreenLightBrush" Color="{StaticResource GreenLightColor}" />
 
             <SolidColorBrush x:Key="OrangeBrush" Color="{StaticResource OrangeColor}" />
-            <SolidColorBrush x:Key="OrangeLightBrush" Color="{StaticResource OrangeLightColor}" />
             <SolidColorBrush x:Key="OrangeHoverBrush" Color="{StaticResource OrangeHoverColor}" />
+            <SolidColorBrush x:Key="OrangeSubtleBrush" Color="{StaticResource OrangeSubtleColor}" />
+            <SolidColorBrush x:Key="OrangeLightBrush" Color="{StaticResource OrangeLightColor}" />
 
             <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
-            <SolidColorBrush x:Key="RedLightBrush" Color="{StaticResource RedLightColor}" />
             <SolidColorBrush x:Key="RedHoverBrush" Color="{StaticResource RedHoverColor}" />
+            <SolidColorBrush x:Key="RedSubtleBrush" Color="{StaticResource RedSubtleColor}" />
+            <SolidColorBrush x:Key="RedLightBrush" Color="{StaticResource RedLightColor}" />
 
             <SolidColorBrush x:Key="PurpleBrush" Color="{StaticResource PurpleColor}" />
-            <SolidColorBrush x:Key="PurpleLightBrush" Color="{StaticResource PurpleLightColor}" />
             <SolidColorBrush x:Key="PurpleHoverBrush" Color="{StaticResource PurpleHoverColor}" />
+            <SolidColorBrush x:Key="PurpleSubtleBrush" Color="{StaticResource PurpleSubtleColor}" />
+            <SolidColorBrush x:Key="PurpleLightBrush" Color="{StaticResource PurpleLightColor}" />
 
             <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
-            <SolidColorBrush x:Key="TealLightBrush" Color="{StaticResource TealLightColor}" />
             <SolidColorBrush x:Key="TealHoverBrush" Color="{StaticResource TealHoverColor}" />
+            <SolidColorBrush x:Key="TealSubtleBrush" Color="{StaticResource TealSubtleColor}" />
+            <SolidColorBrush x:Key="TealLightBrush" Color="{StaticResource TealLightColor}" />
 
             <!-- Semantic aliases (backward-compatible + semantic clarity) -->
             <SolidColorBrush x:Key="PrimaryBlueBrush" Color="{StaticResource BlueColor}" />
             <SolidColorBrush x:Key="PrimaryBlueHoverBrush" Color="{StaticResource BlueHoverColor}" />
+            <SolidColorBrush x:Key="PrimaryBluePressedBrush" Color="{StaticResource BluePressedColor}" />
             <SolidColorBrush x:Key="AccentPurpleBrush" Color="{StaticResource PurpleColor}" />
             <SolidColorBrush x:Key="SuccessGreenBrush" Color="{StaticResource GreenColor}" />
+            <SolidColorBrush x:Key="SuccessGreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
             <SolidColorBrush x:Key="SuccessGreenLightBrush" Color="{StaticResource GreenLightColor}" />
             <SolidColorBrush x:Key="WarningAmberBrush" Color="{StaticResource OrangeColor}" />
             <SolidColorBrush x:Key="WarningAmberLightBrush" Color="{StaticResource OrangeLightColor}" />
+            <SolidColorBrush x:Key="WarningOrangeBrush" Color="{StaticResource OrangeColor}" />
+            <SolidColorBrush x:Key="WarningOrangeHoverBrush" Color="{StaticResource OrangeHoverColor}" />
             <SolidColorBrush x:Key="DangerRedBrush" Color="{StaticResource RedColor}" />
+            <SolidColorBrush x:Key="DangerRedHoverBrush" Color="{StaticResource RedHoverColor}" />
             <SolidColorBrush x:Key="DangerRedLightBrush" Color="{StaticResource RedLightColor}" />
             <SolidColorBrush x:Key="InfoBlueBrush" Color="{StaticResource BlueColor}" />
             <SolidColorBrush x:Key="InfoBlueLightBrush" Color="{StaticResource BlueLightColor}" />
+            <SolidColorBrush x:Key="FinanceTealBrush" Color="{StaticResource TealColor}" />
+            <SolidColorBrush x:Key="NavySidebarBrush" Color="{StaticResource SidebarColor}" />
+            <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource SidebarColor}" />
+            <SolidColorBrush x:Key="NavyActiveBrush" Color="{StaticResource SidebarHoverColor}" />
+        </ResourceDictionary>
+
+        <!-- ── LIGHT THEME ── -->
+        <ResourceDictionary x:Key="Light">
+
+            <!-- ═══ BASE COLORS ═══ -->
+            <!-- Background -->
+            <Color x:Key="BackgroundColor">#F5F5F5</Color>
+            <Color x:Key="SurfaceWhiteColor">#FFFFFF</Color>
+            <Color x:Key="SurfaceGrayColor">#F5F5F5</Color>
+            <Color x:Key="SurfaceGray2Color">#EEEEEE</Color>
+            <Color x:Key="SurfaceElevatedColor">#FFFFFF</Color>
+            <Color x:Key="SurfaceSunkenColor">#E9E9E9</Color>
+            <Color x:Key="SurfaceDisabledColor">#F0F0F0</Color>
+
+            <!-- Text -->
+            <Color x:Key="TextPrimaryColor">#2D2D2D</Color>
+            <Color x:Key="TextSecondaryColor">#666666</Color>
+            <Color x:Key="TextMutedColor">#9E9E9E</Color>
+            <Color x:Key="TextDisabledColor">#BDBDBD</Color>
+            <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
+            <Color x:Key="TextOnDarkColor">#FFFFFF</Color>
+            <Color x:Key="TextOnDarkMutedColor">#CCCCCC</Color>
+
+            <!-- Sidebar / Navigation -->
+            <Color x:Key="SidebarColor">#1E1E1E</Color>
+            <Color x:Key="SidebarHoverColor">#2A2A2A</Color>
+            <Color x:Key="SidebarBorderColor">#2A2A2A</Color>
+
+            <!-- Dividers / Lines / Borders -->
+            <Color x:Key="DividerColor">#DDDDDD</Color>
+            <Color x:Key="BorderLightColor">#DDDDDD</Color>
+            <Color x:Key="BorderMediumColor">#CCCCCC</Color>
+            <Color x:Key="BorderStrongColor">#AFAFAF</Color>
+            <Color x:Key="FocusBorderColor">#1976D2</Color>
+
+            <!-- Interactive States -->
+            <Color x:Key="HoverColor">#F0F0F0</Color>
+            <Color x:Key="PressedColor">#E5E5E5</Color>
+            <Color x:Key="SelectedColor">#E3F2FD</Color>
+            <Color x:Key="SelectedHoverColor">#D7EBFC</Color>
+            <Color x:Key="DisabledColor">#F0F0F0</Color>
+            <Color x:Key="DisabledBorderColor">#D6D6D6</Color>
+            <Color x:Key="HoverBlueColor">#E3F2FD</Color>
+            <Color x:Key="HoverGrayColor">#EEEEEE</Color>
+
+            <!-- Table -->
+            <Color x:Key="TableRowAltColor">#FAFAFA</Color>
+            <Color x:Key="TableSelectedRowColor">#E3F2FD</Color>
+
+            <!-- Buttons -->
+            <Color x:Key="DisabledButtonBackgroundColor">#E0E0E0</Color>
+            <Color x:Key="DisabledButtonTextColor">#9E9E9E</Color>
+
+            <!-- Overlay (semi-transparent black, 40% opacity) -->
+            <Color x:Key="OverlayColor">#66000000</Color>
+            <Color x:Key="ScrimColor">#66000000</Color>
+            <Color x:Key="CardShadowColor">#0A000000</Color>
+
+            <!-- Chart gridlines -->
+            <Color x:Key="ChartGridlineColor">#DDDDDD</Color>
+
+            <!-- Calendar -->
+            <Color x:Key="CalendarCurrentDayColor">#2196F3</Color>
+            <Color x:Key="CalendarInactiveDayTextColor">#666666</Color>
+
+            <!-- ═══ ACCENT PALETTE (semantic mapping) ═══ -->
+            <!-- Blue: Information, students, search highlights, analytics -->
+            <Color x:Key="BlueColor">#2196F3</Color>
+            <Color x:Key="BlueHoverColor">#1976D2</Color>
+            <Color x:Key="BluePressedColor">#1565C0</Color>
+            <Color x:Key="BlueSubtleColor">#E3F2FD</Color>
+            <Color x:Key="BlueLightColor">#E3F2FD</Color>
+
+            <!-- Green: Success, teachers, positive states, "Present" -->
+            <Color x:Key="GreenColor">#4CAF50</Color>
+            <Color x:Key="GreenHoverColor">#388E3C</Color>
+            <Color x:Key="GreenSubtleColor">#E8F5E9</Color>
+            <Color x:Key="GreenLightColor">#E8F5E9</Color>
+
+            <!-- Orange: Activity, classes, caution, "Late" -->
+            <Color x:Key="OrangeColor">#FF9800</Color>
+            <Color x:Key="OrangeHoverColor">#F57C00</Color>
+            <Color x:Key="OrangeSubtleColor">#FFF3E0</Color>
+            <Color x:Key="OrangeLightColor">#FFF3E0</Color>
+
+            <!-- Red: Errors, warnings, "Absent" -->
+            <Color x:Key="RedColor">#F44336</Color>
+            <Color x:Key="RedHoverColor">#D32F2F</Color>
+            <Color x:Key="RedSubtleColor">#FFEBEE</Color>
+            <Color x:Key="RedLightColor">#FFEBEE</Color>
+
+            <!-- Purple: Secondary highlights -->
+            <Color x:Key="PurpleColor">#673AB7</Color>
+            <Color x:Key="PurpleHoverColor">#512DA8</Color>
+            <Color x:Key="PurpleSubtleColor">#EDE7F6</Color>
+            <Color x:Key="PurpleLightColor">#EDE7F6</Color>
+
+            <!-- Teal: Finance, fees -->
+            <Color x:Key="TealColor">#009688</Color>
+            <Color x:Key="TealHoverColor">#00796B</Color>
+            <Color x:Key="TealSubtleColor">#E0F2F1</Color>
+            <Color x:Key="TealLightColor">#E0F2F1</Color>
+
+            <!-- ═══ BRUSHES (Light) ═══ -->
+            <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
+            <SolidColorBrush x:Key="SurfaceWhiteBrush" Color="{StaticResource SurfaceWhiteColor}" />
+            <SolidColorBrush x:Key="SurfaceGrayBrush" Color="{StaticResource SurfaceGrayColor}" />
+            <SolidColorBrush x:Key="SurfaceGray2Brush" Color="{StaticResource SurfaceGray2Color}" />
+            <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}" />
+            <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="{StaticResource SurfaceSunkenColor}" />
+            <SolidColorBrush x:Key="SurfaceDisabledBrush" Color="{StaticResource SurfaceDisabledColor}" />
+
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+            <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
+            <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccentColor}" />
+            <SolidColorBrush x:Key="TextOnDarkBrush" Color="{StaticResource TextOnDarkColor}" />
+            <SolidColorBrush x:Key="TextOnDarkMutedBrush" Color="{StaticResource TextOnDarkMutedColor}" />
+
+            <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}" />
+            <SolidColorBrush x:Key="SidebarHoverBrush" Color="{StaticResource SidebarHoverColor}" />
+            <SolidColorBrush x:Key="SidebarBorderBrush" Color="{StaticResource SidebarBorderColor}" />
+
+            <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}" />
+            <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource BorderLightColor}" />
+            <SolidColorBrush x:Key="BorderMediumBrush" Color="{StaticResource BorderMediumColor}" />
+            <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
+            <SolidColorBrush x:Key="FocusBorderBrush" Color="{StaticResource FocusBorderColor}" />
+
+            <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}" />
+            <SolidColorBrush x:Key="PressedBrush" Color="{StaticResource PressedColor}" />
+            <SolidColorBrush x:Key="SelectedBrush" Color="{StaticResource SelectedColor}" />
+            <SolidColorBrush x:Key="SelectedHoverBrush" Color="{StaticResource SelectedHoverColor}" />
+            <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource DisabledColor}" />
+            <SolidColorBrush x:Key="DisabledBorderBrush" Color="{StaticResource DisabledBorderColor}" />
+
+            <SolidColorBrush x:Key="HoverBlueBrush" Color="{StaticResource HoverBlueColor}" />
+            <SolidColorBrush x:Key="HoverGrayBrush" Color="{StaticResource HoverGrayColor}" />
+
+            <SolidColorBrush x:Key="TableRowAltBrush" Color="{StaticResource TableRowAltColor}" />
+            <SolidColorBrush x:Key="TableSelectedRowBrush" Color="{StaticResource TableSelectedRowColor}" />
+
+            <SolidColorBrush x:Key="DisabledButtonBackgroundBrush" Color="{StaticResource DisabledButtonBackgroundColor}" />
+            <SolidColorBrush x:Key="DisabledButtonTextBrush" Color="{StaticResource DisabledButtonTextColor}" />
+
+            <SolidColorBrush x:Key="OverlayBrush" Color="{StaticResource OverlayColor}" />
+            <SolidColorBrush x:Key="ScrimBrush" Color="{StaticResource ScrimColor}" />
+            <SolidColorBrush x:Key="CardShadowBrush" Color="{StaticResource CardShadowColor}" />
+
+            <SolidColorBrush x:Key="ChartGridlineBrush" Color="{StaticResource ChartGridlineColor}" />
+
+            <SolidColorBrush x:Key="CalendarCurrentDayBrush" Color="{StaticResource CalendarCurrentDayColor}" />
+            <SolidColorBrush x:Key="CalendarInactiveDayTextBrush" Color="{StaticResource CalendarInactiveDayTextColor}" />
+
+            <!-- Accent brushes -->
+            <SolidColorBrush x:Key="BlueBrush" Color="{StaticResource BlueColor}" />
+            <SolidColorBrush x:Key="BlueHoverBrush" Color="{StaticResource BlueHoverColor}" />
+            <SolidColorBrush x:Key="BluePressedBrush" Color="{StaticResource BluePressedColor}" />
+            <SolidColorBrush x:Key="BlueSubtleBrush" Color="{StaticResource BlueSubtleColor}" />
+            <SolidColorBrush x:Key="BlueLightBrush" Color="{StaticResource BlueLightColor}" />
+
+            <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
+            <SolidColorBrush x:Key="GreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
+            <SolidColorBrush x:Key="GreenSubtleBrush" Color="{StaticResource GreenSubtleColor}" />
+            <SolidColorBrush x:Key="GreenLightBrush" Color="{StaticResource GreenLightColor}" />
+
+            <SolidColorBrush x:Key="OrangeBrush" Color="{StaticResource OrangeColor}" />
+            <SolidColorBrush x:Key="OrangeHoverBrush" Color="{StaticResource OrangeHoverColor}" />
+            <SolidColorBrush x:Key="OrangeSubtleBrush" Color="{StaticResource OrangeSubtleColor}" />
+            <SolidColorBrush x:Key="OrangeLightBrush" Color="{StaticResource OrangeLightColor}" />
+
+            <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
+            <SolidColorBrush x:Key="RedHoverBrush" Color="{StaticResource RedHoverColor}" />
+            <SolidColorBrush x:Key="RedSubtleBrush" Color="{StaticResource RedSubtleColor}" />
+            <SolidColorBrush x:Key="RedLightBrush" Color="{StaticResource RedLightColor}" />
+
+            <SolidColorBrush x:Key="PurpleBrush" Color="{StaticResource PurpleColor}" />
+            <SolidColorBrush x:Key="PurpleHoverBrush" Color="{StaticResource PurpleHoverColor}" />
+            <SolidColorBrush x:Key="PurpleSubtleBrush" Color="{StaticResource PurpleSubtleColor}" />
+            <SolidColorBrush x:Key="PurpleLightBrush" Color="{StaticResource PurpleLightColor}" />
+
+            <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
+            <SolidColorBrush x:Key="TealHoverBrush" Color="{StaticResource TealHoverColor}" />
+            <SolidColorBrush x:Key="TealSubtleBrush" Color="{StaticResource TealSubtleColor}" />
+            <SolidColorBrush x:Key="TealLightBrush" Color="{StaticResource TealLightColor}" />
+
+            <!-- Semantic aliases (backward-compatible + semantic clarity) -->
+            <SolidColorBrush x:Key="PrimaryBlueBrush" Color="{StaticResource BlueColor}" />
+            <SolidColorBrush x:Key="PrimaryBlueHoverBrush" Color="{StaticResource BlueHoverColor}" />
+            <SolidColorBrush x:Key="PrimaryBluePressedBrush" Color="{StaticResource BluePressedColor}" />
+            <SolidColorBrush x:Key="AccentPurpleBrush" Color="{StaticResource PurpleColor}" />
+            <SolidColorBrush x:Key="SuccessGreenBrush" Color="{StaticResource GreenColor}" />
+            <SolidColorBrush x:Key="SuccessGreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
+            <SolidColorBrush x:Key="SuccessGreenLightBrush" Color="{StaticResource GreenLightColor}" />
+            <SolidColorBrush x:Key="WarningAmberBrush" Color="{StaticResource OrangeColor}" />
+            <SolidColorBrush x:Key="WarningAmberLightBrush" Color="{StaticResource OrangeLightColor}" />
             <SolidColorBrush x:Key="WarningOrangeBrush" Color="{StaticResource OrangeColor}" />
+            <SolidColorBrush x:Key="WarningOrangeHoverBrush" Color="{StaticResource OrangeHoverColor}" />
+            <SolidColorBrush x:Key="DangerRedBrush" Color="{StaticResource RedColor}" />
+            <SolidColorBrush x:Key="DangerRedHoverBrush" Color="{StaticResource RedHoverColor}" />
+            <SolidColorBrush x:Key="DangerRedLightBrush" Color="{StaticResource RedLightColor}" />
+            <SolidColorBrush x:Key="InfoBlueBrush" Color="{StaticResource BlueColor}" />
+            <SolidColorBrush x:Key="InfoBlueLightBrush" Color="{StaticResource BlueLightColor}" />
+            <SolidColorBrush x:Key="FinanceTealBrush" Color="{StaticResource TealColor}" />
             <SolidColorBrush x:Key="NavySidebarBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyActiveBrush" Color="{StaticResource SidebarHoverColor}" />
@@ -178,11 +436,16 @@
             <Color x:Key="SurfaceWhiteColor">#2D2D2D</Color>
             <Color x:Key="SurfaceGrayColor">#1E1E1E</Color>
             <Color x:Key="SurfaceGray2Color">#2D2D2D</Color>
+            <Color x:Key="SurfaceElevatedColor">#333333</Color>
+            <Color x:Key="SurfaceSunkenColor">#171717</Color>
+            <Color x:Key="SurfaceDisabledColor">#3A3A3A</Color>
 
             <!-- Text -->
             <Color x:Key="TextPrimaryColor">#E0E0E0</Color>
             <Color x:Key="TextSecondaryColor">#A0A0A0</Color>
             <Color x:Key="TextMutedColor">#757575</Color>
+            <Color x:Key="TextDisabledColor">#555555</Color>
+            <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
             <Color x:Key="TextOnDarkColor">#E0E0E0</Color>
             <Color x:Key="TextOnDarkMutedColor">#A0A0A0</Color>
 
@@ -191,12 +454,20 @@
             <Color x:Key="SidebarHoverColor">#1E1E1E</Color>
             <Color x:Key="SidebarBorderColor">#1E1E1E</Color>
 
-            <!-- Dividers / Lines -->
+            <!-- Dividers / Lines / Borders -->
             <Color x:Key="DividerColor">#333333</Color>
             <Color x:Key="BorderLightColor">#333333</Color>
             <Color x:Key="BorderMediumColor">#444444</Color>
+            <Color x:Key="BorderStrongColor">#555555</Color>
+            <Color x:Key="FocusBorderColor">#1976D2</Color>
 
-            <!-- Hover / Focus States -->
+            <!-- Interactive States -->
+            <Color x:Key="HoverColor">#3A3A3A</Color>
+            <Color x:Key="PressedColor">#444444</Color>
+            <Color x:Key="SelectedColor">#1E3A5F</Color>
+            <Color x:Key="SelectedHoverColor">#24466E</Color>
+            <Color x:Key="DisabledColor">#2D2D2D</Color>
+            <Color x:Key="DisabledBorderColor">#3A3A3A</Color>
             <Color x:Key="HoverBlueColor">#1E3A5F</Color>
             <Color x:Key="HoverGrayColor">#2D2D2D</Color>
 
@@ -210,6 +481,8 @@
 
             <!-- Overlay (semi-transparent black, 40% opacity) -->
             <Color x:Key="OverlayColor">#66000000</Color>
+            <Color x:Key="ScrimColor">#66000000</Color>
+            <Color x:Key="CardShadowColor">#0A000000</Color>
 
             <!-- Chart gridlines -->
             <Color x:Key="ChartGridlineColor">#333333</Color>
@@ -220,38 +493,50 @@
 
             <!-- ═══ ACCENT PALETTE (same vibrant accents for both themes) ═══ -->
             <Color x:Key="BlueColor">#2196F3</Color>
-            <Color x:Key="BlueLightColor">#1E3A5F</Color>
             <Color x:Key="BlueHoverColor">#1976D2</Color>
+            <Color x:Key="BluePressedColor">#1565C0</Color>
+            <Color x:Key="BlueSubtleColor">#1E3A5F</Color>
+            <Color x:Key="BlueLightColor">#1E3A5F</Color>
 
             <Color x:Key="GreenColor">#4CAF50</Color>
-            <Color x:Key="GreenLightColor">#1B5E20</Color>
             <Color x:Key="GreenHoverColor">#388E3C</Color>
+            <Color x:Key="GreenSubtleColor">#1B5E20</Color>
+            <Color x:Key="GreenLightColor">#1B5E20</Color>
 
             <Color x:Key="OrangeColor">#FF9800</Color>
-            <Color x:Key="OrangeLightColor">#E65100</Color>
             <Color x:Key="OrangeHoverColor">#F57C00</Color>
+            <Color x:Key="OrangeSubtleColor">#E65100</Color>
+            <Color x:Key="OrangeLightColor">#E65100</Color>
 
             <Color x:Key="RedColor">#F44336</Color>
-            <Color x:Key="RedLightColor">#B71C1C</Color>
             <Color x:Key="RedHoverColor">#D32F2F</Color>
+            <Color x:Key="RedSubtleColor">#B71C1C</Color>
+            <Color x:Key="RedLightColor">#B71C1C</Color>
 
             <Color x:Key="PurpleColor">#673AB7</Color>
-            <Color x:Key="PurpleLightColor">#4A148C</Color>
             <Color x:Key="PurpleHoverColor">#512DA8</Color>
+            <Color x:Key="PurpleSubtleColor">#4A148C</Color>
+            <Color x:Key="PurpleLightColor">#4A148C</Color>
 
             <Color x:Key="TealColor">#009688</Color>
-            <Color x:Key="TealLightColor">#004D40</Color>
             <Color x:Key="TealHoverColor">#00796B</Color>
+            <Color x:Key="TealSubtleColor">#004D40</Color>
+            <Color x:Key="TealLightColor">#004D40</Color>
 
             <!-- ═══ BRUSHES (Dark) ═══ -->
             <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
             <SolidColorBrush x:Key="SurfaceWhiteBrush" Color="{StaticResource SurfaceWhiteColor}" />
             <SolidColorBrush x:Key="SurfaceGrayBrush" Color="{StaticResource SurfaceGrayColor}" />
             <SolidColorBrush x:Key="SurfaceGray2Brush" Color="{StaticResource SurfaceGray2Color}" />
+            <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}" />
+            <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="{StaticResource SurfaceSunkenColor}" />
+            <SolidColorBrush x:Key="SurfaceDisabledBrush" Color="{StaticResource SurfaceDisabledColor}" />
 
             <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
             <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
             <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+            <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
+            <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccentColor}" />
             <SolidColorBrush x:Key="TextOnDarkBrush" Color="{StaticResource TextOnDarkColor}" />
             <SolidColorBrush x:Key="TextOnDarkMutedBrush" Color="{StaticResource TextOnDarkMutedColor}" />
 
@@ -262,6 +547,15 @@
             <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}" />
             <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource BorderLightColor}" />
             <SolidColorBrush x:Key="BorderMediumBrush" Color="{StaticResource BorderMediumColor}" />
+            <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
+            <SolidColorBrush x:Key="FocusBorderBrush" Color="{StaticResource FocusBorderColor}" />
+
+            <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}" />
+            <SolidColorBrush x:Key="PressedBrush" Color="{StaticResource PressedColor}" />
+            <SolidColorBrush x:Key="SelectedBrush" Color="{StaticResource SelectedColor}" />
+            <SolidColorBrush x:Key="SelectedHoverBrush" Color="{StaticResource SelectedHoverColor}" />
+            <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource DisabledColor}" />
+            <SolidColorBrush x:Key="DisabledBorderBrush" Color="{StaticResource DisabledBorderColor}" />
 
             <SolidColorBrush x:Key="HoverBlueBrush" Color="{StaticResource HoverBlueColor}" />
             <SolidColorBrush x:Key="HoverGrayBrush" Color="{StaticResource HoverGrayColor}" />
@@ -273,6 +567,8 @@
             <SolidColorBrush x:Key="DisabledButtonTextBrush" Color="{StaticResource DisabledButtonTextColor}" />
 
             <SolidColorBrush x:Key="OverlayBrush" Color="{StaticResource OverlayColor}" />
+            <SolidColorBrush x:Key="ScrimBrush" Color="{StaticResource ScrimColor}" />
+            <SolidColorBrush x:Key="CardShadowBrush" Color="{StaticResource CardShadowColor}" />
 
             <SolidColorBrush x:Key="ChartGridlineBrush" Color="{StaticResource ChartGridlineColor}" />
 
@@ -281,42 +577,54 @@
 
             <!-- Accent brushes -->
             <SolidColorBrush x:Key="BlueBrush" Color="{StaticResource BlueColor}" />
-            <SolidColorBrush x:Key="BlueLightBrush" Color="{StaticResource BlueLightColor}" />
             <SolidColorBrush x:Key="BlueHoverBrush" Color="{StaticResource BlueHoverColor}" />
+            <SolidColorBrush x:Key="BluePressedBrush" Color="{StaticResource BluePressedColor}" />
+            <SolidColorBrush x:Key="BlueSubtleBrush" Color="{StaticResource BlueSubtleColor}" />
+            <SolidColorBrush x:Key="BlueLightBrush" Color="{StaticResource BlueLightColor}" />
 
             <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}" />
-            <SolidColorBrush x:Key="GreenLightBrush" Color="{StaticResource GreenLightColor}" />
             <SolidColorBrush x:Key="GreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
+            <SolidColorBrush x:Key="GreenSubtleBrush" Color="{StaticResource GreenSubtleColor}" />
+            <SolidColorBrush x:Key="GreenLightBrush" Color="{StaticResource GreenLightColor}" />
 
             <SolidColorBrush x:Key="OrangeBrush" Color="{StaticResource OrangeColor}" />
-            <SolidColorBrush x:Key="OrangeLightBrush" Color="{StaticResource OrangeLightColor}" />
             <SolidColorBrush x:Key="OrangeHoverBrush" Color="{StaticResource OrangeHoverColor}" />
+            <SolidColorBrush x:Key="OrangeSubtleBrush" Color="{StaticResource OrangeSubtleColor}" />
+            <SolidColorBrush x:Key="OrangeLightBrush" Color="{StaticResource OrangeLightColor}" />
 
             <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}" />
-            <SolidColorBrush x:Key="RedLightBrush" Color="{StaticResource RedLightColor}" />
             <SolidColorBrush x:Key="RedHoverBrush" Color="{StaticResource RedHoverColor}" />
+            <SolidColorBrush x:Key="RedSubtleBrush" Color="{StaticResource RedSubtleColor}" />
+            <SolidColorBrush x:Key="RedLightBrush" Color="{StaticResource RedLightColor}" />
 
             <SolidColorBrush x:Key="PurpleBrush" Color="{StaticResource PurpleColor}" />
-            <SolidColorBrush x:Key="PurpleLightBrush" Color="{StaticResource PurpleLightColor}" />
             <SolidColorBrush x:Key="PurpleHoverBrush" Color="{StaticResource PurpleHoverColor}" />
+            <SolidColorBrush x:Key="PurpleSubtleBrush" Color="{StaticResource PurpleSubtleColor}" />
+            <SolidColorBrush x:Key="PurpleLightBrush" Color="{StaticResource PurpleLightColor}" />
 
             <SolidColorBrush x:Key="TealBrush" Color="{StaticResource TealColor}" />
-            <SolidColorBrush x:Key="TealLightBrush" Color="{StaticResource TealLightColor}" />
             <SolidColorBrush x:Key="TealHoverBrush" Color="{StaticResource TealHoverColor}" />
+            <SolidColorBrush x:Key="TealSubtleBrush" Color="{StaticResource TealSubtleColor}" />
+            <SolidColorBrush x:Key="TealLightBrush" Color="{StaticResource TealLightColor}" />
 
             <!-- Semantic aliases -->
             <SolidColorBrush x:Key="PrimaryBlueBrush" Color="{StaticResource BlueColor}" />
             <SolidColorBrush x:Key="PrimaryBlueHoverBrush" Color="{StaticResource BlueHoverColor}" />
+            <SolidColorBrush x:Key="PrimaryBluePressedBrush" Color="{StaticResource BluePressedColor}" />
             <SolidColorBrush x:Key="AccentPurpleBrush" Color="{StaticResource PurpleColor}" />
             <SolidColorBrush x:Key="SuccessGreenBrush" Color="{StaticResource GreenColor}" />
+            <SolidColorBrush x:Key="SuccessGreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
             <SolidColorBrush x:Key="SuccessGreenLightBrush" Color="{StaticResource GreenLightColor}" />
             <SolidColorBrush x:Key="WarningAmberBrush" Color="{StaticResource OrangeColor}" />
             <SolidColorBrush x:Key="WarningAmberLightBrush" Color="{StaticResource OrangeLightColor}" />
+            <SolidColorBrush x:Key="WarningOrangeBrush" Color="{StaticResource OrangeColor}" />
+            <SolidColorBrush x:Key="WarningOrangeHoverBrush" Color="{StaticResource OrangeHoverColor}" />
             <SolidColorBrush x:Key="DangerRedBrush" Color="{StaticResource RedColor}" />
+            <SolidColorBrush x:Key="DangerRedHoverBrush" Color="{StaticResource RedHoverColor}" />
             <SolidColorBrush x:Key="DangerRedLightBrush" Color="{StaticResource RedLightColor}" />
             <SolidColorBrush x:Key="InfoBlueBrush" Color="{StaticResource BlueColor}" />
             <SolidColorBrush x:Key="InfoBlueLightBrush" Color="{StaticResource BlueLightColor}" />
-            <SolidColorBrush x:Key="WarningOrangeBrush" Color="{StaticResource OrangeColor}" />
+            <SolidColorBrush x:Key="FinanceTealBrush" Color="{StaticResource TealColor}" />
             <SolidColorBrush x:Key="NavySidebarBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyActiveBrush" Color="{StaticResource SidebarHoverColor}" />
@@ -433,10 +741,6 @@
         <Setter Property="Padding" Value="{StaticResource CardPadding}" />
     </Style>
 
-    <!-- Subtle shadow-like brush used for elevated surfaces -->
-    <Color x:Key="CardShadowColor">#0A000000</Color>
-    <SolidColorBrush x:Key="CardShadowBrush" Color="{StaticResource CardShadowColor}" />
-
     <!-- KPI card with left accent bar -->
     <Style x:Key="KpiCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
@@ -503,29 +807,37 @@
         <Setter Property="Background" Value="{ThemeResource TableSelectedRowBrush}" />
     </Style>
 
+    <Style x:Key="TableRowHoverStyle" TargetType="ListViewItem">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Background" Value="{ThemeResource HoverBrush}" />
+    </Style>
+
     <!-- ═══════════════════════════════════════════════════════════
          STATUS BADGE STYLES — filled circles / badges
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="BadgeSuccessStyle" TargetType="Border">
-        <Setter Property="Background" Value="{ThemeResource GreenLightBrush}" />
+        <Setter Property="Background" Value="{ThemeResource GreenSubtleBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource BadgeCornerRadiusValue}" />
         <Setter Property="Padding" Value="8,3" />
     </Style>
 
     <Style x:Key="BadgeWarningStyle" TargetType="Border">
-        <Setter Property="Background" Value="{ThemeResource OrangeLightBrush}" />
+        <Setter Property="Background" Value="{ThemeResource OrangeSubtleBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource BadgeCornerRadiusValue}" />
         <Setter Property="Padding" Value="8,3" />
     </Style>
 
     <Style x:Key="BadgeDangerStyle" TargetType="Border">
-        <Setter Property="Background" Value="{ThemeResource RedLightBrush}" />
+        <Setter Property="Background" Value="{ThemeResource RedSubtleBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource BadgeCornerRadiusValue}" />
         <Setter Property="Padding" Value="8,3" />
     </Style>
 
     <Style x:Key="BadgeInfoStyle" TargetType="Border">
-        <Setter Property="Background" Value="{ThemeResource BlueLightBrush}" />
+        <Setter Property="Background" Value="{ThemeResource BlueSubtleBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource BadgeCornerRadiusValue}" />
         <Setter Property="Padding" Value="8,3" />
     </Style>
@@ -543,15 +855,11 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════
-         BUTTON STYLES — accent bg, white text, hover darker, disabled gray
-         NOTE: WinUI 3 does not support Style.Triggers. Visual states
-         are handled via the Button's default template / VSM.
-         These styles set the base appearance; hover/disabled states
-         are managed by the control's built-in VisualStateManager.
+         BUTTON STYLES
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{ThemeResource BlueBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="{ThemeResource PrimaryBlueBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource TextOnAccentBrush}" />
         <Setter Property="Padding" Value="16,9" />
         <Setter Property="CornerRadius" Value="{StaticResource ButtonCornerRadiusValue}" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -571,7 +879,7 @@
 
     <Style x:Key="GhostButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{ThemeResource BlueBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource PrimaryBlueBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="16,9" />
         <Setter Property="CornerRadius" Value="{StaticResource ButtonCornerRadiusValue}" />
@@ -579,8 +887,8 @@
     </Style>
 
     <Style x:Key="DangerButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{ThemeResource RedBrush}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="{ThemeResource DangerRedBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource TextOnAccentBrush}" />
         <Setter Property="Padding" Value="16,9" />
         <Setter Property="CornerRadius" Value="{StaticResource ButtonCornerRadiusValue}" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -601,7 +909,28 @@
     <Style x:Key="AccentProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="6" />
         <Setter Property="CornerRadius" Value="3" />
-        <Setter Property="Foreground" Value="{ThemeResource BlueBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource PrimaryBlueBrush}" />
+        <Setter Property="Background" Value="{ThemeResource SurfaceGray2Brush}" />
+    </Style>
+
+    <Style x:Key="SuccessProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Foreground" Value="{ThemeResource SuccessGreenBrush}" />
+        <Setter Property="Background" Value="{ThemeResource SurfaceGray2Brush}" />
+    </Style>
+
+    <Style x:Key="WarningProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Foreground" Value="{ThemeResource WarningOrangeBrush}" />
+        <Setter Property="Background" Value="{ThemeResource SurfaceGray2Brush}" />
+    </Style>
+
+    <Style x:Key="DangerProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="Foreground" Value="{ThemeResource DangerRedBrush}" />
         <Setter Property="Background" Value="{ThemeResource SurfaceGray2Brush}" />
     </Style>
 
@@ -627,8 +956,6 @@
 
     <!-- ═══════════════════════════════════════════════════════════
          DROPDOWN / COMBOBOX STYLES
-         White background, dark text, accent highlight on hover.
-         Selected item has bold accent border (#2196F3).
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="ComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
@@ -649,9 +976,6 @@
 
     <!-- ═══════════════════════════════════════════════════════════
          SEARCH BAR STYLE
-         White background, subtle gray border (#DDDDDD),
-         blue accent (#2196F3) for active focus.
-         Placeholder text in medium gray (#666666).
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="SearchBoxStyle" TargetType="TextBox">
         <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
@@ -664,11 +988,19 @@
         <Setter Property="PlaceholderForeground" Value="{ThemeResource TextSecondaryBrush}" />
     </Style>
 
+    <Style x:Key="TextBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderLightBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource ButtonCornerRadiusValue}" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="PlaceholderForeground" Value="{ThemeResource TextSecondaryBrush}" />
+    </Style>
+
     <!-- ═══════════════════════════════════════════════════════════
          CALENDAR STYLES
-         Current day highlighted in blue (#2196F3).
-         Selected day = filled accent background with white text.
-         Non-active days = medium gray text.
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="CalendarStyle" TargetType="CalendarView">
         <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
@@ -680,11 +1012,9 @@
 
     <!-- ═══════════════════════════════════════════════════════════
          CHART STYLES
-         Neutral background, gridlines in light gray (#DDDDDD).
-         Series use accent colors consistently.
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="ChartBackgroundStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource SurfaceGrayBrush}" />
+        <Setter Property="Background" Value="{ThemeResource SurfaceGrayBrush}" />
         <Setter Property="CornerRadius" Value="8" />
     </Style>
 
@@ -697,11 +1027,10 @@
 
     <!-- ═══════════════════════════════════════════════════════════
          DIALOG / POPUP STYLES
-         White background, dark text, accent-colored action buttons.
-         Overlay background = semi-transparent black (40% opacity).
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="ModalDialogStyle" TargetType="ContentDialog">
-        <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
+        <Setter Property="Background" Value="{ThemeResource SurfaceElevatedBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource BorderLightBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource CardCornerRadiusValue}" />
@@ -713,6 +1042,8 @@
 
     <!-- Dialog action button — accent background with white text -->
     <Style x:Key="DialogPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}" />
+
+    <Style x:Key="DialogSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}" />
 
     <!-- Dialog close button — top-right, ghost style -->
     <Style x:Key="DialogCloseButtonStyle" TargetType="Button">
@@ -727,17 +1058,42 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════
+         MENU / FLYOUT / TOOLTIP STYLES
+    ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="TooltipStyle" TargetType="ToolTip">
+        <Setter Property="Background" Value="{ThemeResource SurfaceElevatedBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderLightBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
          MODAL CONTAINER STYLE
          90% of screen, centrally aligned
     ═══════════════════════════════════════════════════════════ -->
     <Style x:Key="ModalContainerStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource SurfaceWhiteBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderLightBrush}" />
+        <Setter Property="Background" Value="{ThemeResource SurfaceElevatedBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderLightBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource CardCornerRadiusValue}" />
         <Setter Property="Padding" Value="24" />
         <Setter Property="MaxWidth" Value="1440" />
         <Setter Property="MaxHeight" Value="800" />
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         NAVIGATION STYLES
+    ═══════════════════════════════════════════════════════════ -->
+    <Style x:Key="NavigationPaneStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource SurfaceWhiteBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource BorderLightBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="NavigationItemStyle" TargetType="ListViewItem">
+        <Setter Property="Foreground" Value="{ThemeResource TextSecondaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="12,10" />
     </Style>
 
 </ResourceDictionary>

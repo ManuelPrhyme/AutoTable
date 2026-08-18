@@ -1,6 +1,6 @@
 using AutoTable.Controls;
+using AutoTable.Converters;
 using AutoTable.ViewModels;
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -56,26 +56,26 @@ namespace AutoTable.Views
         private static Border BuildAssessmentRow(string name, string cls, int pct, bool verified, bool alt)
         {
             var bg = alt
-                ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 248, 250, 252))
-                : new SolidColorBrush(Colors.White);
+                ? ThemeResourceHelper.GetThemeBrush("TableRowAltBrush")
+                : ThemeResourceHelper.GetThemeBrush("SurfaceWhiteBrush");
 
-            Windows.UI.Color pctColor = pct >= 90
-                ? Windows.UI.Color.FromArgb(255, 22, 163, 74)
+            var pctBrush = pct >= 90
+                ? ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush")
                 : pct >= 60
-                    ? Windows.UI.Color.FromArgb(255, 217, 119, 6)
-                    : Windows.UI.Color.FromArgb(255, 220, 38, 38);
+                    ? ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush")
+                    : ThemeResourceHelper.GetThemeBrush("DangerRedBrush");
 
             string statusText = verified ? "Verified" : pct >= 100 ? "Complete" : "In Progress";
-            Windows.UI.Color statusBg = verified
-                ? Windows.UI.Color.FromArgb(255, 220, 252, 231)
+            var statusBg = verified
+                ? ThemeResourceHelper.GetThemeBrush("GreenSubtleBrush")
                 : pct >= 100
-                    ? Windows.UI.Color.FromArgb(255, 224, 242, 254)
-                    : Windows.UI.Color.FromArgb(255, 254, 243, 199);
-            Windows.UI.Color statusFg = verified
-                ? Windows.UI.Color.FromArgb(255, 22, 163, 74)
+                    ? ThemeResourceHelper.GetThemeBrush("BlueSubtleBrush")
+                    : ThemeResourceHelper.GetThemeBrush("OrangeSubtleBrush");
+            var statusFg = verified
+                ? ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush")
                 : pct >= 100
-                    ? Windows.UI.Color.FromArgb(255, 2, 132, 199)
-                    : Windows.UI.Color.FromArgb(255, 217, 119, 6);
+                    ? ThemeResourceHelper.GetThemeBrush("PrimaryBlueBrush")
+                    : ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush");
 
             var grid = new Grid { ColumnSpacing = 12, Padding = new Thickness(16, 10, 16, 10) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
@@ -84,19 +84,19 @@ namespace AutoTable.Views
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
 
-            var nameBlock = new TextBlock { Text = name, FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42)) };
-            var clsBlock = new TextBlock { Text = cls, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 100, 116, 139)) };
-            var pctBlock = new TextBlock { Text = $"{pct}%", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Foreground = new SolidColorBrush(pctColor) };
-            var bar = new ProgressBar { Value = pct, Maximum = 100, Height = 6, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(pctColor), Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 226, 232, 240)) };
+            var nameBlock = new TextBlock { Text = name, FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Foreground = ThemeResourceHelper.GetThemeBrush("TextPrimaryBrush") };
+            var clsBlock = new TextBlock { Text = cls, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = ThemeResourceHelper.GetThemeBrush("TextSecondaryBrush") };
+            var pctBlock = new TextBlock { Text = $"{pct}%", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Foreground = pctBrush };
+            var bar = new ProgressBar { Value = pct, Maximum = 100, Height = 6, VerticalAlignment = VerticalAlignment.Center, Foreground = pctBrush, Background = ThemeResourceHelper.GetThemeBrush("SurfaceGray2Brush") };
             bar.CornerRadius = new CornerRadius(3);
 
             var badge = new Border
             {
-                Background = new SolidColorBrush(statusBg),
+                Background = statusBg,
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(8, 3, 8, 3),
                 VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock { Text = statusText, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(statusFg) }
+                Child = new TextBlock { Text = statusText, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = statusFg }
             };
 
             Grid.SetColumn(nameBlock, 0);
@@ -112,6 +112,21 @@ namespace AutoTable.Views
             grid.Children.Add(badge);
 
             return new Border { Background = bg, Child = grid };
+        }
+
+        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            _vm.SearchText = sender.Text;
+        }
+
+        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            // Handle suggestion chosen - navigate or filter
+            var selectedItem = args.SelectedItem as string;
+            if (!string.IsNullOrEmpty(selectedItem))
+            {
+                // Could navigate to relevant page or show details
+            }
         }
     }
 }

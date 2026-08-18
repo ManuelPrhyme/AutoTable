@@ -4,11 +4,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class AssessmentsViewModel : BaseViewModel
     {
+        private readonly IDataService _dataService;
+
         [ObservableProperty] private string _selectedClass = "All";
         [ObservableProperty] private string _selectedSubject = "All";
         [ObservableProperty] private string _statusMessage = string.Empty;
@@ -26,23 +29,44 @@ namespace AutoTable.ViewModels
 
         public AssessmentsViewModel()
         {
-            Classes = new ObservableCollection<string>(new[] { "All" }.Concat(MockDataService.Instance.Classes));
-            Subjects = new ObservableCollection<string>(new[] { "All" }.Concat(MockDataService.Instance.Subjects));
-            Assessments = new ObservableCollection<AssessmentItem>(MockDataService.Instance.GetAssessments());
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Classes = new ObservableCollection<string>(new[] { "All" });
+            Subjects = new ObservableCollection<string>(new[] { "All" });
+            Assessments = new ObservableCollection<AssessmentItem>();
+            _ = LoadAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => ApplyFilter();
-        partial void OnSelectedSubjectChanged(string value) => ApplyFilter();
+        partial void OnSelectedClassChanged(string value) => _ = ApplyFilterAsync();
+        partial void OnSelectedSubjectChanged(string value) => _ = ApplyFilterAsync();
 
         [RelayCommand]
-        private void RefreshFilter() => ApplyFilter();
+        private async Task RefreshFilter()
+        {
+            await LoadAsync();
+        }
 
         [RelayCommand(CanExecute = nameof(IsAdministrator))]
         private void NewAssessment() => StatusMessage = "New Assessment dialog will open here (Admin).";
 
-        private void ApplyFilter()
+        private async Task LoadAsync()
         {
-            var filtered = MockDataService.Instance.GetAssessments().Where(a =>
+            var classes = await _dataService.GetClassesAsync();
+            Classes.Clear();
+            Classes.Add("All");
+            foreach (var c in classes) Classes.Add(c.Name);
+
+            var subjects = await _dataService.GetSubjectsAsync();
+            Subjects.Clear();
+            Subjects.Add("All");
+            foreach (var s in subjects) Subjects.Add(s.Name);
+
+            await ApplyFilterAsync();
+        }
+
+        private async Task ApplyFilterAsync()
+        {
+            var all = await _dataService.GetAssessmentsAsync();
+            var filtered = all.Where(a =>
                 (SelectedClass == "All" || a.ClassName == SelectedClass) &&
                 (SelectedSubject == "All" || a.Subject == SelectedSubject));
 

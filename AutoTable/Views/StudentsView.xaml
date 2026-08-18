@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AutoTable.Views.StudentsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource SurfaceGrayBrush}">
+    <StackPanel Padding="16" Spacing="12">
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Students" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="Add Student" Click="AddStudent_Click" Style="{ThemeResource PrimaryButtonStyle}" />
+        </Grid>
+
+        <TextBox x:Name="SearchBox" PlaceholderText="Search by name or LIN" TextChanged="SearchBox_TextChanged"/>
+
+        <ListView x:Name="StudentsList" IsItemClickEnabled="True" SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="12" Padding="8">
+                        <TextBlock Text="{Binding LIN}" FontWeight="SemiBold" Width="120"/>
+                        <TextBlock Text="{Binding FullName}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackPanel>
+</Page>

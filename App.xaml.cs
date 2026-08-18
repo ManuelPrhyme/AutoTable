@@ -15,7 +15,9 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using AutoTable.Data;
 using AutoTable.Services;
+using Microsoft.EntityFrameworkCore;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -36,9 +38,9 @@ namespace AutoTable
         public App()
         {
             InitializeComponent();
-        // Global exception handlers to capture runtime errors during startup and at runtime
-        this.UnhandledException += App_UnhandledException;
-        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            // Global exception handlers to capture runtime errors during startup and at runtime
+            this.UnhandledException += App_UnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
         /// <summary>
@@ -49,7 +51,82 @@ namespace AutoTable
         {
             try
             {
+                // Development testing: recreate a fresh SQLite DB on each run when possible.
+                var devDbFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_test.db");
+                string? dbError = null;
+
+                try
+                {
+                    // Best-effort fresh DB: if the previous instance is still holding the file,
+                    // fall back to reusing the existing one rather than failing startup.
+                    if (System.IO.File.Exists(devDbFile))
+                    {
+                        try { System.IO.File.Delete(devDbFile); } catch { }
+                    }
+
+                    var sqliteConn = AutoTable.Data.AppDbContext.CreateConnection(devDbFile);
+                    var options = new DbContextOptionsBuilder<AutoTable.Data.AppDbContext>()
+                        .UseSqlite(sqliteConn)
+                        .Options;
+
+                    using (var ctx = new AutoTable.Data.AppDbContext(options))
+                    {
+                        try
+                        {
+                            ctx.Database.EnsureDeleted();
+                        }
+                        catch
+                        {
+                            // File may be locked by a previous process; reuse existing DB.
+                        }
+
+                        ctx.Database.EnsureCreated();
+                        AutoTable.Data.SeedData.EnsureSeed(ctx);
+                    }
+
+                    // Register the global data service.
+                    AppServices.DataService = new DatabaseDataService(options);
+                }
+                catch (Exception initEx)
+                {
+                    dbError = initEx.ToString();
+
+                    // Ensure the UI service ALWAYS gets registered so page navigation never
+                    // throws "DataService not configured", even if full recreate is not possible.
+                    try
+                    {
+                        var fallbackConn = AppDbContext.CreateConnection(devDbFile);
+                        var fallbackOptions = new DbContextOptionsBuilder<AppDbContext>()
+                            .UseSqlite(fallbackConn)
+                            .Options;
+                        using (var ctx = new AppDbContext(fallbackOptions))
+                        {
+                            ctx.Database.EnsureCreated();
+                            AutoTable.Data.SeedData.EnsureSeed(ctx);
+                        }
+
+                        AppServices.DataService = new DatabaseDataService(fallbackOptions);
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        dbError = new AggregateException(initEx, fallbackEx).ToString();
+                    }
+                }
+
+                // Surface DB init problems for diagnosis without breaking the UI shell.
+                if (dbError != null)
+                {
+                    try
+                    {
+                        var diagPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_test_db_init_error.txt");
+                        System.IO.File.WriteAllText(diagPath,
+                            $"devDbFile={devDbFile}\r\nTEMP={System.IO.Path.GetTempPath()}\r\n{dbError}");
+                    }
+                    catch { }
+                }
+
                 _window = new MainWindow();
+                ThemeService.Initialize(_window);
                 var root = new Frame();
                 _window.Content = root;
                 NavigationService.Instance.Initialize(root);

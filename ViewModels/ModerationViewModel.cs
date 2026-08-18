@@ -4,11 +4,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class ModerationViewModel : BaseViewModel
     {
+        private readonly IDataService _dataService;
+
         [ObservableProperty] private string _selectedClass = "All";
         [ObservableProperty] private string _selectedSubject = "All";
 
@@ -22,17 +25,34 @@ namespace AutoTable.ViewModels
 
         public ModerationViewModel()
         {
-            Classes = new ObservableCollection<string>(new[] { "All" }.Concat(MockDataService.Instance.Classes));
-            Subjects = new ObservableCollection<string>(new[] { "All" }.Concat(MockDataService.Instance.Subjects));
-            Load();
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Classes = new ObservableCollection<string>(new[] { "All" });
+            Subjects = new ObservableCollection<string>(new[] { "All" });
+            _ = Load();
         }
 
         [RelayCommand]
-        private void Load()
+        private async Task Load()
         {
-            ModerationItems.Clear();
-            foreach (var a in MockDataService.Instance.GetAssessments())
+            if (Classes.Count == 1)
             {
+                var classes = await _dataService.GetClassesAsync();
+                foreach (var c in classes) Classes.Add(c.Name);
+            }
+
+            if (Subjects.Count == 1)
+            {
+                var subjects = await _dataService.GetSubjectsAsync();
+                foreach (var s in subjects) Subjects.Add(s.Name);
+            }
+
+            ModerationItems.Clear();
+            var all = await _dataService.GetAssessmentsAsync();
+            foreach (var a in all)
+            {
+                if (SelectedClass != "All" && a.ClassName != SelectedClass) continue;
+                if (SelectedSubject != "All" && a.Subject != SelectedSubject) continue;
+
                 ModerationItems.Add(new ModerationItem
                 {
                     AssessmentName = a.Name,

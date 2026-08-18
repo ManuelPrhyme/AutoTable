@@ -23,6 +23,8 @@ namespace AutoTable.Views
             ["Analytics"]          = ("Analytics", "Hierarchical performance analytics across classes and time."),
             ["Moderation"]         = ("Moderation", "Review and approve marks before publishing."),
             ["ReportCards"]        = ("Report Cards", "Generate and print student report cards."),
+            ["Students"]           = ("Students", "Manage student records, LIN identifiers, and termination."),
+            ["Classes"]            = ("Classes & Subjects", "Manage classes, subjects, and subject assignments."),
             ["FinDashboard"]       = ("Financial Dashboard", "Overview of fee collection, budget, and expenditure."),
             ["FeeCollection"]      = ("Fee Collection", "Track and manage student fee payments."),
             ["Budget"]             = ("Budget & Expenditure", "School budget planning and expenditure tracking."),
@@ -39,6 +41,8 @@ namespace AutoTable.Views
             ["Analytics"]          = typeof(AnalyticsView),
             ["Moderation"]         = typeof(ModerationView),
             ["ReportCards"]        = typeof(ReportCardsView),
+            ["Students"]           = typeof(StudentsView),
+            ["Classes"]            = typeof(ClassesView),
             ["FinDashboard"]       = typeof(FinancialsDashboardView),
             ["FeeCollection"]      = typeof(FeeCollectionView),
             ["Budget"]             = typeof(BudgetView),
@@ -51,6 +55,7 @@ namespace AutoTable.Views
             _vm = new ShellViewModel();
             DataContext = _vm;
             Loaded += ShellView_Loaded;
+            ThemeToggle.Toggled += ThemeToggle_Toggled;
         }
 
         private void ShellView_Loaded(object sender, RoutedEventArgs e)
@@ -91,18 +96,39 @@ namespace AutoTable.Views
             ContentFrame.Navigate(pageType);
         }
 
+        private Brush GetThemeBrush(string resourceKey)
+        {
+            try
+            {
+                if (Application.Current is Application app)
+                {
+                    var themeKey = app.RequestedTheme == ApplicationTheme.Dark ? "Dark" : "Light";
+                    if (app.Resources.ThemeDictionaries.TryGetValue(themeKey, out var dictObj) &&
+                        dictObj is ResourceDictionary themeDict &&
+                        themeDict.TryGetValue(resourceKey, out var brushObj) &&
+                        brushObj is Brush brush)
+                    {
+                        return brush;
+                    }
+                }
+            }
+            catch { }
+
+            return new SolidColorBrush(Colors.Transparent);
+        }
+
         private void SetActiveButton(Button active)
         {
             // Reset previous
             if (_activeNavButton != null)
             {
                 _activeNavButton.Background = new SolidColorBrush(Colors.Transparent);
-                _activeNavButton.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 241, 245, 249));
+                _activeNavButton.Foreground = GetThemeBrush("TextOnDarkBrush");
             }
 
             // Set new active
-            active.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 58, 95)); // NavyActive
-            active.Foreground = new SolidColorBrush(Colors.White);
+            active.Background = GetThemeBrush("NavyActiveBrush");
+            active.Foreground = GetThemeBrush("TextOnDarkBrush");
             _activeNavButton = active;
         }
 
@@ -110,6 +136,18 @@ namespace AutoTable.Views
         {
             SessionService.Instance.SignOut();
             NavigationService.Instance.Navigate(typeof(LoginView));
+        }
+
+        private void ThemeToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (ThemeToggle.IsOn)
+            {
+                ThemeService.SetTheme(ApplicationTheme.Dark);
+            }
+            else
+            {
+                ThemeService.SetTheme(ApplicationTheme.Light);
+            }
         }
     }
 }

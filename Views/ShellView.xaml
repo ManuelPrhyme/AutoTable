@@ -129,6 +129,34 @@
                     <!-- SEPARATOR -->
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
+                    <!-- MODULE: ADMIN -->
+                    <TextBlock
+                        Text="ADMINISTRATION"
+                        FontSize="10"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextOnDarkMutedBrush}"
+                        Margin="8,0,0,6"
+                        CharacterSpacing="80" />
+
+                    <Button x:Name="NavStudents" Tag="Students" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE716;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Students" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavClasses" Tag="Classes" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Classes Management" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+                    <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
+
                     <!-- MODULE: FINANCIALS -->
                     <TextBlock
                         Text="FINANCIALS"
@@ -240,9 +268,10 @@
                             <ComboBoxItem Content="Term 2, 2025" />
                             <ComboBoxItem Content="Term 1, 2025" />
                         </ComboBox>
-                        <Button Style="{ThemeResource IconButtonStyle}" ToolTipService.ToolTip="Notifications">
+                    <Button Style="{ThemeResource IconButtonStyle}" ToolTipService.ToolTip="Notifications">
                             <FontIcon Glyph="&#xE7ED;" FontSize="16" Foreground="{ThemeResource TextSecondaryBrush}" />
                         </Button>
+                    <ToggleSwitch x:Name="ThemeToggle" OffContent="Light" OnContent="Dark" Toggled="ThemeToggle_Toggled" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <TextBlock x:Name="HeaderUserName" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" />
                     </StackPanel>
                 </Grid>

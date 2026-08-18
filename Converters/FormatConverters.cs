@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -52,6 +53,37 @@ namespace AutoTable.Converters
             => throw new NotImplementedException();
     }
 
+    public static class ThemeResourceHelper
+    {
+        /// <summary>
+        /// Resolves a brush from the current theme's ThemeDictionary so converters
+        /// return theme-aware colors at runtime.
+        /// </summary>
+        public static SolidColorBrush GetThemeBrush(string resourceKey)
+        {
+            try
+            {
+                if (Application.Current is Application app &&
+                    app.Resources.ThemeDictionaries.TryGetValue(GetCurrentThemeKey(), out var dictObj) &&
+                    dictObj is ResourceDictionary themeDict &&
+                    themeDict.TryGetValue(resourceKey, out var brushObj) &&
+                    brushObj is SolidColorBrush brush)
+                {
+                    return brush;
+                }
+            }
+            catch { }
+
+            // Fallback neutral gray
+            return new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 158, 158));
+        }
+
+        private static string GetCurrentThemeKey()
+        {
+            return Application.Current?.RequestedTheme == ApplicationTheme.Dark ? "Dark" : "Light";
+        }
+    }
+
     public class GradeColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
@@ -59,13 +91,13 @@ namespace AutoTable.Converters
             var grade = value?.ToString() ?? string.Empty;
             return grade switch
             {
-                "A" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — excellent
-                "B" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 33, 150, 243)),  // Blue (#2196F3) — good
-                "C" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — average
-                "D" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — below average
-                "E" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — poor
-                "F" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — fail
-                _ => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 158, 158))    // Gray (#9E9E9E) — muted
+                "A" => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // excellent
+                "B" => ThemeResourceHelper.GetThemeBrush("PrimaryBlueBrush"),    // good
+                "C" => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // average
+                "D" => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // below average
+                "E" => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // poor
+                "F" => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // fail
+                _ => ThemeResourceHelper.GetThemeBrush("TextMutedBrush")         // muted
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)
@@ -79,16 +111,16 @@ namespace AutoTable.Converters
             var status = value?.ToString() ?? string.Empty;
             return status switch
             {
-                "Excellent" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — good
-                "On Track"  => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 33, 150, 243)),  // Blue (#2196F3) — informational
-                "At Risk"   => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — error
-                "Present"   => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — present
-                "Late"      => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — late
-                "Absent"    => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — absent
-                "Pending"   => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — pending
-                "Approved"  => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — approved
-                "Rejected"  => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — rejected
-                _ => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 158, 158))            // Gray (#9E9E9E) — muted
+                "Excellent" => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // good
+                "On Track"  => ThemeResourceHelper.GetThemeBrush("PrimaryBlueBrush"),    // informational
+                "At Risk"   => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // error
+                "Present"   => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // present
+                "Late"      => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // late
+                "Absent"    => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // absent
+                "Pending"   => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // pending
+                "Approved"  => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // approved
+                "Rejected"  => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // rejected
+                _ => ThemeResourceHelper.GetThemeBrush("TextMutedBrush")                 // muted
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)

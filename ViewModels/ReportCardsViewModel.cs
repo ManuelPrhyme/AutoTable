@@ -3,11 +3,14 @@ using AutoTable.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class ReportCardsViewModel : BaseViewModel
     {
+        private readonly IDataService _dataService;
+
         [ObservableProperty] private string _selectedClass = "P5";
         [ObservableProperty] private string _selectedTerm = "Term 2, 2025";
 
@@ -21,17 +24,29 @@ namespace AutoTable.ViewModels
 
         public ReportCardsViewModel()
         {
-            Classes = new ObservableCollection<string>(MockDataService.Instance.Classes);
-            Terms = new ObservableCollection<string>(MockDataService.Instance.Terms);
-            Load();
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Classes = new ObservableCollection<string>();
+            Terms = new ObservableCollection<string>();
+            _ = InitializeAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => Load();
+        partial void OnSelectedClassChanged(string value) => _ = Load();
 
-        private void Load()
+        private async Task InitializeAsync()
+        {
+            var classes = await _dataService.GetClassesAsync();
+            foreach (var c in classes) Classes.Add(c.Name);
+
+            var terms = await _dataService.GetTermsAsync();
+            foreach (var t in terms) Terms.Add(t);
+
+            await Load();
+        }
+
+        private async Task Load()
         {
             ReportCards.Clear();
-            var rows = MockDataService.Instance.GetGradebook(SelectedClass, "Mathematics");
+            var rows = await _dataService.GetGradebookAsync(SelectedClass, "Mathematics", term: SelectedTerm);
             foreach (var r in rows)
             {
                 ReportCards.Add(new ReportCardRow

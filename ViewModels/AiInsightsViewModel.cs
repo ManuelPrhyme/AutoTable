@@ -2,6 +2,7 @@ using AutoTable.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
@@ -11,10 +12,19 @@ namespace AutoTable.ViewModels
         public ObservableCollection<string> Recommendations { get; } = new();
         public ObservableCollection<AutomationItem> Automations { get; } = new();
 
-        public AiInsightsViewModel() => Load();
+        public AiInsightsViewModel()
+        {
+            _ = LoadAsync();
+        }
 
         [RelayCommand]
-        private void Refresh() => Load();
+        private void Refresh() => _ = LoadAsync();
+
+        private Task LoadAsync()
+        {
+            Load();
+            return Task.CompletedTask;
+        }
 
         private void Load()
         {

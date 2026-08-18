@@ -26,7 +26,12 @@
                 </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                        <TextBox Width="420" Style="{ThemeResource SearchBoxStyle}" PlaceholderText="Search students, teachers, classes..." />
+                        <AutoSuggestBox x:Name="SearchBox"
+                            Width="420"
+                            PlaceholderText="Search students, teachers, classes..."
+                            QueryIcon="Find"
+                            TextChanged="SearchBox_TextChanged"
+                            SuggestionChosen="SearchBox_SuggestionChosen" />
                     </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
@@ -212,4 +217,3 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
-

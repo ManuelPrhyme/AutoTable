@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
@@ -18,12 +19,21 @@ namespace AutoTable.ViewModels
         public decimal Remaining => TotalBudget - TotalSpent;
         public double UtilisationPercent => TotalBudget == 0 ? 0 : (double)(TotalSpent / TotalBudget * 100);
 
-        public BudgetViewModel() => Load();
+        public BudgetViewModel()
+        {
+            _ = LoadAsync();
+        }
 
         partial void OnSelectedYearChanged(string value) => Load();
 
         [RelayCommand] private void Export() { }
         [RelayCommand] private void AddLineItem() { }
+
+        private Task LoadAsync()
+        {
+            Load();
+            return Task.CompletedTask;
+        }
 
         private void Load()
         {

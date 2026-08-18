@@ -1,0 +1,11 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Users\manue\.nuget\packages\microsoft.windowsappsdk.winui\2.3.0\buildTransitive\Microsoft.UI.Xaml.Markup.Compiler.interop.targets(509,5): error MSB4067: The element <#text> beneath element <Target> is unrecognized. [C:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj]
+
+Build FAILED.
+
+C:\Users\manue\.nuget\packages\microsoft.windowsappsdk.winui\2.3.0\buildTransitive\Microsoft.UI.Xaml.Markup.Compiler.interop.targets(509,5): error MSB4067: The element <#text> beneath element <Target> is unrecognized. [C:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:09.11

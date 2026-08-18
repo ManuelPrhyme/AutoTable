@@ -4,11 +4,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class FeeCollectionViewModel : BaseViewModel
     {
+        private readonly IDataService _dataService;
+
         [ObservableProperty] private string _selectedClass = "P5";
         [ObservableProperty] private string _selectedTerm = "Term 2, 2025";
         [ObservableProperty] private string _selectedStatus = "All";
@@ -25,24 +28,36 @@ namespace AutoTable.ViewModels
 
         public FeeCollectionViewModel()
         {
-            Classes = new ObservableCollection<string>(MockDataService.Instance.Classes);
-            Terms = new ObservableCollection<string>(MockDataService.Instance.Terms);
-            Load();
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Classes = new ObservableCollection<string>();
+            Terms = new ObservableCollection<string>();
+            _ = InitializeAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => Load();
-        partial void OnSelectedTermChanged(string value) => Load();
+        partial void OnSelectedClassChanged(string value) => _ = Load();
+        partial void OnSelectedTermChanged(string value) => _ = Load();
 
         [RelayCommand]
-        private void Refresh() => Load();
+        private async Task Refresh() => await Load();
 
         [RelayCommand]
         private void RecordPayment() { }
 
-        private void Load()
+        private async Task InitializeAsync()
+        {
+            var classes = await _dataService.GetClassesAsync();
+            foreach (var c in classes) Classes.Add(c.Name);
+
+            var terms = await _dataService.GetTermsAsync();
+            foreach (var t in terms) Terms.Add(t);
+
+            await Load();
+        }
+
+        private async Task Load()
         {
             FeeRecords.Clear();
-            var students = MockDataService.Instance.GetStudentMarks(SelectedClass, "Mathematics", "Mid Term I");
+            var students = await _dataService.GetStudentMarksAsync(SelectedClass, "Mathematics", "Mid Term I");
             int i = 1;
             var rng = new System.Random(SelectedClass.GetHashCode());
             foreach (var s in students)

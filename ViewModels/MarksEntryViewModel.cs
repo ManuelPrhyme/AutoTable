@@ -4,11 +4,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class MarksEntryViewModel : BaseViewModel
     {
+        private readonly IDataService _dataService;
+
         [ObservableProperty] private string _selectedClass = "P5";
         [ObservableProperty] private string _selectedSubject = "Mathematics";
         [ObservableProperty] private string _selectedAssessment = "Mid Term I";
@@ -24,21 +27,41 @@ namespace AutoTable.ViewModels
 
         public MarksEntryViewModel()
         {
-            Classes = new ObservableCollection<string>(MockDataService.Instance.Classes);
-            Subjects = new ObservableCollection<string>(MockDataService.Instance.Subjects);
-            Assessments = new ObservableCollection<string>(MockDataService.Instance.GetAssessments().Select(a => a.Name).Distinct());
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Classes = new ObservableCollection<string>();
+            Subjects = new ObservableCollection<string>();
+            Assessments = new ObservableCollection<string>();
             StudentMarks = new ObservableCollection<StudentMarkRow>();
-            LoadMarks();
+            _ = InitializeAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => LoadMarks();
-        partial void OnSelectedSubjectChanged(string value) => LoadMarks();
-        partial void OnSelectedAssessmentChanged(string value) => LoadMarks();
+        partial void OnSelectedClassChanged(string value) => _ = LoadMarks();
+        partial void OnSelectedSubjectChanged(string value) => _ = LoadMarks();
+        partial void OnSelectedAssessmentChanged(string value) => _ = LoadMarks();
+
+        private async Task InitializeAsync()
+        {
+            var classes = await _dataService.GetClassesAsync();
+            foreach (var c in classes) Classes.Add(c.Name);
+
+            var subjects = await _dataService.GetSubjectsAsync();
+            foreach (var s in subjects) Subjects.Add(s.Name);
+
+            var all = await _dataService.GetAssessmentsAsync();
+            Assessments.Clear();
+            foreach (var a in all.Select(a => a.Name).Distinct())
+                Assessments.Add(a);
+
+            if (Assessments.Count > 0)
+                SelectedAssessment = Assessments[0];
+
+            await LoadMarks();
+        }
 
         [RelayCommand]
-        private void LoadMarks()
+        private async Task LoadMarks()
         {
-            var rows = MockDataService.Instance.GetStudentMarks(SelectedClass, SelectedSubject, SelectedAssessment);
+            var rows = await _dataService.GetStudentMarksAsync(SelectedClass, SelectedSubject, SelectedAssessment);
             StudentMarks.Clear();
             foreach (var row in rows)
             {
