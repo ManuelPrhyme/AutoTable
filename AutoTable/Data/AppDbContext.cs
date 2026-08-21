@@ -19,6 +19,9 @@ namespace AutoTable.Data
         public DbSet<UserEntity> Users => Set<UserEntity>();
         public DbSet<TerminationLogEntity> TerminationLogs => Set<TerminationLogEntity>();
         public DbSet<EnrollmentEntity> Enrollments => Set<EnrollmentEntity>();
+        // New entities
+        public DbSet<ClassStreamEntity> ClassStreams => Set<ClassStreamEntity>();
+        public DbSet<TermFeeEntity> TermFees => Set<TermFeeEntity>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -60,6 +63,22 @@ namespace AutoTable.Data
             modelBuilder.Entity<ClassSubjectEntity>()
                 .HasKey(cs => new { cs.ClassId, cs.SubjectId });
 
+            // ClassStream many-to-many via join entity
+            modelBuilder.Entity<ClassStreamEntity>()
+                .HasKey(cs => new { cs.ClassId, cs.StreamId });
+
+            modelBuilder.Entity<ClassStreamEntity>()
+                .HasOne(cs => cs.Class)
+                .WithMany(c => c.ClassStreams)
+                .HasForeignKey(cs => cs.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ClassStreamEntity>()
+                .HasOne(cs => cs.Stream)
+                .WithMany(s => s.ClassStreams)
+                .HasForeignKey(cs => cs.StreamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<ClassSubjectEntity>()
                 .HasOne(cs => cs.Class)
                 .WithMany(c => c.ClassSubjects)
@@ -99,6 +118,11 @@ namespace AutoTable.Data
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<TerminationLogEntity>()
                 .HasIndex(t => t.StudentId);
+
+            // Term fees: unique per term+class
+            modelBuilder.Entity<TermFeeEntity>()
+                .HasIndex(tf => new { tf.TermId, tf.ClassId })
+                .IsUnique();
 
             base.OnModelCreating(modelBuilder);
         }

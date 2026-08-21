@@ -50,6 +50,7 @@ namespace AutoTable.Data.Entities
         public ICollection<StudentEntity> Students { get; set; } = new List<StudentEntity>();
         public ICollection<AssessmentEntity> Assessments { get; set; } = new List<AssessmentEntity>();
         public ICollection<ClassSubjectEntity> ClassSubjects { get; set; } = new List<ClassSubjectEntity>();
+        public ICollection<ClassStreamEntity> ClassStreams { get; set; } = new List<ClassStreamEntity>();
     }
 
     public class StreamEntity
@@ -57,6 +58,7 @@ namespace AutoTable.Data.Entities
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public ICollection<StudentEntity> Students { get; set; } = new List<StudentEntity>();
+        public ICollection<ClassStreamEntity> ClassStreams { get; set; } = new List<ClassStreamEntity>();
     }
 
     public class SubjectEntity
@@ -186,5 +188,28 @@ namespace AutoTable.Data.Entities
         public string AuthorizedPickupPerson { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
         public string Status { get; set; } = "New";
+    }
+
+    // Join entity to associate Classes with Streams (many-to-many)
+    public class ClassStreamEntity
+    {
+        public int ClassId { get; set; }
+        public ClassEntity? Class { get; set; }
+
+        public int StreamId { get; set; }
+        public StreamEntity? Stream { get; set; }
+    }
+
+    // Term fee entity: amount to be charged for a given Class during a Term
+    public class TermFeeEntity
+    {
+        public int Id { get; set; }
+        public int TermId { get; set; }
+        public TermEntity? Term { get; set; }
+
+        public int ClassId { get; set; }
+        public ClassEntity? Class { get; set; }
+
+        public double Amount { get; set; }
     }
 }

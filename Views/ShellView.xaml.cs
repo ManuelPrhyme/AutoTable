@@ -1,5 +1,7 @@
 using AutoTable.Services;
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using AutoTable.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -170,6 +172,74 @@ namespace AutoTable.Views
             {
                 ThemeService.SetTheme(ApplicationTheme.Light);
             }
+        }
+
+        // Simple search result model used by the AutoSuggestBox
+        private class SearchResult
+        {
+            public string Title { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty; // e.g., "Student" or "Class"
+            public object? Payload { get; set; }
+        }
+
+        private async void TopSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+            var q = sender.Text?.Trim() ?? string.Empty;
+            if (q.Length < 2)
+            {
+                sender.ItemsSource = null;
+                return;
+            }
+
+            try
+            {
+                var ds = AppServices.DataService;
+                var results = new List<SearchResult>();
+                if (ds != null)
+                {
+                    var students = await ds.GetAllStudentsAsync();
+                    foreach (var s in students.Where(s => s.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
+                        results.Add(new SearchResult { Title = s, Type = "Student", Payload = s });
+
+                    var classes = await ds.GetClassesAsync();
+                    foreach (var c in classes.Where(c => c.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
+                        results.Add(new SearchResult { Title = c.Name, Type = "Class", Payload = c });
+                }
+
+                sender.ItemsSource = results;
+            }
+            catch
+            {
+                sender.ItemsSource = null;
+            }
+        }
+
+        private async void TopSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            if (args.SelectedItem is not SearchResult r) return;
+
+            try
+            {
+                var dlg = new ContentDialog
+                {
+                    Title = r.Title,
+                    Content = r.Type,
+                    PrimaryButtonText = "Open",
+                    CloseButtonText = "Close",
+                    XamlRoot = this.XamlRoot
+                };
+
+                var res = await dlg.ShowAsync();
+                if (res == ContentDialogResult.Primary)
+                {
+                    if (r.Type == "Student")
+                        NavigationService.Instance.Navigate(typeof(Views.StudentsView));
+                    else if (r.Type == "Class")
+                        NavigationService.Instance.Navigate(typeof(Views.ClassesView));
+                }
+            }
+            catch { }
         }
     }
 }

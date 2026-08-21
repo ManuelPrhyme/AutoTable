@@ -265,11 +265,23 @@
 
                     <!-- Search -->
                     <AutoSuggestBox
+                        x:Name="TopSearchBox"
                         Grid.Column="1"
                         Margin="16,0"
                         VerticalAlignment="Center"
                         PlaceholderText="Search students, classes..."
-                        QueryIcon="Find" />
+                        QueryIcon="Find"
+                        TextChanged="TopSearchBox_TextChanged"
+                        SuggestionChosen="TopSearchBox_SuggestionChosen">
+                        <AutoSuggestBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*,Auto" Padding="8,4">
+                                    <TextBlock Text="{Binding Title}" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Type}" FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </DataTemplate>
+                        </AutoSuggestBox.ItemTemplate>
+                    </AutoSuggestBox>
 
                     <!-- Right Controls -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
