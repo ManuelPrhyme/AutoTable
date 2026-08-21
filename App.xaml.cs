@@ -33,7 +33,7 @@ namespace AutoTable
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
+        /// executed, and as such it is the logical equivalent of main() or WinMain().
         /// </summary>
         public App()
         {
@@ -51,35 +51,27 @@ namespace AutoTable
         {
             try
             {
-                // Development testing: recreate a fresh SQLite DB on each run when possible.
-                var devDbFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_test.db");
+                // Development: use a fresh SQLite DB for each run (testing mode).
+                // The DB is deleted, recreated, and seeded idempotently every startup.
+                var devDbFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable.db");
                 string? dbError = null;
+
+                // Remove stale database file from previous runs to avoid schema drift.
+                if (System.IO.File.Exists(devDbFile))
+                {
+                    try { System.IO.File.Delete(devDbFile); } catch { }
+                }
 
                 try
                 {
-                    // Best-effort fresh DB: if the previous instance is still holding the file,
-                    // fall back to reusing the existing one rather than failing startup.
-                    if (System.IO.File.Exists(devDbFile))
-                    {
-                        try { System.IO.File.Delete(devDbFile); } catch { }
-                    }
-
-                    var sqliteConn = AutoTable.Data.AppDbContext.CreateConnection(devDbFile);
+                    var sqliteConnection = AutoTable.Data.AppDbContext.CreateConnection(devDbFile);
                     var options = new DbContextOptionsBuilder<AutoTable.Data.AppDbContext>()
-                        .UseSqlite(sqliteConn)
+                        .UseSqlite(sqliteConnection)
                         .Options;
 
                     using (var ctx = new AutoTable.Data.AppDbContext(options))
                     {
-                        try
-                        {
-                            ctx.Database.EnsureDeleted();
-                        }
-                        catch
-                        {
-                            // File may be locked by a previous process; reuse existing DB.
-                        }
-
+                        ctx.Database.EnsureDeleted();
                         ctx.Database.EnsureCreated();
                         AutoTable.Data.SeedData.EnsureSeed(ctx);
                     }
@@ -101,6 +93,7 @@ namespace AutoTable
                             .Options;
                         using (var ctx = new AppDbContext(fallbackOptions))
                         {
+                            ctx.Database.EnsureDeleted();
                             ctx.Database.EnsureCreated();
                             AutoTable.Data.SeedData.EnsureSeed(ctx);
                         }
@@ -123,6 +116,13 @@ namespace AutoTable
                             $"devDbFile={devDbFile}\r\nTEMP={System.IO.Path.GetTempPath()}\r\n{dbError}");
                     }
                     catch { }
+                }
+
+                // If both DB initialization attempts failed, register an in-memory mock
+                // data service so the UI can still function for demos and diagnostics.
+                if (AppServices.DataService == null)
+                {
+                    AppServices.DataService = new Services.MockDataServiceAdapter();
                 }
 
                 _window = new MainWindow();

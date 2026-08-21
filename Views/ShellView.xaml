@@ -155,6 +155,15 @@
                             <TextBlock Text="Classes Management" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
+
+                    <Button x:Name="NavAuditLog" Tag="AuditLog" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE81C;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Audit Log" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
                     <!-- MODULE: FINANCIALS -->

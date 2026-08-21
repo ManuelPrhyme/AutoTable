@@ -33,7 +33,7 @@
                     <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                         <Button Content="+ New Assessment"
                                 Style="{ThemeResource PrimaryButtonStyle}"
-                                Command="{Binding NewAssessmentCommand}" />
+                                Click="NewAssessment_Click" />
                     </StackPanel>
                 </Grid>
             </Border>

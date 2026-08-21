@@ -1,4 +1,5 @@
 using AutoTable.Services;
+using System;
 using AutoTable.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -25,6 +26,7 @@ namespace AutoTable.Views
             ["ReportCards"]        = ("Report Cards", "Generate and print student report cards."),
             ["Students"]           = ("Students", "Manage student records, LIN identifiers, and termination."),
             ["Classes"]            = ("Classes & Subjects", "Manage classes, subjects, and subject assignments."),
+            ["AuditLog"]           = ("Termination / Audit Log", "View termination history and anonymization records."),
             ["FinDashboard"]       = ("Financial Dashboard", "Overview of fee collection, budget, and expenditure."),
             ["FeeCollection"]      = ("Fee Collection", "Track and manage student fee payments."),
             ["Budget"]             = ("Budget & Expenditure", "School budget planning and expenditure tracking."),
@@ -43,6 +45,7 @@ namespace AutoTable.Views
             ["ReportCards"]        = typeof(ReportCardsView),
             ["Students"]           = typeof(StudentsView),
             ["Classes"]            = typeof(ClassesView),
+            ["AuditLog"]           = typeof(AuditLogView),
             ["FinDashboard"]       = typeof(FinancialsDashboardView),
             ["FeeCollection"]      = typeof(FeeCollectionView),
             ["Budget"]             = typeof(BudgetView),
@@ -79,7 +82,7 @@ namespace AutoTable.Views
             NavigateTo(tag, btn);
         }
 
-        private void NavigateTo(string tag, Button btn)
+        private async void NavigateTo(string tag, Button btn)
         {
             if (!Routes.TryGetValue(tag, out var pageType)) return;
 
@@ -93,7 +96,26 @@ namespace AutoTable.Views
             // Active state: highlight active button
             SetActiveButton(btn);
 
-            ContentFrame.Navigate(pageType);
+            try
+            {
+                ContentFrame.Navigate(pageType);
+            }
+            catch (System.Exception ex)
+            {
+                // Surface navigation errors so they are visible during debugging/runtime
+                try
+                {
+                    var dlg = new ContentDialog
+                    {
+                        Title = "Navigation error",
+                        Content = ex.ToString(),
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dlg.ShowAsync();
+                }
+                catch { }
+            }
         }
 
         private Brush GetThemeBrush(string resourceKey)

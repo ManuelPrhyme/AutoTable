@@ -36,6 +36,11 @@ namespace AutoTable.ViewModels
             await _dataService.CreateClassAsync(name);
         }
 
+        public async Task DeleteClassAsync(int classId)
+        {
+            await _dataService.DeleteClassAsync(classId);
+        }
+
         public async Task CreateSubjectAsync(string name)
         {
             await _dataService.CreateSubjectAsync(name);

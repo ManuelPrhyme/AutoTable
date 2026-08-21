@@ -1,8 +1,7 @@
 $exe = 'C:\Users\manue\Desktop\Desktop_Apps\AutoTable\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AutoTable.exe'
-$db = Join-Path $env:TEMP 'autotable_test.db'
+$db = Join-Path $env:TEMP 'autotable.db'
 $err = Join-Path $env:TEMP 'AutoTable_startup_error.txt'
 
-Remove-Item $db -ErrorAction SilentlyContinue
 Remove-Item $err -ErrorAction SilentlyContinue
 
 $p = Start-Process -FilePath $exe -PassThru
@@ -18,8 +17,12 @@ if (Test-Path $db) {
     Write-Output ('DB file present: ' + $db)
     $len = (Get-Item $db).Length
     Write-Output ('DB size: ' + $len + ' bytes')
-    $tables = sqlite3 $db '.tables' 2>$null
-    if ($null -ne $tables) { Write-Output ('Tables: ' + $tables) }
+    if (Get-Command sqlite3 -ErrorAction SilentlyContinue) {
+        $tables = sqlite3 $db '.tables' 2>$null
+        if ($null -ne $tables) { Write-Output ('Tables: ' + $tables) }
+    } else {
+        Write-Output 'sqlite3 CLI not installed - table listing skipped.'
+    }
 } else {
     Write-Output 'DB file MISSING.'
 }

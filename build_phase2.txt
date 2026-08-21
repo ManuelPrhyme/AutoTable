@@ -1,0 +1,7 @@
+  AutoTable -> c:\Users\manue\Desktop\Desktop_Apps\AutoTable\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AutoTable.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:03:20.90

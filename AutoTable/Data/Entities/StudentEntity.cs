@@ -20,6 +20,25 @@ namespace AutoTable.Data.Entities
         public DateTime? TerminationDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // Extended enrollment fields
+        public string? GuardianName { get; set; }
+        public string? GuardianRelationship { get; set; }
+        public string? GuardianPhone { get; set; }
+        public string? GuardianEmail { get; set; }
+        public string? GuardianAddress { get; set; }
+        public bool HasCustodyDocuments { get; set; }
+        public string? ResidenceProofType { get; set; }
+        public string? ResidenceDistrict { get; set; }
+        public string? ResidenceZone { get; set; }
+        public bool HasImmunizationCard { get; set; }
+        public bool HasMedicalExamReport { get; set; }
+        public string? AllergiesOrConditions { get; set; }
+        public string? HealthInsurance { get; set; }
+        public string? EmergencyName { get; set; }
+        public string? EmergencyRelationship { get; set; }
+        public string? EmergencyPhone { get; set; }
+        public string? AuthorizedPickupPerson { get; set; }
+
         public ICollection<MarkEntity> Marks { get; set; } = new List<MarkEntity>();
         public ICollection<FeePaymentEntity> FeePayments { get; set; } = new List<FeePaymentEntity>();
     }
@@ -135,5 +154,37 @@ namespace AutoTable.Data.Entities
         public DateTime TerminationDate { get; set; }
         public bool Anonymized { get; set; }
         public DateTime LoggedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class EnrollmentEntity
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string LIN { get; set; } = string.Empty;
+        public DateTime DateOfBirth { get; set; }
+        public string Gender { get; set; } = string.Empty;
+        public string Nationality { get; set; } = string.Empty;
+        public string Religion { get; set; } = string.Empty;
+        public string PreviousSchool { get; set; } = string.Empty;
+        public string AdmissionNumber { get; set; } = string.Empty;
+        public string GuardianName { get; set; } = string.Empty;
+        public string GuardianRelationship { get; set; } = string.Empty;
+        public string GuardianPhone { get; set; } = string.Empty;
+        public string GuardianEmail { get; set; } = string.Empty;
+        public string GuardianAddress { get; set; } = string.Empty;
+        public bool HasCustodyDocuments { get; set; }
+        public string ResidenceProofType { get; set; } = string.Empty;
+        public string ResidenceDistrict { get; set; } = string.Empty;
+        public string ResidenceZone { get; set; } = string.Empty;
+        public bool HasImmunizationCard { get; set; }
+        public bool HasMedicalExamReport { get; set; }
+        public string AllergiesOrConditions { get; set; } = string.Empty;
+        public string HealthInsurance { get; set; } = string.Empty;
+        public string EmergencyName { get; set; } = string.Empty;
+        public string EmergencyRelationship { get; set; } = string.Empty;
+        public string EmergencyPhone { get; set; } = string.Empty;
+        public string AuthorizedPickupPerson { get; set; } = string.Empty;
+        public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+        public string Status { get; set; } = "New";
     }
 }

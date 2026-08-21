@@ -1,0 +1,12 @@
+c:\Users\manue\Desktop\Desktop_Apps\AutoTable\Views\AssessmentsView.xaml.cs(60,27): warning CS8602: Dereference of a possibly null reference. [c:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj]
+c:\Users\manue\Desktop\Desktop_Apps\AutoTable\Views\AssessmentsView.xaml.cs(60,27): warning CS8602: Dereference of a possibly null reference. [c:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj]
+  AutoTable -> c:\Users\manue\Desktop\Desktop_Apps\AutoTable\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AutoTable.dll
+
+Build succeeded.
+
+c:\Users\manue\Desktop\Desktop_Apps\AutoTable\Views\AssessmentsView.xaml.cs(60,27): warning CS8602: Dereference of a possibly null reference. [c:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj]
+c:\Users\manue\Desktop\Desktop_Apps\AutoTable\Views\AssessmentsView.xaml.cs(60,27): warning CS8602: Dereference of a possibly null reference. [c:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.csproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:02:16.23

@@ -26,6 +26,9 @@ namespace AutoTable.Services
         Task<Student> CreateStudentWithInitialDataAsync(Student student, double? initialFeeAmount = null, IEnumerable<(int AssessmentId, double? Mark, string? Grade)>? initialMarks = null);
         Task<Student?> UpdateStudentAsync(Student student);
         Task TerminateStudentAsync(int studentId, StudentTerminationReason reason, DateTime date, bool anonymize = false);
+        Task<IReadOnlyList<TerminationLogItem>> GetTerminationLogAsync();
+        Task SaveEnrollmentAsync(EnrollmentFormData enrollment);
+        Task<IReadOnlyList<EnrollmentFormData>> GetEnrollmentsAsync();
 
         // Class & Subject management
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetClassesAsync();
@@ -39,5 +42,6 @@ namespace AutoTable.Services
         Task AssignSubjectToClassAsync(int classId, int subjectId);
         Task RemoveSubjectFromClassAsync(int classId, int subjectId);
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetSubjectsForClassAsync(int classId);
+        Task CreateAssessmentAsync(AutoTable.Models.AssessmentItem item);
     }
 }

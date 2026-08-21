@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AutoTable.Views.EnrollmentFormView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource SurfaceGrayBrush}">
+
+    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16" MaxWidth="860" HorizontalAlignment="Left">
+            <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Student Enrollment Form" />
+
+            <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Student Information" FontWeight="SemiBold" />
+                    <TextBox Header="Full name" Text="{Binding FullName}" />
+                    <TextBox Header="LIN (leave blank to auto-generate)" Text="{Binding Lin}" />
+                    <DatePicker Header="Date of birth" Date="{Binding DateOfBirth, Mode=TwoWay}" />
+                    <ComboBox Header="Gender" SelectedItem="{Binding Gender, Mode=TwoWay}">
+                        <ComboBoxItem Content="Male" />
+                        <ComboBoxItem Content="Female" />
+                        <ComboBoxItem Content="Other" />
+                    </ComboBox>
+                    <TextBox Header="Nationality" Text="{Binding Nationality}" />
+                    <TextBox Header="Religion" Text="{Binding Religion}" />
+                    <TextBox Header="Previous school (if any)" Text="{Binding PreviousSchool}" />
+                </StackPanel>
+            </Border>
+
+            <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Parent / Guardian Details" FontWeight="SemiBold" />
+                    <TextBox Header="Guardian full name" Text="{Binding GuardianName}" />
+                    <TextBox Header="Relationship to student" Text="{Binding GuardianRelationship}" />
+                    <TextBox Header="Contact number" Text="{Binding GuardianPhone}" />
+                    <TextBox Header="Email" Text="{Binding GuardianEmail}" />
+                    <TextBox Header="Residential address" Text="{Binding GuardianAddress}" />
+                    <CheckBox Content="Custody documents on file" IsChecked="{Binding HasCustodyDocuments, Mode=TwoWay}" />
+                </StackPanel>
+            </Border>
+
+            <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Residency Verification" FontWeight="SemiBold" />
+                    <ComboBox Header="Proof of residence" SelectedItem="{Binding ResidenceProofType, Mode=TwoWay}">
+                        <ComboBoxItem Content="Utility Bill" />
+                        <ComboBoxItem Content="LC1 Letter" />
+                        <ComboBoxItem Content="Lease Agreement" />
+                    </ComboBox>
+                    <TextBox Header="District" Text="{Binding ResidenceDistrict}" />
+                    <TextBox Header="Zone / Village" Text="{Binding ResidenceZone}" />
+                </StackPanel>
+            </Border>
+
+            <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Health Records" FontWeight="SemiBold" />
+                    <CheckBox Content="Immunization card on file" IsChecked="{Binding HasImmunizationCard, Mode=TwoWay}" />
+                    <CheckBox Content="Medical exam report on file" IsChecked="{Binding HasMedicalExamReport, Mode=TwoWay}" />
+                    <TextBox Header="Allergies / chronic conditions" Text="{Binding AllergiesOrConditions}" />
+                    <TextBox Header="Health insurance information" Text="{Binding HealthInsurance}" />
+                </StackPanel>
+            </Border>
+
+            <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Emergency Contacts" FontWeight="SemiBold" />
+                    <TextBox Header="Emergency contact name" Text="{Binding EmergencyName}" />
+                    <TextBox Header="Relationship to student" Text="{Binding EmergencyRelationship}" />
+                    <TextBox Header="Phone number" Text="{Binding EmergencyPhone}" />
+                    <TextBox Header="Authorized pickup person(s)" Text="{Binding AuthorizedPickupPerson}" />
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Content="Submit Enrollment"
+                        Command="{Binding SubmitCommand}"
+                        Style="{ThemeResource PrimaryButtonStyle}" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusMessage}"
+                           Style="{ThemeResource MutedTextStyle}"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

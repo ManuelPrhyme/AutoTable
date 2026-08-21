@@ -18,17 +18,16 @@ namespace AutoTable.Data
         public DbSet<FeePaymentEntity> FeePayments => Set<FeePaymentEntity>();
         public DbSet<UserEntity> Users => Set<UserEntity>();
         public DbSet<TerminationLogEntity> TerminationLogs => Set<TerminationLogEntity>();
+        public DbSet<EnrollmentEntity> Enrollments => Set<EnrollmentEntity>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Students
+            // Keep unique index on LIN (user-provided identifier)
             modelBuilder.Entity<StudentEntity>()
                 .HasIndex(s => s.LIN)
-                .IsUnique();
-            modelBuilder.Entity<StudentEntity>()
-                .HasIndex(s => s.AdmissionNumber)
                 .IsUnique();
 
             // Class unique name

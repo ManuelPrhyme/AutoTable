@@ -85,7 +85,8 @@ namespace AutoTable.Services
                     return new GradebookRow
                     {
                         StudentName = g.Key.FullName,
-                        AdmissionNumber = g.Key.AdmissionNumber ?? string.Empty,
+                    // Use LIN as the identifier presented to users instead of the legacy admission number
+                    AdmissionNumber = g.Key.LIN ?? string.Empty,
                         ClassName = cls.Name,
                         Stream = g.Key.Stream?.Name ?? string.Empty,
                         Subject = subj.Name,
@@ -132,7 +133,7 @@ namespace AutoTable.Services
                 {
                     StudentId = s.Id.ToString(),
                     StudentName = s.FullName,
-                    AdmissionNumber = s.AdmissionNumber ?? string.Empty,
+                        AdmissionNumber = s.LIN ?? string.Empty,
                     ClassName = cls?.Name ?? string.Empty,
                     Mark = null,
                     Grade = "-",
@@ -153,7 +154,7 @@ namespace AutoTable.Services
                 {
                     StudentId = s.Id.ToString(),
                     StudentName = s.FullName,
-                    AdmissionNumber = s.AdmissionNumber ?? string.Empty,
+                    AdmissionNumber = s.LIN ?? string.Empty,
                     ClassName = cls.Name,
                     Mark = mark?.Mark,
                     Grade = mark?.Grade ?? "-",
@@ -201,7 +202,7 @@ namespace AutoTable.Services
             var detail = new Models.StudentPerformanceDetail
             {
                 StudentName = studentName,
-                AdmissionNumber = student?.AdmissionNumber ?? string.Empty,
+                AdmissionNumber = student?.LIN ?? string.Empty,
                 ClassName = className,
                 Stream = stream,
                 AcademicYear = academicYear,
@@ -277,7 +278,7 @@ namespace AutoTable.Services
                 Id = s.Id,
                 LIN = s.LIN,
                 FullName = s.FullName,
-                AdmissionNumber = s.AdmissionNumber,
+                    AdmissionNumber = s.LIN,
                 ClassId = s.ClassId,
                 StreamId = s.StreamId,
                 DateOfBirth = s.DateOfBirth,
@@ -299,7 +300,7 @@ namespace AutoTable.Services
                 Id = s.Id,
                 LIN = s.LIN,
                 FullName = s.FullName,
-                AdmissionNumber = s.AdmissionNumber,
+                    AdmissionNumber = s.LIN,
                 ClassId = s.ClassId,
                 StreamId = s.StreamId,
                 DateOfBirth = s.DateOfBirth,
@@ -334,7 +335,7 @@ namespace AutoTable.Services
                 {
                     LIN = student.LIN,
                     FullName = student.FullName,
-                    AdmissionNumber = student.AdmissionNumber,
+                AdmissionNumber = student.LIN,
                     ClassId = student.ClassId,
                     StreamId = student.StreamId,
                     DateOfBirth = student.DateOfBirth,
@@ -342,6 +343,26 @@ namespace AutoTable.Services
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
+
+                // map extended enrollment fields if provided on the model
+                entity.AdmissionNumber = student.AdmissionNumber ?? entity.AdmissionNumber;
+                entity.GuardianName = student.GuardianName;
+                entity.GuardianRelationship = student.GuardianRelationship;
+                entity.GuardianPhone = student.GuardianPhone;
+                entity.GuardianEmail = student.GuardianEmail;
+                entity.GuardianAddress = student.GuardianAddress;
+                entity.HasCustodyDocuments = student.HasCustodyDocuments;
+                entity.ResidenceProofType = student.ResidenceProofType;
+                entity.ResidenceDistrict = student.ResidenceDistrict;
+                entity.ResidenceZone = student.ResidenceZone;
+                entity.HasImmunizationCard = student.HasImmunizationCard;
+                entity.HasMedicalExamReport = student.HasMedicalExamReport;
+                entity.AllergiesOrConditions = student.AllergiesOrConditions;
+                entity.HealthInsurance = student.HealthInsurance;
+                entity.EmergencyName = student.EmergencyName;
+                entity.EmergencyRelationship = student.EmergencyRelationship;
+                entity.EmergencyPhone = student.EmergencyPhone;
+                entity.AuthorizedPickupPerson = student.AuthorizedPickupPerson;
 
                 db.Students.Add(entity);
                 await db.SaveChangesAsync();
@@ -407,11 +428,31 @@ namespace AutoTable.Services
 
             e.LIN = student.LIN;
             e.FullName = student.FullName;
+            // Persist the LIN value into the model's AdmissionNumber slot for legacy consumers
             e.AdmissionNumber = student.AdmissionNumber;
+            e.LIN = student.LIN;
             e.ClassId = student.ClassId;
             e.StreamId = student.StreamId;
             e.DateOfBirth = student.DateOfBirth;
             e.Gender = student.Gender;
+            // update extended enrollment fields
+            e.GuardianName = student.GuardianName;
+            e.GuardianRelationship = student.GuardianRelationship;
+            e.GuardianPhone = student.GuardianPhone;
+            e.GuardianEmail = student.GuardianEmail;
+            e.GuardianAddress = student.GuardianAddress;
+            e.HasCustodyDocuments = student.HasCustodyDocuments;
+            e.ResidenceProofType = student.ResidenceProofType;
+            e.ResidenceDistrict = student.ResidenceDistrict;
+            e.ResidenceZone = student.ResidenceZone;
+            e.HasImmunizationCard = student.HasImmunizationCard;
+            e.HasMedicalExamReport = student.HasMedicalExamReport;
+            e.AllergiesOrConditions = student.AllergiesOrConditions;
+            e.HealthInsurance = student.HealthInsurance;
+            e.EmergencyName = student.EmergencyName;
+            e.EmergencyRelationship = student.EmergencyRelationship;
+            e.EmergencyPhone = student.EmergencyPhone;
+            e.AuthorizedPickupPerson = student.AuthorizedPickupPerson;
             await db.SaveChangesAsync();
 
             return student;
@@ -435,6 +476,7 @@ namespace AutoTable.Services
                 {
                     e.FullName = $"Terminated-{e.Id}";
                     e.AdmissionNumber = null;
+                    e.LIN = $"REMOVED-{e.Id}";
                     e.LIN = $"REMOVED-{e.Id}";
                 }
 
@@ -460,6 +502,101 @@ namespace AutoTable.Services
                 await tx.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<IReadOnlyList<TerminationLogItem>> GetTerminationLogAsync()
+        {
+            using var db = CreateContext();
+            var logs = await db.TerminationLogs
+                .OrderByDescending(t => t.LoggedAt)
+                .ToListAsync();
+
+            return logs.Select(t => new TerminationLogItem
+            {
+                Id = t.Id,
+                StudentId = t.StudentId,
+                StudentName = t.StudentNameAtTermination,
+                Reason = ((StudentTerminationReason)t.TerminationReason).ToString(),
+                TerminationDate = t.TerminationDate,
+                Anonymized = t.Anonymized,
+                LoggedAt = t.LoggedAt
+            }).ToList();
+        }
+
+        public async Task SaveEnrollmentAsync(EnrollmentFormData enrollment)
+        {
+            using var db = CreateContext();
+            db.Enrollments.Add(new EnrollmentEntity
+            {
+                FullName = enrollment.FullName,
+                DateOfBirth = enrollment.DateOfBirth,
+                Gender = enrollment.Gender,
+                Nationality = enrollment.Nationality,
+                Religion = enrollment.Religion,
+                PreviousSchool = enrollment.PreviousSchool,
+                // Store the provided LIN as the primary identifier; keep AdmissionNumber for compatibility
+                AdmissionNumber = enrollment.AdmissionNumber,
+                LIN = enrollment.LIN,
+                GuardianName = enrollment.GuardianName,
+                GuardianRelationship = enrollment.GuardianRelationship,
+                GuardianPhone = enrollment.GuardianPhone,
+                GuardianEmail = enrollment.GuardianEmail,
+                GuardianAddress = enrollment.GuardianAddress,
+                HasCustodyDocuments = enrollment.HasCustodyDocuments,
+                ResidenceProofType = enrollment.ResidenceProofType,
+                ResidenceDistrict = enrollment.ResidenceDistrict,
+                ResidenceZone = enrollment.ResidenceZone,
+                HasImmunizationCard = enrollment.HasImmunizationCard,
+                HasMedicalExamReport = enrollment.HasMedicalExamReport,
+                AllergiesOrConditions = enrollment.AllergiesOrConditions,
+                HealthInsurance = enrollment.HealthInsurance,
+                EmergencyName = enrollment.EmergencyName,
+                EmergencyRelationship = enrollment.EmergencyRelationship,
+                EmergencyPhone = enrollment.EmergencyPhone,
+                AuthorizedPickupPerson = enrollment.AuthorizedPickupPerson,
+                SubmittedAt = DateTime.UtcNow,
+                Status = "New"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        public async Task<IReadOnlyList<EnrollmentFormData>> GetEnrollmentsAsync()
+        {
+            using var db = CreateContext();
+            var list = await db.Enrollments
+                .OrderByDescending(e => e.SubmittedAt)
+                .ToListAsync();
+
+            return list.Select(e => new EnrollmentFormData
+            {
+                FullName = e.FullName,
+                LIN = e.LIN,
+                DateOfBirth = e.DateOfBirth,
+                Gender = e.Gender,
+                Nationality = e.Nationality,
+                Religion = e.Religion,
+                PreviousSchool = e.PreviousSchool,
+                AdmissionNumber = e.AdmissionNumber,
+                GuardianName = e.GuardianName,
+                GuardianRelationship = e.GuardianRelationship,
+                GuardianPhone = e.GuardianPhone,
+                GuardianEmail = e.GuardianEmail,
+                GuardianAddress = e.GuardianAddress,
+                HasCustodyDocuments = e.HasCustodyDocuments,
+                ResidenceProofType = e.ResidenceProofType,
+                ResidenceDistrict = e.ResidenceDistrict,
+                ResidenceZone = e.ResidenceZone,
+                HasImmunizationCard = e.HasImmunizationCard,
+                HasMedicalExamReport = e.HasMedicalExamReport,
+                AllergiesOrConditions = e.AllergiesOrConditions,
+                HealthInsurance = e.HealthInsurance,
+                EmergencyName = e.EmergencyName,
+                EmergencyRelationship = e.EmergencyRelationship,
+                EmergencyPhone = e.EmergencyPhone,
+                AuthorizedPickupPerson = e.AuthorizedPickupPerson,
+                SubmittedAt = e.SubmittedAt,
+                Status = e.Status
+            }).ToList();
         }
 
         // --- Class & Subject management ---
@@ -557,6 +694,34 @@ namespace AutoTable.Services
                 .Select(cs => cs.Subject!)
                 .ToListAsync();
             return list.Select(s => new AutoTable.Models.SimpleLookup { Id = s.Id, Name = s.Name }).ToList();
+        }
+
+        public async Task CreateAssessmentAsync(AutoTable.Models.AssessmentItem item)
+        {
+            using var db = CreateContext();
+            // resolve class and subject
+            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == item.ClassName) ?? db.Classes.FirstOrDefault();
+            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == item.Subject) ?? db.Subjects.FirstOrDefault();
+            var ay = await db.AcademicYears.FirstOrDefaultAsync() ?? null;
+            var term = await db.Terms.FirstOrDefaultAsync() ?? null;
+            if (cls == null || subj == null || ay == null || term == null)
+                throw new InvalidOperationException("Class, subject, academic year or term not found.");
+
+            var entity = new AssessmentEntity
+            {
+                Name = item.Name,
+                ClassId = cls.Id,
+                SubjectId = subj.Id,
+                AcademicYearId = ay.Id,
+                TermId = term.Id,
+                WeightPercent = item.WeightPercent,
+                DueDate = item.DueDate,
+                IsVerified = false,
+                IsPublished = false,
+                MarksEnteredPercent = 0
+            };
+            db.Assessments.Add(entity);
+            await db.SaveChangesAsync();
         }
     }
 }
