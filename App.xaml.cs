@@ -51,16 +51,11 @@ namespace AutoTable
         {
             try
             {
-                // Development: use a fresh SQLite DB for each run (testing mode).
-                // The DB is deleted, recreated, and seeded idempotently every startup.
-                var devDbFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable.db");
+                // Database file location: use persistent LocalApplicationData so data is retained between runs.
+                var devDbFile = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AutoTable", "autotable.db");
+                // Ensure directory exists
+                try { var dbDir = System.IO.Path.GetDirectoryName(devDbFile); if (!string.IsNullOrEmpty(dbDir)) System.IO.Directory.CreateDirectory(dbDir); } catch { }
                 string? dbError = null;
-
-                // Remove stale database file from previous runs to avoid schema drift.
-                if (System.IO.File.Exists(devDbFile))
-                {
-                    try { System.IO.File.Delete(devDbFile); } catch { }
-                }
 
                 try
                 {
@@ -71,9 +66,8 @@ namespace AutoTable
 
                     using (var ctx = new AutoTable.Data.AppDbContext(options))
                     {
-                        ctx.Database.EnsureDeleted();
+                        // Create schema if missing. Do NOT delete or seed data by default — start with a plain DB.
                         ctx.Database.EnsureCreated();
-                        AutoTable.Data.SeedData.EnsureSeed(ctx);
                     }
 
                     // Register the global data service.
@@ -82,47 +76,30 @@ namespace AutoTable
                 catch (Exception initEx)
                 {
                     dbError = initEx.ToString();
-
-                    // Ensure the UI service ALWAYS gets registered so page navigation never
-                    // throws "DataService not configured", even if full recreate is not possible.
-                    try
-                    {
-                        var fallbackConn = AppDbContext.CreateConnection(devDbFile);
-                        var fallbackOptions = new DbContextOptionsBuilder<AppDbContext>()
-                            .UseSqlite(fallbackConn)
-                            .Options;
-                        using (var ctx = new AppDbContext(fallbackOptions))
-                        {
-                            ctx.Database.EnsureDeleted();
-                            ctx.Database.EnsureCreated();
-                            AutoTable.Data.SeedData.EnsureSeed(ctx);
-                        }
-
-                        AppServices.DataService = new DatabaseDataService(fallbackOptions);
-                    }
-                    catch (Exception fallbackEx)
-                    {
-                        dbError = new AggregateException(initEx, fallbackEx).ToString();
-                    }
                 }
 
-                // Surface DB init problems for diagnosis without breaking the UI shell.
-                if (dbError != null)
+                // Surface DB init problems for diagnosis and fail early if DB cannot be used.
+                if (dbError != null || AppServices.DataService == null)
                 {
                     try
                     {
-                        var diagPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_test_db_init_error.txt");
+                        var diagPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_init_error.txt");
                         System.IO.File.WriteAllText(diagPath,
-                            $"devDbFile={devDbFile}\r\nTEMP={System.IO.Path.GetTempPath()}\r\n{dbError}");
+                            $"devDbFile={devDbFile}\r\nLOCALAPPDATA={Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\r\n{dbError}");
                     }
                     catch { }
-                }
 
-                // If both DB initialization attempts failed, register an in-memory mock
-                // data service so the UI can still function for demos and diagnostics.
-                if (AppServices.DataService == null)
-                {
-                    AppServices.DataService = new Services.MockDataServiceAdapter();
+                    // Show a minimal error window and abort startup so the app does not run with a missing data service.
+                    var errWin = new Window();
+                    var tb = new TextBlock
+                    {
+                        Text = "Failed to initialize database. See autotable_init_error.txt in your temp folder for details.\r\n" + (dbError ?? "DataService not configured."),
+                        TextWrapping = TextWrapping.Wrap,
+                        Padding = new Thickness(12)
+                    };
+                    errWin.Content = tb;
+                    errWin.Activate();
+                    return;
                 }
 
                 _window = new MainWindow();

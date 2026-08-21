@@ -28,10 +28,19 @@ namespace AutoTable.Views
         {
             var form = new EnrollmentFormView();
             ContentDialog? dialog = null;
-            form.ViewModel.OnSubmittedAsync = async () =>
+            form.ViewModel.OnSubmittedAsync = async (createdStudent) =>
             {
-                await _vm.LoadAsync();
-                if (dialog != null) StudentsList.ItemsSource = _vm.Students;
+                if (createdStudent != null)
+                {
+                    // Insert newly created student at top of collection so it appears first
+                    _vm.Students.Insert(0, createdStudent);
+                }
+                else
+                {
+                    // Fallback: reload full list
+                    await _vm.LoadAsync();
+                    if (dialog != null) StudentsList.ItemsSource = _vm.Students;
+                }
                 dialog?.Hide();
             };
 

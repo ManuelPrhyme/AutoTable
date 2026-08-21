@@ -12,10 +12,10 @@
             <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Student Information" FontWeight="SemiBold" />
-                    <TextBox Header="Full name" Text="{Binding FullName}" />
-                    <TextBox Header="LIN (leave blank to auto-generate)" Text="{Binding Lin}" />
+                    <TextBox Header="Full name" Text="{Binding FullName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="LIN (leave blank to auto-generate)" Text="{Binding Lin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <DatePicker Header="Date of birth" Date="{Binding DateOfBirth, Mode=TwoWay}" />
-                    <ComboBox Header="Gender" SelectedItem="{Binding Gender, Mode=TwoWay}">
+                    <ComboBox Header="Gender" SelectedItem="{Binding Gender, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <ComboBoxItem Content="Male" />
                         <ComboBoxItem Content="Female" />
                         <ComboBoxItem Content="Other" />
@@ -29,11 +29,11 @@
             <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Parent / Guardian Details" FontWeight="SemiBold" />
-                    <TextBox Header="Guardian full name" Text="{Binding GuardianName}" />
-                    <TextBox Header="Relationship to student" Text="{Binding GuardianRelationship}" />
-                    <TextBox Header="Contact number" Text="{Binding GuardianPhone}" />
-                    <TextBox Header="Email" Text="{Binding GuardianEmail}" />
-                    <TextBox Header="Residential address" Text="{Binding GuardianAddress}" />
+                    <TextBox Header="Guardian full name" Text="{Binding GuardianName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Relationship to student" Text="{Binding GuardianRelationship, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Contact number" Text="{Binding GuardianPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Email" Text="{Binding GuardianEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Residential address" Text="{Binding GuardianAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <CheckBox Content="Custody documents on file" IsChecked="{Binding HasCustodyDocuments, Mode=TwoWay}" />
                 </StackPanel>
             </Border>
@@ -41,13 +41,13 @@
             <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Residency Verification" FontWeight="SemiBold" />
-                    <ComboBox Header="Proof of residence" SelectedItem="{Binding ResidenceProofType, Mode=TwoWay}">
+                    <ComboBox Header="Proof of residence" SelectedItem="{Binding ResidenceProofType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <ComboBoxItem Content="Utility Bill" />
                         <ComboBoxItem Content="LC1 Letter" />
                         <ComboBoxItem Content="Lease Agreement" />
                     </ComboBox>
-                    <TextBox Header="District" Text="{Binding ResidenceDistrict}" />
-                    <TextBox Header="Zone / Village" Text="{Binding ResidenceZone}" />
+                    <TextBox Header="District" Text="{Binding ResidenceDistrict, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Zone / Village" Text="{Binding ResidenceZone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
             </Border>
 
@@ -56,18 +56,18 @@
                     <TextBlock Text="Health Records" FontWeight="SemiBold" />
                     <CheckBox Content="Immunization card on file" IsChecked="{Binding HasImmunizationCard, Mode=TwoWay}" />
                     <CheckBox Content="Medical exam report on file" IsChecked="{Binding HasMedicalExamReport, Mode=TwoWay}" />
-                    <TextBox Header="Allergies / chronic conditions" Text="{Binding AllergiesOrConditions}" />
-                    <TextBox Header="Health insurance information" Text="{Binding HealthInsurance}" />
+                    <TextBox Header="Allergies / chronic conditions" Text="{Binding AllergiesOrConditions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Health insurance information" Text="{Binding HealthInsurance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
             </Border>
 
             <Border Background="{ThemeResource SurfaceWhiteBrush}" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Emergency Contacts" FontWeight="SemiBold" />
-                    <TextBox Header="Emergency contact name" Text="{Binding EmergencyName}" />
-                    <TextBox Header="Relationship to student" Text="{Binding EmergencyRelationship}" />
-                    <TextBox Header="Phone number" Text="{Binding EmergencyPhone}" />
-                    <TextBox Header="Authorized pickup person(s)" Text="{Binding AuthorizedPickupPerson}" />
+                    <TextBox Header="Emergency contact name" Text="{Binding EmergencyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Relationship to student" Text="{Binding EmergencyRelationship, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Phone number" Text="{Binding EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Authorized pickup person(s)" Text="{Binding AuthorizedPickupPerson, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </StackPanel>
             </Border>
 

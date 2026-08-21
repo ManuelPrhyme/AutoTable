@@ -45,8 +45,12 @@ namespace AutoTable.ViewModels
 
         /// <summary>
         /// Callback invoked by the host (e.g. the Students page modal) after a successful save.
+        /// The created Student (if any) is passed to the callback.
         /// </summary>
-        public Func<Task>? OnSubmittedAsync { get; set; }
+        public Func<Student?, Task>? OnSubmittedAsync { get; set; }
+
+        // Notify the view when an error occurs so the UI can show a dialog
+        public event Action<string>? ErrorOccurred;
 
         public EnrollmentViewModel()
         {
@@ -97,9 +101,10 @@ namespace AutoTable.ViewModels
                 await _dataService.SaveEnrollmentAsync(data);
 
                 // Also create the student record so they show up in the Students list
+                Student? createdStudent = null;
                 try
                 {
-                    await _dataService.CreateStudentAsync(new Student
+                    createdStudent = await _dataService.CreateStudentAsync(new Student
                     {
                         LIN = data.LIN,
                         FullName = data.FullName,
@@ -126,16 +131,20 @@ namespace AutoTable.ViewModels
                         AuthorizedPickupPerson = data.AuthorizedPickupPerson,
                     });
                 }
-                catch { /* student may already exist; enrollment is still saved */ }
+                catch
+                {
+                    // student may already exist; enrollment is still saved
+                }
 
                 StatusMessage = "Enrollment submitted successfully.";
 
-                if (OnSubmittedAsync != null) await OnSubmittedAsync.Invoke();
+                if (OnSubmittedAsync != null) await OnSubmittedAsync.Invoke(createdStudent);
                 ResetForm();
             }
             catch (Exception ex)
             {
                 StatusMessage = "Failed to submit enrollment: " + ex.Message;
+                try { ErrorOccurred?.Invoke(ex.Message); } catch { }
             }
             finally
             {
