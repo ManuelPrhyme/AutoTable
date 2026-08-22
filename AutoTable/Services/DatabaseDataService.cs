@@ -18,6 +18,137 @@ namespace AutoTable.Services
             _options = options;
         }
 
+        public async Task AssignStudentToStreamAsync(int studentId, int streamId)
+        {
+            using var db = CreateContext();
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) throw new InvalidOperationException("Student not found.");
+            if (!await db.Streams.AnyAsync(st => st.Id == streamId)) throw new InvalidOperationException("Stream not found.");
+            s.StreamId = streamId;
+            db.Students.Update(s);
+            await db.SaveChangesAsync();
+        }
+
+        public async Task CreateFeePaymentAsync(int studentId, double amount, int? recordedByUserId = null, string? description = null)
+        {
+            using var db = CreateContext();
+            // Validate student exists
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) throw new InvalidOperationException("Student not found.");
+
+            var fee = new FeePaymentEntity
+            {
+                StudentId = studentId,
+                Amount = amount,
+                PaymentDate = DateTime.UtcNow,
+                RecordedByUserId = recordedByUserId,
+                Description = description
+            };
+            db.FeePayments.Add(fee);
+            await db.SaveChangesAsync();
+        }
+
+        public async Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null)
+        {
+            using var db = CreateContext();
+            var existing = await db.Marks.FirstOrDefaultAsync(m => m.AssessmentId == assessmentId && m.StudentId == studentId);
+            if (existing == null)
+            {
+                existing = new MarkEntity { AssessmentId = assessmentId, StudentId = studentId, Mark = mark, Grade = grade, Remarks = remarks, EnteredAt = DateTime.UtcNow };
+                db.Marks.Add(existing);
+            }
+            else
+            {
+                existing.Mark = mark;
+                existing.Grade = grade;
+                existing.Remarks = remarks;
+                existing.EnteredAt = DateTime.UtcNow;
+                db.Marks.Update(existing);
+            }
+            await db.SaveChangesAsync();
+            await UpdateAssessmentCompletionAsync(assessmentId);
+        }
+
+        public async Task DeleteMarkAsync(int assessmentId, int studentId)
+        {
+            using var db = CreateContext();
+            var existing = await db.Marks.FirstOrDefaultAsync(m => m.AssessmentId == assessmentId && m.StudentId == studentId);
+            if (existing == null) return;
+            db.Marks.Remove(existing);
+            await db.SaveChangesAsync();
+            await UpdateAssessmentCompletionAsync(assessmentId);
+        }
+
+        public async Task UpdateAssessmentCompletionAsync(int assessmentId)
+        {
+            using var db = CreateContext();
+            var assess = await db.Assessments.Include(a => a.Marks).FirstOrDefaultAsync(a => a.Id == assessmentId);
+            if (assess == null) return;
+            var studentsInClass = await db.Students.Where(s => s.ClassId == assess.ClassId && s.IsActive).CountAsync();
+            var marksEntered = assess.Marks.Count(m => m.Mark != null);
+            assess.MarksEnteredPercent = studentsInClass == 0 ? 0 : (int)Math.Round(marksEntered * 100.0 / studentsInClass);
+            db.Assessments.Update(assess);
+            await db.SaveChangesAsync();
+        }
+
+        public async Task<AutoTable.Models.AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
+        {
+            using var db = CreateContext();
+            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == className);
+            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == subject);
+            if (cls == null || subj == null) return null;
+            var a = await db.Assessments.FirstOrDefaultAsync(x => x.Name == name && x.ClassId == cls.Id && x.SubjectId == subj.Id);
+            if (a == null) return null;
+            return new AutoTable.Models.AssessmentItem
+            {
+                Id = a.Id.ToString(),
+                Name = a.Name,
+                ClassName = cls.Name,
+                Subject = subj.Name,
+                WeightPercent = a.WeightPercent,
+                DueDate = a.DueDate ?? DateTime.MinValue,
+                MarksEnteredPercent = a.MarksEnteredPercent,
+                IsVerified = a.IsVerified,
+                IsPublished = a.IsPublished
+            };
+        }
+
+        public async Task<SimpleLookup> CreateTermAsync(string name, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            using var db = CreateContext();
+            if (await db.Terms.AnyAsync(t => t.Name == name))
+                throw new InvalidOperationException("Term already exists.");
+            var t = new TermEntity { Name = name, StartDate = startDate, EndDate = endDate };
+            db.Terms.Add(t);
+            await db.SaveChangesAsync();
+            return new SimpleLookup { Id = t.Id, Name = t.Name };
+        }
+
+        public async Task<SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            using var db = CreateContext();
+            var t = await db.Terms.FindAsync(termId);
+            if (t == null) return null;
+            t.Name = name;
+            t.StartDate = startDate;
+            t.EndDate = endDate;
+            db.Terms.Update(t);
+            await db.SaveChangesAsync();
+            return new SimpleLookup { Id = t.Id, Name = t.Name };
+        }
+
+        public async Task DeleteTermAsync(int termId)
+        {
+            using var db = CreateContext();
+            var t = await db.Terms.FindAsync(termId);
+            if (t == null) return;
+            // Prevent deletion if assessments exist for term
+            var hasAssessments = await db.Assessments.AnyAsync(a => a.TermId == termId);
+            if (hasAssessments) throw new InvalidOperationException("Cannot delete term with existing assessments.");
+            db.Terms.Remove(t);
+            await db.SaveChangesAsync();
+        }
+
         private AppDbContext CreateContext() => new AppDbContext(_options);
 
         public async Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync()
@@ -146,7 +277,16 @@ namespace AutoTable.Services
                 .Where(m => m.AssessmentId == assess.Id)
                 .ToListAsync();
 
-            var students = await db.Students.Where(s => s.ClassId == cls.Id && s.IsActive).ToListAsync();
+            // Determine eligible students based on assessment scope
+            List<StudentEntity> students;
+            if (assess.IsClassWide || assess.StreamId == null)
+            {
+                students = await db.Students.Where(s => s.ClassId == cls.Id && s.IsActive).ToListAsync();
+            }
+            else
+            {
+                students = await db.Students.Where(s => s.ClassId == cls.Id && s.StreamId == assess.StreamId && s.IsActive).ToListAsync();
+            }
             var result = students.Select(s =>
             {
                 var mark = marks.FirstOrDefault(m => m.StudentId == s.Id);
@@ -182,6 +322,119 @@ namespace AutoTable.Services
         {
             using var db = CreateContext();
             return await db.Streams.OrderBy(s => s.Name).Select(s => s.Name).ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<SimpleLookup>> GetStreamsForClassAsync(int classId)
+        {
+            using var db = CreateContext();
+            var list = await db.ClassStreams
+                .Where(cs => cs.ClassId == classId)
+                .Include(cs => cs.Stream)
+                .Select(cs => cs.Stream!)
+                .Where(s => s != null)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            return list.Select(s => new SimpleLookup { Id = s.Id, Name = s.Name }).ToList();
+        }
+
+        public async Task<SimpleLookup> CreateStreamAsync(string name)
+        {
+            using var db = CreateContext();
+            var existing = await db.Streams.FirstOrDefaultAsync(s => s.Name == name);
+            if (existing != null)
+                return new SimpleLookup { Id = existing.Id, Name = existing.Name };
+
+            var entity = new StreamEntity { Name = name };
+            db.Streams.Add(entity);
+            await db.SaveChangesAsync();
+            return new SimpleLookup { Id = entity.Id, Name = entity.Name };
+        }
+
+        public async Task<SimpleLookup> CreateStreamAsync(string name, int? classId = null)
+        {
+            var lookup = await CreateStreamAsync(name);
+            if (classId.HasValue)
+            {
+                // assign to class if requested
+                await AssignStreamToClassAsync(classId.Value, lookup.Id);
+            }
+            return lookup;
+        }
+
+        public async Task<IReadOnlyList<SimpleLookup>> GetAllStreamsAsync()
+        {
+            using var db = CreateContext();
+            var list = await db.Streams.OrderBy(s => s.Name).ToListAsync();
+            return list.Select(s => new SimpleLookup { Id = s.Id, Name = s.Name }).ToList();
+        }
+
+        public async Task AssignStreamToClassAsync(int classId, int streamId)
+        {
+            using var db = CreateContext();
+            if (!await db.Classes.AnyAsync(c => c.Id == classId)) throw new InvalidOperationException("Class not found.");
+            if (!await db.Streams.AnyAsync(s => s.Id == streamId)) throw new InvalidOperationException("Stream not found.");
+            if (await db.ClassStreams.AnyAsync(cs => cs.ClassId == classId && cs.StreamId == streamId)) return;
+            db.ClassStreams.Add(new ClassStreamEntity { ClassId = classId, StreamId = streamId });
+            await db.SaveChangesAsync();
+        }
+
+        public async Task RemoveStreamFromClassAsync(int classId, int streamId)
+        {
+            using var db = CreateContext();
+            var cs = await db.ClassStreams.FindAsync(classId, streamId);
+            if (cs == null) return;
+            db.ClassStreams.Remove(cs);
+            await db.SaveChangesAsync();
+        }
+
+        public async Task<IReadOnlyList<TermFee>> GetTermFeesAsync()
+        {
+            using var db = CreateContext();
+            var list = await db.TermFees
+                .Include(tf => tf.Term)
+                .Include(tf => tf.Class)
+                .ToListAsync();
+
+            return list.Select(tf => new TermFee
+            {
+                Id = tf.Id,
+                TermId = tf.TermId,
+                TermName = tf.Term?.Name ?? string.Empty,
+                ClassId = tf.ClassId,
+                ClassName = tf.Class?.Name ?? string.Empty,
+                Amount = tf.Amount
+            }).ToList();
+        }
+
+        public async Task<TermFee> SetTermFeeAsync(int termId, int classId, double amount)
+        {
+            using var db = CreateContext();
+            var existing = await db.TermFees.FirstOrDefaultAsync(t => t.TermId == termId && t.ClassId == classId);
+            if (existing == null)
+            {
+                existing = new TermFeeEntity { TermId = termId, ClassId = classId, Amount = amount };
+                db.TermFees.Add(existing);
+            }
+            else
+            {
+                existing.Amount = amount;
+                db.TermFees.Update(existing);
+            }
+
+            await db.SaveChangesAsync();
+
+            var term = await db.Terms.FindAsync(termId);
+            var cls = await db.Classes.FindAsync(classId);
+            return new TermFee
+            {
+                Id = existing.Id,
+                TermId = existing.TermId,
+                TermName = term?.Name ?? string.Empty,
+                ClassId = existing.ClassId,
+                ClassName = cls?.Name ?? string.Empty,
+                Amount = existing.Amount
+            };
         }
 
         public async Task<IReadOnlyList<string>> GetAllStudentsAsync()
@@ -272,7 +525,7 @@ namespace AutoTable.Services
         public async Task<IReadOnlyList<Student>> GetStudentsAsync()
         {
             using var db = CreateContext();
-            var list = await db.Students.Include(s => s.Class).Include(s => s.Stream).OrderBy(s => s.FullName).ToListAsync();
+            var list = await db.Students.Include(s => s.Class).Include(s => s.Stream).OrderByDescending(s => s.CreatedAt).ToListAsync();
             return list.Select(s => new Student
             {
                 Id = s.Id,
@@ -281,6 +534,8 @@ namespace AutoTable.Services
                     AdmissionNumber = s.LIN,
                 ClassId = s.ClassId,
                 StreamId = s.StreamId,
+                ClassName = s.Class?.Name,
+                StreamName = s.Stream?.Name,
                 DateOfBirth = s.DateOfBirth,
                 Gender = s.Gender,
                 IsActive = s.IsActive,
@@ -696,7 +951,7 @@ namespace AutoTable.Services
             return list.Select(s => new AutoTable.Models.SimpleLookup { Id = s.Id, Name = s.Name }).ToList();
         }
 
-        public async Task CreateAssessmentAsync(AutoTable.Models.AssessmentItem item)
+        public async Task<AutoTable.Models.AssessmentItem> CreateAssessmentAsync(AutoTable.Models.AssessmentItem item)
         {
             using var db = CreateContext();
             // resolve class and subject
@@ -716,12 +971,27 @@ namespace AutoTable.Services
                 TermId = term.Id,
                 WeightPercent = item.WeightPercent,
                 DueDate = item.DueDate,
+                StreamId = item.StreamId,
+                IsClassWide = item.IsClassWide,
                 IsVerified = false,
                 IsPublished = false,
                 MarksEnteredPercent = 0
             };
             db.Assessments.Add(entity);
             await db.SaveChangesAsync();
+
+            return new AutoTable.Models.AssessmentItem
+            {
+                Id = entity.Id.ToString(),
+                Name = entity.Name,
+                ClassName = cls.Name,
+                Subject = subj.Name,
+                WeightPercent = entity.WeightPercent,
+                DueDate = entity.DueDate ?? DateTime.MinValue,
+                MarksEnteredPercent = entity.MarksEnteredPercent,
+                IsVerified = entity.IsVerified,
+                IsPublished = entity.IsPublished
+            };
         }
     }
 }

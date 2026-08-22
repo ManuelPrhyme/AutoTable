@@ -70,6 +70,84 @@ namespace AutoTable
                         ctx.Database.EnsureCreated();
                     }
 
+                    // Best-effort compatibility fixes for older DB schemas
+                    try
+                    {
+                        using var cmd = sqliteConnection.CreateCommand();
+                        // Add Terms.EndDate column if missing
+                        cmd.CommandText = "PRAGMA table_info('Terms');";
+                        using var rdr = cmd.ExecuteReader();
+                        var hasEnd = false;
+                        while (rdr.Read())
+                        {
+                            if (string.Equals(rdr.GetString(1), "EndDate", StringComparison.OrdinalIgnoreCase)) { hasEnd = true; break; }
+                        }
+                        rdr.Close();
+                        if (!hasEnd)
+                        {
+                            cmd.CommandText = "ALTER TABLE Terms ADD COLUMN EndDate TEXT;";
+                            try { cmd.ExecuteNonQuery(); } catch { }
+                        }
+
+                        // Add Assessments.StreamId and Assessments.IsClassWide if missing
+                        cmd.CommandText = "PRAGMA table_info('Assessments');";
+                        using var r2 = cmd.ExecuteReader();
+                        var hasStreamId = false; var hasIsClassWide = false;
+                        while (r2.Read())
+                        {
+                            var col = r2.GetString(1);
+                            if (string.Equals(col, "StreamId", StringComparison.OrdinalIgnoreCase)) hasStreamId = true;
+                            if (string.Equals(col, "IsClassWide", StringComparison.OrdinalIgnoreCase)) hasIsClassWide = true;
+                        }
+                        r2.Close();
+                        if (!hasStreamId)
+                        {
+                            cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN StreamId INTEGER;";
+                            try { cmd.ExecuteNonQuery(); } catch { }
+                        }
+                        if (!hasIsClassWide)
+                        {
+                            cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN IsClassWide INTEGER DEFAULT 1;";
+                            try { cmd.ExecuteNonQuery(); } catch { }
+                        }
+                    }
+                    catch { }
+
+                    // Ensure compatibility with older DBs: add missing Stream/ClassStreams table or Student.StreamId column if absent.
+                    try
+                    {
+                        using var cmd = sqliteConnection.CreateCommand();
+                        // Create ClassStreams join table if it doesn't exist
+                        cmd.CommandText = @"CREATE TABLE IF NOT EXISTS ClassStreams (
+                                                ClassId INTEGER NOT NULL,
+                                                StreamId INTEGER NOT NULL,
+                                                PRIMARY KEY (ClassId, StreamId)
+                                            );";
+                        cmd.ExecuteNonQuery();
+
+                        // Add StreamId column to Students if missing
+                        cmd.CommandText = @"PRAGMA table_info('Students');";
+                        using var reader = cmd.ExecuteReader();
+                        var hasStreamId = false;
+                        while (reader.Read())
+                        {
+                            var colName = reader.GetString(1);
+                            if (string.Equals(colName, "StreamId", System.StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasStreamId = true;
+                                break;
+                            }
+                        }
+                        reader.Close();
+
+                        if (!hasStreamId)
+                        {
+                            cmd.CommandText = "ALTER TABLE Students ADD COLUMN StreamId INTEGER;";
+                            try { cmd.ExecuteNonQuery(); } catch { /* best-effort */ }
+                        }
+                    }
+                    catch { }
+
                     // Register the global data service.
                     AppServices.DataService = new DatabaseDataService(options);
                 }

@@ -1,6 +1,7 @@
 using AutoTable.Controls;
 using AutoTable.Converters;
 using AutoTable.ViewModels;
+using AutoTable.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -126,6 +127,25 @@ namespace AutoTable.Views
             if (!string.IsNullOrEmpty(selectedItem))
             {
                 // Could navigate to relevant page or show details
+            }
+        }
+
+        private void QuickAction_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Content is string action)
+            {
+                switch (action)
+                {
+                    case "Create Term":
+                        NavigationService.Instance.Navigate(typeof(Views.TermManagementView));
+                        break;
+                    case "Record Fees Payment":
+                        NavigationService.Instance.Navigate(typeof(Views.FeeCollectionView));
+                        break;
+                    default:
+                        // Other quick actions could be routed to different pages or show dialogs
+                        break;
+                }
             }
         }
     }

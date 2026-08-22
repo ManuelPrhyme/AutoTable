@@ -82,6 +82,8 @@ namespace AutoTable.Data.Entities
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 
     public class AcademicYearEntity
@@ -102,6 +104,11 @@ namespace AutoTable.Data.Entities
         public AcademicYearEntity? AcademicYear { get; set; }
         public int TermId { get; set; }
         public TermEntity? Term { get; set; }
+        // Optional: when assessment targets a single stream only
+        public int? StreamId { get; set; }
+        public StreamEntity? Stream { get; set; }
+        // If true the assessment applies to the whole class; if false and StreamId set it applies only to that stream
+        public bool IsClassWide { get; set; } = true;
         public int WeightPercent { get; set; }
         public DateTime? DueDate { get; set; }
         public bool IsVerified { get; set; }

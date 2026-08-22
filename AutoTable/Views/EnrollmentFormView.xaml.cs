@@ -1,4 +1,5 @@
 using AutoTable.ViewModels;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 
@@ -28,6 +29,12 @@ namespace AutoTable.Views
                 }
                 catch { }
             };
+            Loaded += EnrollmentFormView_Loaded;
+        }
+
+        private async void EnrollmentFormView_Loaded(object sender, RoutedEventArgs e)
+        {
+            try { await ViewModel.LoadLookupsAsync(); } catch { }
         }
     }
 }

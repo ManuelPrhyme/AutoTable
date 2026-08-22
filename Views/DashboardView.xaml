@@ -108,7 +108,8 @@
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
                                         Style="{ThemeResource SecondaryButtonStyle}"
-                                        Content="{Binding}" />
+                                        Content="{Binding}"
+                                        Click="QuickAction_Click" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

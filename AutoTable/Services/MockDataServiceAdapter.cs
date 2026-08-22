@@ -12,10 +12,10 @@ namespace AutoTable.Services
     {
         private readonly MockDataService _mock = MockDataService.Instance;
 
-        public Task CreateAssessmentAsync(AssessmentItem item)
+        public Task<AssessmentItem> CreateAssessmentAsync(AssessmentItem item)
         {
-            // No-op for mock; callers expect completion only.
-            return Task.CompletedTask;
+            // Return the item as created (no persistence in mock)
+            return Task.FromResult(item);
         }
 
         public Task<Student> CreateStudentAsync(Student student)
@@ -39,6 +39,12 @@ namespace AutoTable.Services
         public Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync()
             => Task.FromResult<IReadOnlyList<AssessmentItem>>(_mock.GetAssessments());
 
+        public Task<AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
+        {
+            var found = _mock.GetAssessments().FirstOrDefault(a => a.Name == name && a.ClassName == className && a.Subject == subject);
+            return Task.FromResult<AssessmentItem?>(found);
+        }
+
         public Task<IReadOnlyList<Models.GradebookRow>> GetGradebookAsync(string className, string subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
         {
             var rows = _mock.GetGradebook(className, subject, academicYear, term, stream, studentName);
@@ -49,6 +55,24 @@ namespace AutoTable.Services
         {
             var rows = _mock.GetStudentMarks(className, subject, assessmentName);
             return Task.FromResult<IReadOnlyList<Models.StudentMarkRow>>(rows);
+        }
+
+        public Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteMarkAsync(int assessmentId, int studentId)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAssessmentCompletionAsync(int assessmentId)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
         }
 
         public Task<IReadOnlyList<string>> GetTermsAsync()
@@ -119,5 +143,66 @@ namespace AutoTable.Services
 
         public Task<IReadOnlyList<SimpleLookup>> GetSubjectsForClassAsync(int classId)
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(Array.Empty<SimpleLookup>());
+
+        public Task<IReadOnlyList<SimpleLookup>> GetStreamsForClassAsync(int classId)
+        {
+            // Mock: return all streams (no per-class mapping in mock)
+            var list = _mock.Streams.Select((s, i) => new SimpleLookup { Id = i + 1, Name = s }).ToList();
+            return Task.FromResult<IReadOnlyList<SimpleLookup>>(list);
+        }
+
+        public Task<SimpleLookup> CreateStreamAsync(string name, int? classId = null)
+        {
+            // Mock: return a SimpleLookup without persisting; ignore class assignment
+            return Task.FromResult(new SimpleLookup { Id = 0, Name = name });
+        }
+
+        public Task<IReadOnlyList<SimpleLookup>> GetAllStreamsAsync()
+            => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Streams.Select((s, i) => new SimpleLookup { Id = i + 1, Name = s }).ToList());
+
+        public Task AssignStreamToClassAsync(int classId, int streamId)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveStreamFromClassAsync(int classId, int streamId)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task AssignStudentToStreamAsync(int studentId, int streamId)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<TermFee>> GetTermFeesAsync()
+            => Task.FromResult<IReadOnlyList<TermFee>>(Array.Empty<TermFee>());
+
+        public Task<TermFee> SetTermFeeAsync(int termId, int classId, double amount)
+            => Task.FromResult(new TermFee { Id = 0, TermId = termId, ClassId = classId, Amount = amount, TermName = string.Empty, ClassName = string.Empty });
+
+        public Task CreateFeePaymentAsync(int studentId, double amount, int? recordedByUserId = null, string? description = null)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task<SimpleLookup> CreateTermAsync(string name, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            return Task.FromResult(new SimpleLookup { Id = 0, Name = name });
+        }
+
+        public Task<SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            return Task.FromResult<SimpleLookup?>(new SimpleLookup { Id = termId, Name = name });
+        }
+
+        public Task DeleteTermAsync(int termId)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

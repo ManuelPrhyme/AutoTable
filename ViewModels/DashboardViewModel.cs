@@ -82,6 +82,7 @@ namespace AutoTable.ViewModels
         private void LoadQuickActions()
         {
             QuickActions.Clear();
+            QuickActions.Add("Create Term");
             QuickActions.Add("Enter Marks");
             QuickActions.Add("Add Assessment");
             QuickActions.Add("View Gradebook");

@@ -13,6 +13,10 @@
                 <StackPanel Spacing="12">
                     <TextBlock Text="Student Information" FontWeight="SemiBold" />
                     <TextBox Header="Full name" Text="{Binding FullName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox Header="Class" Width="200" ItemsSource="{Binding Classes}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding SelectedClassId, Mode=TwoWay}" />
+                        <ComboBox Header="Stream" Width="200" ItemsSource="{Binding Streams}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding SelectedStreamId, Mode=TwoWay}" />
+                    </StackPanel>
                     <TextBox Header="LIN (leave blank to auto-generate)" Text="{Binding Lin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <DatePicker Header="Date of birth" Date="{Binding DateOfBirth, Mode=TwoWay}" />
                     <ComboBox Header="Gender" SelectedItem="{Binding Gender, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">

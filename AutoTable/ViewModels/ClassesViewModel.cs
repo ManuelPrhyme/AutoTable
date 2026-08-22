@@ -14,6 +14,8 @@ namespace AutoTable.ViewModels
         public ObservableCollection<SimpleLookup> Classes { get; } = new();
         public ObservableCollection<SimpleLookup> AllSubjects { get; } = new();
         public ObservableCollection<SimpleLookup> SubjectsForClass { get; } = new();
+        public ObservableCollection<SimpleLookup> StreamsForClass { get; } = new();
+        public ObservableCollection<SimpleLookup> AllStreams { get; } = new();
 
         public ClassesViewModel()
         {
@@ -46,11 +48,36 @@ namespace AutoTable.ViewModels
             await _dataService.CreateSubjectAsync(name);
         }
 
+        public async Task CreateStreamAsync(string name, int? classId = null)
+        {
+            await _dataService.CreateStreamAsync(name, classId);
+        }
+
         public async Task LoadSubjectsForClassAsync(int classId)
         {
             var subs = await _dataService.GetSubjectsForClassAsync(classId);
             SubjectsForClass.Clear();
             foreach (var s in subs) SubjectsForClass.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
+            var streams = await _dataService.GetStreamsForClassAsync(classId);
+            StreamsForClass.Clear();
+            foreach (var s in streams) StreamsForClass.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
+        }
+
+        public async Task LoadAllStreamsAsync()
+        {
+            var list = await _dataService.GetAllStreamsAsync();
+            AllStreams.Clear();
+            foreach (var s in list) AllStreams.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
+        }
+
+        public async Task AssignStreamToClassAsync(int classId, int streamId)
+        {
+            await _dataService.AssignStreamToClassAsync(classId, streamId);
+        }
+
+        public async Task RemoveStreamFromClassAsync(int classId, int streamId)
+        {
+            await _dataService.RemoveStreamFromClassAsync(classId, streamId);
         }
 
         public async Task AssignSubjectToClassAsync(int classId, int subjectId)

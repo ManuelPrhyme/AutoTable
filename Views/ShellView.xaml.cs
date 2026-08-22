@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoTable.ViewModels;
+using AutoTable.Views;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -48,6 +49,7 @@ namespace AutoTable.Views
             ["Students"]           = typeof(StudentsView),
             ["Classes"]            = typeof(ClassesView),
             ["AuditLog"]           = typeof(AuditLogView),
+            ["TermManagement"]     = typeof(TermManagementView),
             ["FinDashboard"]       = typeof(FinancialsDashboardView),
             ["FeeCollection"]      = typeof(FeeCollectionView),
             ["Budget"]             = typeof(BudgetView),

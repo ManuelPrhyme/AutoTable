@@ -147,6 +147,15 @@
                         </StackPanel>
                     </Button>
 
+                    <Button x:Name="NavTermManagement" Tag="TermManagement" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE7BE;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Term Management" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
                     <Button x:Name="NavClasses" Tag="Classes" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">

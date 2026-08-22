@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page NavigationCacheMode="Enabled"
+    x:Class="AutoTable.Views.TermManagementView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:AutoTable.Models"
+    mc:Ignorable="d"
+    Background="{ThemeResource SurfaceGrayBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="24" Spacing="16">
+            <TextBlock Style="{ThemeResource PageTitleStyle}" Text="Term Management" />
+            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Create and manage academic terms and per-class fees." />
+
+            <Border Style="{ThemeResource CardBorderStyle}">
+                <StackPanel Spacing="8" Padding="12">
+                    <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Create Term" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBox x:Name="NewTermName" PlaceholderText="Term name e.g. Term 1, 2026" Width="300" />
+                        <DatePicker x:Name="TermStart" Header="Start" />
+                        <DatePicker x:Name="TermEnd" Header="End" />
+                        <Button Content="Create" Click="CreateTerm_Click" Style="{ThemeResource PrimaryButtonStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{ThemeResource TableCardStyle}">
+                    <StackPanel>
+                        <Border Style="{ThemeResource CardHeaderBorderStyle}">
+                            <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Existing Terms" />
+                        </Border>
+                        <ListView x:Name="TermsList" ItemsSource="{Binding Terms}" SelectionMode="Single">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:SimpleLookup">
+                                    <StackPanel Orientation="Horizontal" Padding="8">
+                                        <TextBlock Text="{x:Bind Name}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Style="{ThemeResource CardBorderStyle}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Per-Class Fees" />
+                        <ListView x:Name="ClassesFeeList" ItemsSource="{Binding Classes}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:SimpleLookup">
+                                    <Grid ColumnDefinitions="2*,Auto" Padding="8" ColumnSpacing="8">
+                                        <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" />
+                                        <StackPanel Orientation="Horizontal" Grid.Column="1" Spacing="6">
+                                            <TextBox Width="120" x:Name="FeeBox" Header="Amount" />
+                                            <Button Content="Set" Click="SetFee_Click" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

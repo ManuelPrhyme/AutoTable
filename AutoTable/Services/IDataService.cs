@@ -17,6 +17,25 @@ namespace AutoTable.Services
         Task<IReadOnlyList<string>> GetStreamsAsync();
         Task<IReadOnlyList<string>> GetAllStudentsAsync();
 
+        // Streams and class-stream relations
+        Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetStreamsForClassAsync(int classId);
+        Task<AutoTable.Models.SimpleLookup> CreateStreamAsync(string name, int? classId = null);
+        // Assign a student's stream (update enrollment)
+        Task AssignStudentToStreamAsync(int studentId, int streamId);
+        Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetAllStreamsAsync();
+        Task AssignStreamToClassAsync(int classId, int streamId);
+        Task RemoveStreamFromClassAsync(int classId, int streamId);
+
+        // Term fee management
+        Task<IReadOnlyList<AutoTable.Models.TermFee>> GetTermFeesAsync();
+        Task<AutoTable.Models.TermFee> SetTermFeeAsync(int termId, int classId, double amount);
+        // Fee payments
+        Task CreateFeePaymentAsync(int studentId, double amount, int? recordedByUserId = null, string? description = null);
+        // Term management
+        Task<AutoTable.Models.SimpleLookup> CreateTermAsync(string name, DateTime? startDate = null, DateTime? endDate = null);
+        Task<AutoTable.Models.SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null);
+        Task DeleteTermAsync(int termId);
+
         // Student performance detail
         Task<Models.StudentPerformanceDetail> GetStudentPerformanceDetailAsync(string studentName, string className, string subject, string academicYear, string term, string stream);
 
@@ -42,6 +61,12 @@ namespace AutoTable.Services
         Task AssignSubjectToClassAsync(int classId, int subjectId);
         Task RemoveSubjectFromClassAsync(int classId, int subjectId);
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetSubjectsForClassAsync(int classId);
-        Task CreateAssessmentAsync(AutoTable.Models.AssessmentItem item);
+        Task<AutoTable.Models.AssessmentItem> CreateAssessmentAsync(AutoTable.Models.AssessmentItem item);
+
+        // Marks / assessment CRUD (Phase 2)
+        Task<AutoTable.Models.AssessmentItem?> GetAssessmentAsync(string name, string className, string subject);
+        Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null);
+        Task DeleteMarkAsync(int assessmentId, int studentId);
+        Task UpdateAssessmentCompletionAsync(int assessmentId);
     }
 }

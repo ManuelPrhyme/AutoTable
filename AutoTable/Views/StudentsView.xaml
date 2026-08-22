@@ -18,11 +18,21 @@
 
         <ListView x:Name="StudentsList" IsItemClickEnabled="True" SelectionMode="Single">
             <ListView.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="12" Padding="8">
-                        <TextBlock Text="{Binding LIN}" FontWeight="SemiBold" Width="120"/>
-                        <TextBlock Text="{Binding FullName}" />
-                    </StackPanel>
+                <DataTemplate x:DataType="models:Student" xmlns:models="using:AutoTable.Models">
+                    <Grid Padding="8" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{x:Bind LIN}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind FullName}" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind AdmissionNumber}" />
+                        <TextBlock Grid.Column="3" Text="{x:Bind ClassName}" />
+                        <TextBlock Grid.Column="4" Text="{x:Bind StreamName}" />
+                    </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

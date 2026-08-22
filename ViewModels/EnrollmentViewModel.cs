@@ -11,6 +11,12 @@ namespace AutoTable.ViewModels
     {
         private readonly IDataService _dataService;
 
+        public System.Collections.ObjectModel.ObservableCollection<AutoTable.Models.SimpleLookup> Classes { get; } = new();
+        public System.Collections.ObjectModel.ObservableCollection<AutoTable.Models.SimpleLookup> Streams { get; } = new();
+
+        [ObservableProperty] private int? selectedClassId;
+        [ObservableProperty] private int? selectedStreamId;
+
         [ObservableProperty] private string fullName = string.Empty;
         [ObservableProperty] private string lin = string.Empty;
         [ObservableProperty] private DateTime dateOfBirth = DateTime.Today;
@@ -55,6 +61,31 @@ namespace AutoTable.ViewModels
         public EnrollmentViewModel()
         {
             _dataService = AppServices.DataService ?? throw new InvalidOperationException("DataService not configured.");
+            _ = LoadLookupsAsync();
+        }
+
+        public async Task LoadLookupsAsync()
+        {
+            Classes.Clear();
+            var classes = await _dataService.GetClassesAsync();
+            foreach (var c in classes) Classes.Add(new SimpleLookup { Id = c.Id, Name = c.Name });
+
+            Streams.Clear();
+            var all = await _dataService.GetAllStreamsAsync();
+            foreach (var s in all) Streams.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
+        }
+
+        partial void OnSelectedClassIdChanged(int? value)
+        {
+            _ = LoadStreamsForSelectedClassAsync(value);
+        }
+
+        private async Task LoadStreamsForSelectedClassAsync(int? classId)
+        {
+            Streams.Clear();
+            if (classId == null) return;
+            var list = await _dataService.GetStreamsForClassAsync(classId.Value);
+            foreach (var s in list) Streams.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
         }
 
         [RelayCommand]
@@ -98,6 +129,12 @@ namespace AutoTable.ViewModels
                     AuthorizedPickupPerson = AuthorizedPickupPerson,
                 };
 
+                // Auto-generate LIN when left blank (form hint: "leave blank to auto-generate")
+                if (string.IsNullOrWhiteSpace(data.LIN))
+                {
+                    data.LIN = "LIN-" + System.Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+                }
+
                 await _dataService.SaveEnrollmentAsync(data);
 
                 // Also create the student record so they show up in the Students list
@@ -109,6 +146,8 @@ namespace AutoTable.ViewModels
                         LIN = data.LIN,
                         FullName = data.FullName,
                         AdmissionNumber = data.LIN,
+                    ClassId = SelectedClassId,
+                    StreamId = SelectedStreamId,
                         DateOfBirth = data.DateOfBirth,
                         Gender = data.Gender,
                         // map enrollment details into the student record
@@ -131,9 +170,11 @@ namespace AutoTable.ViewModels
                         AuthorizedPickupPerson = data.AuthorizedPickupPerson,
                     });
                 }
-                catch
+                catch (System.Exception ex)
                 {
-                    // student may already exist; enrollment is still saved
+                    // student creation failed (LIN may already exist or other DB issue) — surface diagnostic
+                    StatusMessage = "Student record creation failed: " + ex.Message;
+                    try { ErrorOccurred?.Invoke(ex.ToString()); } catch { }
                 }
 
                 StatusMessage = "Enrollment submitted successfully.";

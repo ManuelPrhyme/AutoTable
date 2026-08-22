@@ -16,6 +16,9 @@ namespace AutoTable.Models
         public StudentTerminationReason TerminationReason { get; set; } = StudentTerminationReason.None;
         public DateTime? TerminationDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        // Convenience properties for UI
+        public string? ClassName { get; set; }
+        public string? StreamName { get; set; }
         // Extended enrollment fields
         public string? GuardianName { get; set; }
         public string? GuardianRelationship { get; set; }

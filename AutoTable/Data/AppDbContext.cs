@@ -98,6 +98,13 @@ namespace AutoTable.Data
                 .HasForeignKey(m => m.AssessmentId)
                 .OnDelete(DeleteBehavior.Cascade); // deleting assessment removes marks
 
+            // Ensure Stream relationship for assessments
+            modelBuilder.Entity<AssessmentEntity>()
+                .HasOne(a => a.Stream)
+                .WithMany()
+                .HasForeignKey(a => a.StreamId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<StudentEntity>()
                 .HasMany(s => s.Marks)
                 .WithOne(m => m.Student)

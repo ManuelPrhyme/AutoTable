@@ -2,6 +2,7 @@ using AutoTable.Models;
 using AutoTable.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,8 +41,43 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task Refresh() => await Load();
 
+
+
         [RelayCommand]
-        private void RecordPayment() { }
+        private async Task RecordPaymentAsync()
+        {
+            // Simple dialog to record a payment: ask for student LIN and amount
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Record Fee Payment",
+                PrimaryButtonText = "Record",
+                CloseButtonText = "Cancel",
+                XamlRoot = Microsoft.UI.Xaml.Window.Current.Content.XamlRoot
+            };
+
+            var stack = new Microsoft.UI.Xaml.Controls.StackPanel { Spacing = 8 };
+            var linBox = new Microsoft.UI.Xaml.Controls.TextBox { Header = "Student LIN", PlaceholderText = "LIN or admission number" };
+            var amountBox = new Microsoft.UI.Xaml.Controls.TextBox { Header = "Amount", PlaceholderText = "Amount to record" };
+            stack.Children.Add(linBox);
+            stack.Children.Add(amountBox);
+            dialog.Content = stack;
+
+            var res = await dialog.ShowAsync();
+            if (res == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+            {
+                var lin = linBox.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(lin)) return;
+                if (!double.TryParse(amountBox.Text, out var amt)) return;
+
+                // find student by LIN
+                var students = await _dataService.GetStudentsAsync();
+                var student = students.FirstOrDefault(s => string.Equals(s.LIN, lin, StringComparison.OrdinalIgnoreCase) || string.Equals(s.AdmissionNumber, lin, StringComparison.OrdinalIgnoreCase));
+                if (student == null) return;
+
+                await _dataService.CreateFeePaymentAsync(student.Id, amt, null, "Recorded via UI");
+                await Load();
+            }
+        }
 
         private async Task InitializeAsync()
         {

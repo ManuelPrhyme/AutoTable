@@ -24,6 +24,7 @@ namespace AutoTable.Views
         private async void ClassesView_Loaded(object sender, RoutedEventArgs e)
         {
             await _vm.LoadAsync();
+            await _vm.LoadAllStreamsAsync();
             SelectedClassTitle.Text = "Select a class";
         }
 
@@ -95,6 +96,63 @@ namespace AutoTable.Views
             catch (System.Exception ex)
             {
                 await ShowErrorAsync("Unable to create subject.", ex.Message);
+            }
+        }
+
+        private async void CreateStream_Click(object sender, RoutedEventArgs e)
+        {
+            var name = NewStreamName.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(name)) return;
+            try
+            {
+                int? selectedClassId = null;
+                if (ClassesList.SelectedItem is AutoTable.Models.SimpleLookup cls) selectedClassId = cls.Id;
+                await _vm.CreateStreamAsync(name, selectedClassId);
+                await _vm.LoadAllStreamsAsync();
+                if (selectedClassId.HasValue) await _vm.LoadSubjectsForClassAsync(selectedClassId.Value); // reload streams for class
+                NewStreamName.Text = string.Empty;
+            }
+            catch (System.Exception ex)
+            {
+                await ShowErrorAsync("Unable to create stream.", ex.Message);
+            }
+        }
+
+        private async void AssignStream_Click(object sender, RoutedEventArgs e)
+        {
+            if (ClassesList.SelectedItem is not SimpleLookup cls) return;
+            if (StreamPicker.SelectedItem is not SimpleLookup stream) return;
+            try
+            {
+                await _vm.AssignStreamToClassAsync(cls.Id, stream.Id);
+                await _vm.LoadSubjectsForClassAsync(cls.Id);
+                await _vm.LoadAllStreamsAsync();
+            }
+            catch (System.Exception ex)
+            {
+                // Provide full exception details for diagnostics and write to temp log for later inspection
+                try
+                {
+                    var diag = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_assign_stream_error.txt");
+                    System.IO.File.WriteAllText(diag, ex.ToString());
+                }
+                catch { }
+                await ShowErrorAsync("Unable to assign stream.", ex.ToString());
+            }
+        }
+
+        private async void RemoveStream_Click(object sender, RoutedEventArgs e)
+        {
+            if (ClassesList.SelectedItem is not SimpleLookup cls) return;
+            if ((sender as Button)?.DataContext is not SimpleLookup stream) return;
+            try
+            {
+                await _vm.RemoveStreamFromClassAsync(cls.Id, stream.Id);
+                await _vm.LoadSubjectsForClassAsync(cls.Id);
+            }
+            catch (System.Exception ex)
+            {
+                await ShowErrorAsync("Unable to remove stream.", ex.Message);
             }
         }
 

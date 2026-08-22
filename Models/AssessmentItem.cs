@@ -8,6 +8,10 @@ namespace AutoTable.Models
         public string Name { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
+        // Optional: target a specific stream (null means whole class unless IsClassWide=false and StreamId set)
+        public int? StreamId { get; set; }
+        public string? StreamName { get; set; }
+        public bool IsClassWide { get; set; } = true;
         public int WeightPercent { get; set; }
         public DateTime DueDate { get; set; }
         public int MarksEnteredPercent { get; set; }
