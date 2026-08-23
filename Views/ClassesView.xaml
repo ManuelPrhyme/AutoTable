@@ -60,32 +60,37 @@
                                     <ColumnDefinition Width="36" />
                                     <ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="80" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
                                 <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CLASS NAME" />
                                 <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="STREAM" />
-                                <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="STUDENTS" />
+                                <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS TEACHER" />
+                                <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="STUDENTS" />
                             </Grid>
                         </Border>
 
-                        <ListView x:Name="ClassesList" ItemsSource="{Binding Classes}" IsItemClickEnabled="True" ItemClick="ClassesList_ItemClick" SelectionMode="Single">
+                        <ListView x:Name="ClassesList" ItemsSource="{Binding ClassInfos}" IsItemClickEnabled="True" ItemClick="ClassesList_ItemClick" SelectionMode="Single">
                             <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="models:SimpleLookup" xmlns:models="using:AutoTable.Models">
+                                <DataTemplate x:DataType="models:ClassInfo" xmlns:models="using:AutoTable.Models">
                                     <Grid Padding="12" ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="36" />
                                             <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="80" />
                                         </Grid.ColumnDefinitions>
                                         <Ellipse Grid.Column="0" Width="28" Height="28" Fill="{ThemeResource PrimaryBlueBrush}" />
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
-                                            <TextBlock Text="Primary class" Style="{ThemeResource MutedTextStyle}" FontSize="12" />
+                                            <TextBlock Text="{x:Bind SubjectsCsv}" Style="{ThemeResource MutedTextStyle}" FontSize="12" TextWrapping="WrapWholeWords" />
                                         </StackPanel>
-                                        <TextBlock Grid.Column="2" Text="A" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="3" Text="--" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="{x:Bind StreamsCsv}" VerticalAlignment="Center" TextWrapping="WrapWholeWords" />
+                                        <TextBlock Grid.Column="3" Text="{x:Bind ClassTeacherName}" VerticalAlignment="Center" TextWrapping="WrapWholeWords"
+                                                   Foreground="{ThemeResource TextSecondaryBrush}" />
+                                        <TextBlock Grid.Column="4" Text="{x:Bind StudentCount}" VerticalAlignment="Center" />
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>

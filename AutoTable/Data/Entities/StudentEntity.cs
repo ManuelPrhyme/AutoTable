@@ -47,6 +47,9 @@ namespace AutoTable.Data.Entities
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        // Optional class teacher — must be an existing registered teacher (Users.Role == "Teacher")
+        public int? ClassTeacherId { get; set; }
+        public UserEntity? ClassTeacher { get; set; }
         public ICollection<StudentEntity> Students { get; set; } = new List<StudentEntity>();
         public ICollection<AssessmentEntity> Assessments { get; set; } = new List<AssessmentEntity>();
         public ICollection<ClassSubjectEntity> ClassSubjects { get; set; } = new List<ClassSubjectEntity>();
@@ -84,6 +87,8 @@ namespace AutoTable.Data.Entities
         public string Name { get; set; } = string.Empty;
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        // Mark which term is currently active
+        public bool IsActive { get; set; }
     }
 
     public class AcademicYearEntity
@@ -139,6 +144,9 @@ namespace AutoTable.Data.Entities
         public StudentEntity? Student { get; set; }
         public double Amount { get; set; }
         public DateTime PaymentDate { get; set; }
+        // Associate a payment with a particular term (optional)
+        public int? TermId { get; set; }
+        public TermEntity? Term { get; set; }
         public int? RecordedByUserId { get; set; }
         public string? Description { get; set; }
     }
@@ -151,6 +159,17 @@ namespace AutoTable.Data.Entities
         public string? Role { get; set; }
         public string? PasswordHash { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Extended teacher profile fields
+        public string? Phone { get; set; }
+        public string? SubjectsTaught { get; set; }       // comma-separated
+        public string? ClassesTaught { get; set; }        // comma-separated
+        public string? NextOfKinName { get; set; }
+        public string? NextOfKinRelationship { get; set; }
+        public string? NextOfKinPhone { get; set; }
+        public string? PreviousSchools { get; set; }      // comma-separated
+        public bool IsRegisteredTeacher { get; set; }     // registered with the teachers' board
+        public bool IsStudentTeacher { get; set; }        // still a student teacher
     }
 
     public class TerminationLogEntity

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page NavigationCacheMode="Enabled"
+    x:Class="AutoTable.Views.TeachersView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:AutoTable.Models"
+    mc:Ignorable="d"
+    Background="{ThemeResource SurfaceGrayBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="24" Spacing="16">
+            <TextBlock Style="{ThemeResource PageTitleStyle}" Text="Teachers" />
+            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Register and manage teachers, their subjects, classes, next of kin and qualification status." />
+
+            <!-- ── REGISTERED TEACHERS ── -->
+            <Border Style="{ThemeResource TableCardStyle}">
+                <StackPanel>
+                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
+                        <Grid>
+                            <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Registered Teachers" VerticalAlignment="Center" />
+                            <Button Content="+ Add Teacher" HorizontalAlignment="Right"
+                                    Style="{ThemeResource PrimaryButtonStyle}"
+                                    Click="AddTeacher_Click" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Column headers -->
+                    <Border Style="{ThemeResource TableHeaderRowStyle}">
+                        <Grid ColumnSpacing="8" Padding="10,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="TEACHER" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECTS" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="CLASSES" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="NEXT OF KIN" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="PREVIOUS SCHOOLS" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="" />
+                        </Grid>
+                    </Border>
+
+                    <ListView ItemsSource="{Binding Teachers}" SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Teacher">
+                                <Grid Padding="10,8" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Teacher: name; email; phone below email; qualification -->
+                                    <StackPanel Grid.Column="0" Spacing="1">
+                                        <TextBlock Text="{x:Bind FullName}" FontWeight="SemiBold" />
+                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="{x:Bind Email}" />
+                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" Text="{x:Bind Phone}" />
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource TextMutedBrush}"
+                                                   Text="{x:Bind QualificationLabel}" />
+                                    </StackPanel>
+
+                                    <!-- Subjects -->
+                                    <TextBlock Grid.Column="1" FontSize="12" VerticalAlignment="Top"
+                                               Text="{x:Bind SubjectsTaught}" TextWrapping="Wrap" />
+
+                                    <!-- Classes -->
+                                    <TextBlock Grid.Column="2" FontSize="12" VerticalAlignment="Top"
+                                               Text="{x:Bind ClassesTaught}" TextWrapping="Wrap" />
+
+                                    <!-- Next of kin: name on top, relationship + phone below -->
+                                    <StackPanel Grid.Column="3" Spacing="1" VerticalAlignment="Top">
+                                        <TextBlock FontSize="12" Text="{x:Bind NextOfKinName}" TextWrapping="Wrap" />
+                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap">
+                                            <Run Text="{x:Bind NextOfKinRelationship}" /><Run Text="  •  " /><Run Text="{x:Bind NextOfKinPhone}" />
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <!-- Previous schools -->
+                                    <TextBlock Grid.Column="4" FontSize="12" VerticalAlignment="Top"
+                                               Text="{x:Bind PreviousSchools}" TextWrapping="Wrap" />
+
+                                    <Button Grid.Column="5" Content="Delete" VerticalAlignment="Top"
+                                            Click="DeleteTeacher_Click" Tag="{x:Bind Id}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <TextBlock Style="{ThemeResource MutedTextStyle}" Text="{Binding StatusMessage}" Margin="12,8" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

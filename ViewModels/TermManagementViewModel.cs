@@ -26,9 +26,8 @@ namespace AutoTable.ViewModels
         public async Task LoadAsync()
         {
             Terms.Clear();
-            var terms = await _dataService.GetTermsAsync();
-            int id = 1;
-            foreach (var t in terms) Terms.Add(new SimpleLookup { Id = id++, Name = t });
+            var terms = await _dataService.GetTermLookupsAsync();
+            foreach (var t in terms) Terms.Add(new SimpleLookup { Id = t.Id, Name = t.Name });
 
             Classes.Clear();
             var classes = await _dataService.GetClassesAsync();

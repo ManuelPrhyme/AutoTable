@@ -12,6 +12,8 @@ namespace AutoTable.Models
 
     public class ModerationItem
     {
+        // Numeric DB id of the assessment (0 when unknown) — used by verify/publish actions
+        public int AssessmentId { get; set; }
         public string AssessmentName { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;

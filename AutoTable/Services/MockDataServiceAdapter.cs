@@ -75,11 +75,28 @@ namespace AutoTable.Services
             return Task.CompletedTask;
         }
 
+        // Moderation lifecycle (mock: no-op / passthrough)
+        public Task VerifyAssessmentAsync(int assessmentId, bool verified)
+            => Task.CompletedTask;
+
+        public Task PublishAssessmentAsync(int assessmentId, bool published)
+            => Task.CompletedTask;
+
+        // Fee payment reads (mock: empty)
+        public Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.FeePaymentSummary>>(Array.Empty<AutoTable.Models.FeePaymentSummary>());
+
         public Task<IReadOnlyList<string>> GetTermsAsync()
             => Task.FromResult<IReadOnlyList<string>>(_mock.Terms);
 
+        public Task<IReadOnlyList<SimpleLookup>> GetTermLookupsAsync()
+            => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Terms.Select((t, i) => new SimpleLookup { Id = i + 1, Name = t }).ToList());
+
         public Task<IReadOnlyList<string>> GetAcademicYearsAsync()
             => Task.FromResult<IReadOnlyList<string>>(_mock.AcademicYears);
+
+        public Task<SimpleLookup> CreateAcademicYearAsync(string name)
+            => Task.FromResult(new SimpleLookup { Id = 0, Name = name });
 
         public Task<IReadOnlyList<string>> GetStreamsAsync()
             => Task.FromResult<IReadOnlyList<string>>(_mock.Streams);
@@ -129,8 +146,11 @@ namespace AutoTable.Services
         public Task<IReadOnlyList<SimpleLookup>> GetClassesAsync()
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Classes.Select((c, i) => new SimpleLookup { Id = i + 1, Name = c }).ToList());
 
-        public Task<SimpleLookup> CreateClassAsync(string name)
+        public Task<SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null)
             => Task.FromResult(new SimpleLookup { Id = 0, Name = name });
+
+        public Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync()
+            => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
 
         public Task<IReadOnlyList<SimpleLookup>> GetSubjectsAsync()
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Subjects.Select((s, i) => new SimpleLookup { Id = i + 1, Name = s }).ToList());
@@ -184,7 +204,7 @@ namespace AutoTable.Services
         public Task<TermFee> SetTermFeeAsync(int termId, int classId, double amount)
             => Task.FromResult(new TermFee { Id = 0, TermId = termId, ClassId = classId, Amount = amount, TermName = string.Empty, ClassName = string.Empty });
 
-        public Task CreateFeePaymentAsync(int studentId, double amount, int? recordedByUserId = null, string? description = null)
+        public Task CreateFeePaymentAsync(int studentId, double amount, int? termId = null, int? recordedByUserId = null, string? description = null)
         {
             // Mock: no-op
             return Task.CompletedTask;
@@ -193,6 +213,28 @@ namespace AutoTable.Services
         public Task<SimpleLookup> CreateTermAsync(string name, DateTime? startDate = null, DateTime? endDate = null)
         {
             return Task.FromResult(new SimpleLookup { Id = 0, Name = name });
+        }
+
+        // Teacher CRUD (mock)
+        public Task<IReadOnlyList<AutoTable.Models.Teacher>> GetTeachersAsync()
+        {
+            return Task.FromResult<IReadOnlyList<AutoTable.Models.Teacher>>(Array.Empty<AutoTable.Models.Teacher>());
+        }
+
+        public Task<AutoTable.Models.Teacher> CreateTeacherAsync(AutoTable.Models.Teacher teacher)
+        {
+            teacher.Id = 0;
+            return Task.FromResult(teacher);
+        }
+
+        public Task<AutoTable.Models.Teacher?> UpdateTeacherAsync(AutoTable.Models.Teacher teacher)
+        {
+            return Task.FromResult<AutoTable.Models.Teacher?>(teacher);
+        }
+
+        public Task DeleteTeacherAsync(int teacherId)
+        {
+            return Task.CompletedTask;
         }
 
         public Task<SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null)

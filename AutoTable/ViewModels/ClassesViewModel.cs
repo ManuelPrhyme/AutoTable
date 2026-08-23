@@ -10,8 +10,8 @@ namespace AutoTable.ViewModels
     public partial class ClassesViewModel : BaseViewModel
     {
         private readonly IDataService _dataService;
-
         public ObservableCollection<SimpleLookup> Classes { get; } = new();
+        public ObservableCollection<AutoTable.Models.ClassInfo> ClassInfos { get; } = new();
         public ObservableCollection<SimpleLookup> AllSubjects { get; } = new();
         public ObservableCollection<SimpleLookup> SubjectsForClass { get; } = new();
         public ObservableCollection<SimpleLookup> StreamsForClass { get; } = new();
@@ -26,16 +26,41 @@ namespace AutoTable.ViewModels
         {
             var classes = await _dataService.GetClassesAsync();
             Classes.Clear();
-            foreach (var c in classes) Classes.Add(new SimpleLookup { Id = c.Id, Name = c.Name });
+            ClassInfos.Clear();
 
-            var subs = await _dataService.GetSubjectsAsync();
+            var students = await _dataService.GetStudentsAsync();
+
+            foreach (var c in classes) {
+                Classes.Add(new SimpleLookup { Id = c.Id, Name = c.Name });
+            }
+
+            // Build ClassInfos with streams, subjects, student counts and class teacher
+            var teacherNames = await _dataService.GetClassTeacherNamesAsync();
+            foreach (var c in classes)
+            {
+                var streamsForClass = await _dataService.GetStreamsForClassAsync(c.Id);
+                var subjectsForClass = await _dataService.GetSubjectsForClassAsync(c.Id);
+                var count = students.Count(s => s.ClassId == c.Id && s.IsActive);
+                var info = new AutoTable.Models.ClassInfo
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    StreamsCsv = string.Join(", ", streamsForClass.Select(s => s.Name)),
+                    SubjectsCsv = string.Join(", ", subjectsForClass.Select(s => s.Name)),
+                    StudentCount = count,
+                    ClassTeacherName = teacherNames.TryGetValue(c.Id, out var tn) ? tn : string.Empty
+                };
+                ClassInfos.Add(info);
+            }
+
+            var allSubjects = await _dataService.GetSubjectsAsync();
             AllSubjects.Clear();
-            foreach (var s in subs) AllSubjects.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
+            foreach (var s in allSubjects) AllSubjects.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
         }
 
-        public async Task CreateClassAsync(string name)
+        public async Task CreateClassAsync(string name, int? classTeacherId = null)
         {
-            await _dataService.CreateClassAsync(name);
+            await _dataService.CreateClassAsync(name, classTeacherId);
         }
 
         public async Task DeleteClassAsync(int classId)

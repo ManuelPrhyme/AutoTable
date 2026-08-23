@@ -79,5 +79,14 @@ namespace AutoTable.ViewModels
             OnPropertyChanged(nameof(VerifiedCount));
             OnPropertyChanged(nameof(PublishedCount));
         }
+
+        // Public helper to refresh aggregate counts after UI-side modifications
+        public void RefreshCounts()
+        {
+            OnPropertyChanged(nameof(TotalCount));
+            OnPropertyChanged(nameof(PendingCount));
+            OnPropertyChanged(nameof(VerifiedCount));
+            OnPropertyChanged(nameof(PublishedCount));
+        }
     }
 }

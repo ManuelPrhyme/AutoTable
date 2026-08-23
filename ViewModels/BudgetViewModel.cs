@@ -10,6 +10,7 @@ namespace AutoTable.ViewModels
     public partial class BudgetViewModel : BaseViewModel
     {
         [ObservableProperty] private string _selectedYear = "2025";
+        [ObservableProperty] private string _statusMessage = string.Empty;
 
         public ObservableCollection<string> FinancialYears { get; } = new() { "2025", "2024", "2023" };
         public ObservableCollection<BudgetLine> BudgetLines { get; } = new();
@@ -26,8 +27,15 @@ namespace AutoTable.ViewModels
 
         partial void OnSelectedYearChanged(string value) => Load();
 
-        [RelayCommand] private void Export() { }
-        [RelayCommand] private void AddLineItem() { }
+        // NOTE: Budget lines are sample data until a budget table/entity is added to the schema.
+        // The financial dashboard KPIs (FinancialsDashboardViewModel) are wired to live DB data.
+        [RelayCommand]
+        private void Export()
+            => StatusMessage = "Budget export will be available once budget persistence is added.";
+
+        [RelayCommand]
+        private void AddLineItem()
+            => StatusMessage = "Adding budget line items requires a budget table — planned for a future release.";
 
         private Task LoadAsync()
         {
@@ -46,6 +54,7 @@ namespace AutoTable.ViewModels
             BudgetLines.Add(new BudgetLine { Category = "IT & Technology",            Budgeted = 5_000_000,   Spent = 4_800_000  });
             BudgetLines.Add(new BudgetLine { Category = "Sports & Co-curricular",     Budgeted = 4_000_000,   Spent = 1_600_000  });
             BudgetLines.Add(new BudgetLine { Category = "Examination Fees",           Budgeted = 3_500_000,   Spent = 3_500_000  });
+            StatusMessage = "Showing sample budget data — connect a budget table to persist real figures.";
             OnPropertyChanged(nameof(TotalBudget));
             OnPropertyChanged(nameof(TotalSpent));
             OnPropertyChanged(nameof(Remaining));

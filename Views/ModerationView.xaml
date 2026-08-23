@@ -132,9 +132,11 @@
                                                Text="{Binding Status}" />
                                     <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
                                         <Button Content="Approve" Style="{ThemeResource PrimaryButtonStyle}"
-                                                Padding="8,4" FontSize="12" />
+                                                Padding="8,4" FontSize="12"
+                                                Click="ApproveItem_Click" Tag="{Binding}" />
                                         <Button Content="Reject" Style="{ThemeResource DangerButtonStyle}"
-                                                Padding="8,4" FontSize="12" />
+                                                Padding="8,4" FontSize="12"
+                                                Click="RejectItem_Click" Tag="{Binding}" />
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>

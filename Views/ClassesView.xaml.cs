@@ -30,11 +30,36 @@ namespace AutoTable.Views
 
         private async void CreateClass_Click(object sender, RoutedEventArgs e)
         {
+            // Only fully qualified teachers may be assigned as class teachers.
+            var teachers = await AppServices.DataService.GetTeachersAsync();
+            var qualified = teachers.Where(t => t.IsRegisteredTeacher && !t.IsStudentTeacher).ToList();
+
+            if (qualified.Count == 0)
+            {
+                await ShowErrorAsync("No qualified teachers available.",
+                    "A class teacher must be a registered teacher. Register one first under Administration → Teachers (tick 'Registered by the teachers' board').");
+                return;
+            }
+
             var nameBox = new TextBox { Header = "Class name", PlaceholderText = "e.g. P4", Width = 280 };
+            var teacherPicker = new ComboBox
+            {
+                Header = "Class teacher (registered teachers only)",
+                Width = 280,
+                DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
+                ItemsSource = qualified,
+                SelectedIndex = -1,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var panel = new StackPanel { Spacing = 4 };
+            panel.Children.Add(nameBox);
+            panel.Children.Add(teacherPicker);
+
             var dialog = new ContentDialog
             {
                 Title = "New Class",
-                Content = nameBox,
+                Content = panel,
                 PrimaryButtonText = "Create",
                 CloseButtonText = "Cancel",
                 XamlRoot = this.XamlRoot,
@@ -47,9 +72,12 @@ namespace AutoTable.Views
                 var name = nameBox.Text?.Trim();
                 if (string.IsNullOrWhiteSpace(name)) return;
 
+                int? classTeacherId = null;
+                if (teacherPicker.SelectedItem is AutoTable.Models.Teacher t) classTeacherId = t.Id;
+
                 try
                 {
-                    await _vm.CreateClassAsync(name);
+                    await _vm.CreateClassAsync(name, classTeacherId);
                     await _vm.LoadAsync();
                 }
                 catch (System.Exception ex)
@@ -61,7 +89,7 @@ namespace AutoTable.Views
 
         private async void ClassesList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.ClickedItem is SimpleLookup cls)
+            if (e.ClickedItem is AutoTable.Models.ClassInfo cls)
             {
                 await _vm.LoadSubjectsForClassAsync(cls.Id);
                 SelectedClassTitle.Text = cls.Name;

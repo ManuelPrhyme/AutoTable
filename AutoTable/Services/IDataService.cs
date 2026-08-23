@@ -13,7 +13,10 @@ namespace AutoTable.Services
 
         // Lookup lists for filters
         Task<IReadOnlyList<string>> GetTermsAsync();
+        // Returns terms with Ids for UI that needs real DB ids
+        Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetTermLookupsAsync();
         Task<IReadOnlyList<string>> GetAcademicYearsAsync();
+        Task<AutoTable.Models.SimpleLookup> CreateAcademicYearAsync(string name);
         Task<IReadOnlyList<string>> GetStreamsAsync();
         Task<IReadOnlyList<string>> GetAllStudentsAsync();
 
@@ -30,7 +33,7 @@ namespace AutoTable.Services
         Task<IReadOnlyList<AutoTable.Models.TermFee>> GetTermFeesAsync();
         Task<AutoTable.Models.TermFee> SetTermFeeAsync(int termId, int classId, double amount);
         // Fee payments
-        Task CreateFeePaymentAsync(int studentId, double amount, int? recordedByUserId = null, string? description = null);
+        Task CreateFeePaymentAsync(int studentId, double amount, int? termId = null, int? recordedByUserId = null, string? description = null);
         // Term management
         Task<AutoTable.Models.SimpleLookup> CreateTermAsync(string name, DateTime? startDate = null, DateTime? endDate = null);
         Task<AutoTable.Models.SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null);
@@ -51,7 +54,8 @@ namespace AutoTable.Services
 
         // Class & Subject management
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetClassesAsync();
-        Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name);
+        Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null);
+        Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync();
         Task DeleteClassAsync(int classId);
 
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetSubjectsAsync();
@@ -68,5 +72,18 @@ namespace AutoTable.Services
         Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null);
         Task DeleteMarkAsync(int assessmentId, int studentId);
         Task UpdateAssessmentCompletionAsync(int assessmentId);
+
+        // Moderation lifecycle (Phase 4)
+        Task VerifyAssessmentAsync(int assessmentId, bool verified);
+        Task PublishAssessmentAsync(int assessmentId, bool published);
+
+        // Fee payment reads (Phase 5)
+        Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null);
+
+        // Teacher CRUD (maps to UserEntity with Role="Teacher")
+        Task<IReadOnlyList<AutoTable.Models.Teacher>> GetTeachersAsync();
+        Task<AutoTable.Models.Teacher> CreateTeacherAsync(AutoTable.Models.Teacher teacher);
+        Task<AutoTable.Models.Teacher?> UpdateTeacherAsync(AutoTable.Models.Teacher teacher);
+        Task DeleteTeacherAsync(int teacherId);
     }
 }

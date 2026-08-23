@@ -73,14 +73,13 @@ namespace AutoTable.ViewModels
         }
 
         [RelayCommand]
-        private void SaveDraft()
+        private async Task SaveDraft()
         {
-            UpdateCompletion();
-            StatusMessage = $"Draft saved. {CompletionPercent}% of marks entered.";
+            await PersistMarksAsync();
         }
 
         [RelayCommand]
-        private void SubmitMarks()
+        private async Task SubmitMarks()
         {
             UpdateCompletion();
             if (CompletionPercent < 100)
@@ -88,9 +87,55 @@ namespace AutoTable.ViewModels
                 StatusMessage = "Please enter all marks before submitting.";
                 return;
             }
-            StatusMessage = IsAdministrator
-                ? "Marks submitted and marked for verification."
-                : "Marks submitted for admin review.";
+
+            var saved = await PersistMarksAsync();
+            if (saved)
+            {
+                StatusMessage = IsAdministrator
+                    ? $"Marks submitted and marked for verification. {StatusMessage}"
+                    : $"Marks submitted for admin review. {StatusMessage}";
+            }
+        }
+
+        /// <summary>
+        /// Persists every entered mark to the database via IDataService.UpdateMarkAsync
+        /// (which upserts the mark and recomputes the assessment's completion percent).
+        /// </summary>
+        private async Task<bool> PersistMarksAsync()
+        {
+            try
+            {
+                var assessment = await _dataService.GetAssessmentAsync(SelectedAssessment, SelectedClass, SelectedSubject);
+                if (assessment == null || !int.TryParse(assessment.Id, out var assessmentId))
+                {
+                    StatusMessage = "Assessment not found in the database. Create it on the Assessments page first.";
+                    return false;
+                }
+
+                var saved = 0;
+                foreach (var row in StudentMarks)
+                {
+                    if (!row.Mark.HasValue) continue;
+                    if (!int.TryParse(row.StudentId, out var studentId) || studentId == 0) continue;
+
+                    await _dataService.UpdateMarkAsync(
+                        assessmentId,
+                        studentId,
+                        row.Mark.Value,
+                        GradeFromMark(row.Mark.Value),
+                        string.IsNullOrWhiteSpace(row.Remarks) ? null : row.Remarks);
+                    saved++;
+                }
+
+                UpdateCompletion();
+                StatusMessage = $"Saved {saved} mark(s) to the database. {CompletionPercent}% of marks entered.";
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                StatusMessage = "Failed to save marks: " + ex.Message;
+                return false;
+            }
         }
 
         public void UpdateCompletion()
@@ -99,5 +144,15 @@ namespace AutoTable.ViewModels
             var entered = StudentMarks.Count(s => s.Mark.HasValue);
             CompletionPercent = (int)(entered * 100.0 / StudentMarks.Count);
         }
+
+        private static string GradeFromMark(double mark) => mark switch
+        {
+            >= 80 => "A",
+            >= 70 => "B",
+            >= 60 => "C",
+            >= 50 => "D",
+            >= 40 => "E",
+            _ => "F"
+        };
     }
 }

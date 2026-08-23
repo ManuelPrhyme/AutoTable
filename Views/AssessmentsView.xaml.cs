@@ -2,6 +2,7 @@ using AutoTable.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
 using System;
+using System.Linq;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using AutoTable.Models;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace AutoTable.Views
 
             // class picker uses SimpleLookup items from the data service so we can get the Id
             var classPicker = new ComboBox { Header = "Class", Width = 240, DisplayMemberPath = "Name", SelectedIndex = -1 };
-            var subjectPicker = new ComboBox { Header = "Subject", Width = 240, ItemsSource = ViewModel.Subjects, SelectedIndex = 0 };
+            var subjectPicker = new ComboBox { Header = "Subject", Width = 240, DisplayMemberPath = "Name", SelectedIndex = -1 };
             var weightBox = new TextBox { Header = "Weight (%)", Width = 120, Text = "20" };
             var duePicker = new DatePicker { Header = "Due date", Date = DateTime.Today };
 
@@ -36,16 +37,27 @@ namespace AutoTable.Views
             classPicker.ItemsSource = classes;
             if (classes.Count > 0) classPicker.SelectedIndex = 0;
 
-            // when class changes, load streams
+            // when class changes, load streams AND subjects assigned to that class
             classPicker.SelectionChanged += async (s, ev) =>
             {
                 streamPicker.ItemsSource = null;
                 streamPicker.SelectedIndex = -1;
+                subjectPicker.ItemsSource = null;
+                subjectPicker.SelectedIndex = -1;
                 if (classPicker.SelectedItem is AutoTable.Models.SimpleLookup cls)
                 {
                     var streams = await AppServices.DataService.GetStreamsForClassAsync(cls.Id);
                     streamPicker.ItemsSource = streams;
                     if (streams.Count > 0) streamPicker.SelectedIndex = 0;
+
+                    var subjectsForClass = await AppServices.DataService.GetSubjectsForClassAsync(cls.Id);
+                    subjectPicker.ItemsSource = subjectsForClass.Select(x => x.Name).ToList();
+                    if (subjectPicker.Items.Count > 0) subjectPicker.SelectedIndex = 0;
+                }
+                else
+                {
+                    // no class selected: show empty subject list
+                    subjectPicker.ItemsSource = null;
                 }
             };
 
@@ -79,7 +91,6 @@ namespace AutoTable.Views
                     var selectedClass = classPicker.SelectedItem as AutoTable.Models.SimpleLookup;
                     var selectedSubject = subjectPicker.SelectedItem as string ?? string.Empty;
                     var selectedStream = streamPicker.SelectedItem as AutoTable.Models.SimpleLookup;
-
                     var item = new AssessmentItem
                     {
                         Name = nameBox.Text?.Trim() ?? string.Empty,
@@ -93,8 +104,12 @@ namespace AutoTable.Views
                     };
 
                     var created = await AppServices.DataService.CreateAssessmentAsync(item);
-                    // refresh and show created item at top
-                    await ViewModel.RefreshFilterCommand.ExecuteAsync(null);
+                    // Insert created assessment at top of list in the view model if present
+                    if (created != null)
+                    {
+                        ViewModel.Assessments.Insert(0, created);
+                        ViewModel.RefreshCounts();
+                    }
                 }
                 catch (Exception ex)
                 {
