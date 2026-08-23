@@ -23,23 +23,21 @@
                         </Grid>
                     </Border>
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
-                        <Grid ColumnSpacing="12" Padding="0">
+                        <Grid ColumnSpacing="16" Padding="16,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*" />
                                 <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="1.5*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="NAME" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CONTACT" />
                             <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECTS" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASSES" />
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="NEXT OF KIN" />
-                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
-                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
                         </Grid>
                     </Border>
                     <ListView ItemsSource="{Binding Teachers}" SelectionMode="None">
@@ -53,15 +51,14 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="models:Teacher">
-                                <Grid Padding="0,6" ColumnSpacing="12">
+                                <Grid Padding="16,6" ColumnSpacing="16">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="2*" />
                                         <ColumnDefinition Width="1.5*" />
                                         <ColumnDefinition Width="1.5*" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1.5*" />
                                         <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                                         <TextBlock Text="{x:Bind FullName}" FontWeight="SemiBold" TextWrapping="Wrap" />
@@ -84,12 +81,7 @@
                                             <Run Text="{x:Bind NextOfKinRelationship}" /><Run Text="  \u2022  " /><Run Text="{x:Bind NextOfKinPhone}" />
                                         </TextBlock>
                                     </StackPanel>
-                                    <Border Grid.Column="5" VerticalAlignment="Center"
-                                            CornerRadius="4" Padding="6,2" HorizontalAlignment="Left"
-                                            Background="{ThemeResource SurfaceGray2Brush}">
-                                        <TextBlock FontSize="11" Text="{x:Bind QualificationLabel}" />
-                                    </Border>
-                                    <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                         <Button Content="Edit" Click="EditTeacher_Click" Tag="{x:Bind Id}" />
                                         <Button Content="Delete" Click="DeleteTeacher_Click" Tag="{x:Bind Id}" />
                                     </StackPanel>
