@@ -1,11 +1,11 @@
-# AutoTable - Context Report (Updated 23 Aug 2026, 18:30 EAT)
+# AutoTable - Context Report (Updated 23 Aug 2026, 21:15 EAT)
 
 Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, the full codebase assessment, and the agreed implementation roadmap.
 
 - Repo root: c:\Users\manue\Desktop\Desktop_Apps\AutoTable
 - Branch: sql_rec (origin: https://github.com/ManuelPrhyme/AutoTable.git)
 - Target: .NET 8 / WinUI 3 (Windows App SDK 2.3.0), build platform x64
-- Last known commit: cc6bf78
+- Last known commit: 9a06c8b
 
 ## 1. The Operational Plan
 
@@ -50,7 +50,13 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 - BudgetViewModel wired to real DB data (replaces hardcoded sample data)
 - Budget Add Line Item ContentDialog + CSV Export
 - Integration tests (9 tests passing: Student CRUD, Term lifecycle, Assessment creation, Marks upsert, Budget CRUD, Teacher CRUD, Fee payments, Duplicate LIN validation)
-- Teachers table UI rebalanced to 7-column standard layout (NAME, CONTACT, SUBJECTS, CLASSES, NEXT OF KIN, STATUS, ACTIONS) with proportional sizing (2*/1.5*/1.5/*/2*/100/120)
+
+### Session Enhancements (23 Aug 2026)
+- **Progressive marks entry** — Removed 100% completion gate from SubmitMarks(); teachers can now submit partial marks and return later. Clear status messages show count and completion %.
+- **Assessment scope selector** — 4 scope options: Single Subject, All Subjects in Class, Specific Subjects (custom multi-select), All Subjects in School (general exam). Creates one assessment per subject. Class picker hides for school-wide scope.
+- **Teachers table layout** — Removed STATUS badge column; rebalanced to 6 columns (NAME 2*, CONTACT 1.5*, SUBJECTS 1.5*, CLASSES 1.5*, NEXT OF KIN 2*, ACTIONS Auto) with consistent 16px padding.
+- **Next of kin display** — Reformatted from bullet-separated to "Name (Relationship)" with phone below. Added NextOfKinDisplay computed property to Teacher model.
+- **Context report updates** — Synced with latest commits and verification.
 
 ### NOT DONE vs Operational Plan
 - EF Migrations verification and CI integration (startup uses EnsureCreated + ALTER TABLE patches)
@@ -80,65 +86,63 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 
 ### Agreed roadmap phase status
 
-- **Phase 2** — Assessments create: service ✅ / UI ✅ · Marks persistence: service ✅ / VM ✅ · Students sort ✅
+- **Phase 2** — Assessments create: service ✅ / UI ✅ (with scope selector) · Marks persistence: service ✅ / VM ✅ (progressive entry) · Students sort ✅
 - **Phase 4** — Moderation verify/publish: service ✅ / VM ✅ · AI Insights ✅
 - **Phase 5** — `GetFeePaymentsAsync` ✅ · FinancialsDashboard ✅ · FeeCollection ✅ · Budget ✅ (entity + wiring done)
-- **Then** — Teacher CRUD ✅ (service + UI) · Teachers table layout ✅ (7-column rebalanced) · Migrations verification ⚠️ · Mock cleanup ✅ (moved to Demo/) · Tests ✅
+- **Then** — Teacher CRUD ✅ (service + UI) · Teachers table layout ✅ (6-column, no STATUS) · Next of kin display ✅ (Name (Relationship) format) · Assessment scope ✅ (4 options) · Migrations verification ⚠️ · Mock cleanup ✅ (moved to Demo/) · Tests ✅
 
 ## 5. Build & Environment
 
-- Build command: `dotnet build AutoTable.csproj -p:Platform=x64 --no-restore` — **0 errors, 0 warnings** (verified 23 Aug 2026, 18:30 EAT)
-- Test command: `dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64` — **9/9 passing** (verified 23 Aug 2026, 18:30 EAT)
+- Build command: `dotnet build AutoTable.csproj -p:Platform=x64 --no-restore` — **0 errors** (verified 23 Aug 2026, 21:15 EAT)
+- Test command: `dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64` — **9/9 passing** (verified 23 Aug 2026, 21:15 EAT)
 - Packages (v8.0.11): Microsoft.EntityFrameworkCore.Sqlite, Microsoft.EntityFrameworkCore.Design; CommunityToolkit.Mvvm 8.4.2; Microsoft.WindowsAppSDK 2.3.1.
 - No seed at startup (by design).
 - MockDataService.cs and MockDataServiceAdapter.cs moved to Demo/ folder (namespace `AutoTable.Demo`).
 - EF Migrations present under AutoTable/Data/Migrations.
 - Budget entity added (BudgetLineEntity) with full CRUD service methods and UI wiring.
 - Integration tests: SQLite in-memory with 9 test cases covering Student, Assessment, Mark, Term, Budget, Teacher, and FeePayment flows.
+- Assessment model: `AssessmentScope` enum (Single, AllInClass, SpecificSubjects, AllInSchool) in `Models/AssessmentItem.cs`.
+- Teacher model: `NextOfKinDisplay` computed property for "Name (Relationship)" format.
 
 ## 6. Files Modified in This Session
 
-- `CONTEXT_REPORT.md` — Updated context report with latest commit info, build verification, and test results
-- `Views/TeachersView.xaml` — Redesigned from 6 cramped columns to 7 balanced columns (2*/1.5*/1.5/*/2*/100/120); added STATUS badge column; aligned header/data row definitions
-- `AutoTable/Data/Entities/StudentEntity.cs` — added BudgetLineEntity
-- `AutoTable/Data/AppDbContext.cs` — added DbSet<BudgetLineEntity> + unique index
-- `AutoTable/Services/IDataService.cs` — added budget CRUD methods
-- `AutoTable/Services/DatabaseDataService.cs` — implemented budget CRUD methods
-- `AutoTable/Services/MockDataServiceAdapter.cs` — added mock budget methods (now in Demo/)
-- `Models/FinancialModels.cs` — added Id and FinancialYear to BudgetLine
-- `ViewModels/BudgetViewModel.cs` — rewired to use real DB service, implemented AddLineItem dialog and CSV Export
-- `App.xaml.cs` — added BudgetLines table creation for existing DBs, added using AutoTable.Demo
-- `AutoTable.csproj` — excluded Tests/ from main build
-- `Demo/MockDataService.cs` — moved from Services/, namespace changed to AutoTable.Demo
-- `Demo/MockDataServiceAdapter.cs` — moved from AutoTable/Services/, namespace changed to AutoTable.Demo
-- `Tests/AutoTable.IntegrationTests/AutoTable.IntegrationTests.csproj` — new xUnit test project
-- `Tests/AutoTable.IntegrationTests/DatabaseDataServiceTests.cs` — 9 integration tests
+- `CONTEXT_REPORT.md` — Updated context report with all session changes
+- `Models/AssessmentItem.cs` — Added `AssessmentScope` enum (Single, AllInClass, SpecificSubjects, AllInSchool) and `Scope` property
+- `AutoTable/Models/Teacher.cs` — Added `NextOfKinDisplay` computed property ("Name (Relationship)" format)
+- `ViewModels/MarksEntryViewModel.cs` — Removed 100% completion gate from SubmitMarks(); added progressive entry support with clear status messages; improved SaveDraft feedback
+- `Views/AssessmentsView.xaml.cs` — Rewrote creation dialog with 4 scope options (Single, AllInClass, SpecificSubjects, AllInSchool); dynamic subject pickers; bulk creation logic; input validation
+- `Views/TeachersView.xaml` — Removed STATUS column; rebalanced to 6 columns with 16px padding; reformatted NEXT OF KIN to Name (Relationship) + phone layout
 
 ## 7. Git History (recent commits)
 
 ```
+9a06c8b fix: reformat NEXT OF KIN display in teachers table
+ad33de4 feat: add 4 assessment scope options including school-wide exams
+a86f0a2 feat: add assessment scope selector (single/all/specific subjects)
+7988b07 fix: allow progressive/cumulative marks entry in Marks Entry form
 cc6bf78 ui: rebalance Registered Teachers table to 7-column standard layout
 baae53c feat: add budget entity + CRUD, integration tests, mock cleanup
 dad519b docs: sync context report and fix nullable warnings to 0 errors/0 warnings
 9daa4c4 context-report: iteration-2026-08-23-dashboard-wiring-and-teacher-modals
 32c1fa0 Wire dashboard to live DB, redesign teacher modals with two-column layout
 76f21cc teachers
-b34a372 Enrollment
-2cf534a read
-b0f5651 CRUD
-66942b6 mesage
 ```
 
-Branch status: **3 commits ahead** of `origin/sql_rec` (unpushed). One untracked file: `Assets/modal-walmart-old-checkout.jpg`.
+Branch status: **8 commits ahead** of `origin/sql_rec` (unpushed). One untracked file: `Assets/modal-walmart-old-checkout.jpg`.
 
 ---
 
-Iteration ID: iteration-2026-08-23-context-report-update
-Timestamp: 2026-08-23T18:30:00+03:00
+Iteration ID: iteration-2026-08-23-marks-assessment-teachers
+Timestamp: 2026-08-23T21:15:00+03:00
 Author: Buffy (Codebuff agent)
 Success Level: Success
-Operational Plan Reference: plan-implement-remaining-operational-plan-for-autotable.md ; Step(s): step-6 (teachers UI), step-12 (verification)
-Commits: cc6bf78 (latest)
+Operational Plan Reference: plan-implement-remaining-operational-plan-for-autotable.md ; Step(s): step-6 (teachers UI), step-8 (marks), step-4 (assessments), step-12 (verification)
+Commits: 7988b07, a86f0a2, ad33de4, 9a06c8b
 Files changed:
+- Models/AssessmentItem.cs (AssessmentScope enum)
+- AutoTable/Models/Teacher.cs (NextOfKinDisplay property)
+- ViewModels/MarksEntryViewModel.cs (progressive marks entry)
+- Views/AssessmentsView.xaml.cs (4 scope options dialog)
+- Views/TeachersView.xaml (6-column layout, next of kin reformat)
 - CONTEXT_REPORT.md (updated)
-Tags: docs, context-report, verification
+Tags: feature, marks, assessments, teachers, ui, context-report
