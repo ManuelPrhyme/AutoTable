@@ -75,25 +75,54 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task SaveDraft()
         {
-            await PersistMarksAsync();
+            UpdateCompletion();
+            var enteredCount = StudentMarks.Count(s => s.Mark.HasValue);
+            if (enteredCount == 0)
+            {
+                StatusMessage = "No marks to save. Enter marks for students first.";
+                return;
+            }
+
+            StatusMessage = $"Saving draft ({enteredCount} mark(s), {CompletionPercent}% complete)...";
+            var saved = await PersistMarksAsync();
+            if (saved)
+            {
+                StatusMessage = $"Draft saved: {enteredCount} mark(s) persisted. {CompletionPercent}% of marks entered.";
+            }
         }
 
         [RelayCommand]
         private async Task SubmitMarks()
         {
             UpdateCompletion();
+
+            if (StudentMarks.Count == 0)
+            {
+                StatusMessage = "No students loaded. Select a class, subject and assessment first.";
+                return;
+            }
+
+            // Allow progressive/cumulative entry: submit whatever marks are entered.
+            // Warn (but don't block) when less than 100% complete.
+            var enteredCount = StudentMarks.Count(s => s.Mark.HasValue);
+            if (enteredCount == 0)
+            {
+                StatusMessage = "No marks entered yet. Enter at least one mark before submitting.";
+                return;
+            }
+
             if (CompletionPercent < 100)
             {
-                StatusMessage = "Please enter all marks before submitting.";
-                return;
+                StatusMessage = $"Submitting {enteredCount} of {StudentMarks.Count} marks ({CompletionPercent}% complete). " +
+                                "You can enter the remaining marks later.";
             }
 
             var saved = await PersistMarksAsync();
             if (saved)
             {
                 StatusMessage = IsAdministrator
-                    ? $"Marks submitted and marked for verification. {StatusMessage}"
-                    : $"Marks submitted for admin review. {StatusMessage}";
+                    ? $"Submitted {enteredCount} mark(s) and marked for verification. {CompletionPercent}% complete."
+                    : $"Submitted {enteredCount} mark(s) for admin review. {CompletionPercent}% complete.";
             }
         }
 

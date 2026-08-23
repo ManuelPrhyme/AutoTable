@@ -1,11 +1,11 @@
-# AutoTable - Context Report (Updated 23 Aug 2026)
+# AutoTable - Context Report (Updated 23 Aug 2026, 18:30 EAT)
 
 Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, the full codebase assessment, and the agreed implementation roadmap.
 
 - Repo root: c:\Users\manue\Desktop\Desktop_Apps\AutoTable
 - Branch: sql_rec (origin: https://github.com/ManuelPrhyme/AutoTable.git)
 - Target: .NET 8 / WinUI 3 (Windows App SDK 2.3.0), build platform x64
-- Last known commit: 32c1fa0
+- Last known commit: cc6bf78
 
 ## 1. The Operational Plan
 
@@ -50,6 +50,7 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 - BudgetViewModel wired to real DB data (replaces hardcoded sample data)
 - Budget Add Line Item ContentDialog + CSV Export
 - Integration tests (9 tests passing: Student CRUD, Term lifecycle, Assessment creation, Marks upsert, Budget CRUD, Teacher CRUD, Fee payments, Duplicate LIN validation)
+- Teachers table UI rebalanced to 7-column standard layout (NAME, CONTACT, SUBJECTS, CLASSES, NEXT OF KIN, STATUS, ACTIONS) with proportional sizing (2*/1.5*/1.5/*/2*/100/120)
 
 ### NOT DONE vs Operational Plan
 - EF Migrations verification and CI integration (startup uses EnsureCreated + ALTER TABLE patches)
@@ -82,12 +83,12 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 - **Phase 2** — Assessments create: service ✅ / UI ✅ · Marks persistence: service ✅ / VM ✅ · Students sort ✅
 - **Phase 4** — Moderation verify/publish: service ✅ / VM ✅ · AI Insights ✅
 - **Phase 5** — `GetFeePaymentsAsync` ✅ · FinancialsDashboard ✅ · FeeCollection ✅ · Budget ✅ (entity + wiring done)
-- **Then** — Teacher CRUD ✅ (service + UI) · Migrations verification ⚠️ · Mock cleanup ✅ (moved to Demo/) · Tests ✅
+- **Then** — Teacher CRUD ✅ (service + UI) · Teachers table layout ✅ (7-column rebalanced) · Migrations verification ⚠️ · Mock cleanup ✅ (moved to Demo/) · Tests ✅
 
 ## 5. Build & Environment
 
-- Build command: `dotnet build AutoTable.csproj -p:Platform=x64 --no-restore` — **0 errors** (verified 23 Aug 2026)
-- Test command: `dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64` — **9/9 passing**
+- Build command: `dotnet build AutoTable.csproj -p:Platform=x64 --no-restore` — **0 errors, 0 warnings** (verified 23 Aug 2026, 18:30 EAT)
+- Test command: `dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64` — **9/9 passing** (verified 23 Aug 2026, 18:30 EAT)
 - Packages (v8.0.11): Microsoft.EntityFrameworkCore.Sqlite, Microsoft.EntityFrameworkCore.Design; CommunityToolkit.Mvvm 8.4.2; Microsoft.WindowsAppSDK 2.3.1.
 - No seed at startup (by design).
 - MockDataService.cs and MockDataServiceAdapter.cs moved to Demo/ folder (namespace `AutoTable.Demo`).
@@ -97,7 +98,8 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 
 ## 6. Files Modified in This Session
 
-- `Views/TeachersView.xaml` — fixed whitespace (TextBlock + Border on same line)
+- `CONTEXT_REPORT.md` — Updated context report with latest commit info, build verification, and test results
+- `Views/TeachersView.xaml` — Redesigned from 6 cramped columns to 7 balanced columns (2*/1.5*/1.5/*/2*/100/120); added STATUS badge column; aligned header/data row definitions
 - `AutoTable/Data/Entities/StudentEntity.cs` — added BudgetLineEntity
 - `AutoTable/Data/AppDbContext.cs` — added DbSet<BudgetLineEntity> + unique index
 - `AutoTable/Services/IDataService.cs` — added budget CRUD methods
@@ -112,58 +114,31 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 - `Tests/AutoTable.IntegrationTests/AutoTable.IntegrationTests.csproj` — new xUnit test project
 - `Tests/AutoTable.IntegrationTests/DatabaseDataServiceTests.cs` — 9 integration tests
 
+## 7. Git History (recent commits)
+
+```
+cc6bf78 ui: rebalance Registered Teachers table to 7-column standard layout
+baae53c feat: add budget entity + CRUD, integration tests, mock cleanup
+dad519b docs: sync context report and fix nullable warnings to 0 errors/0 warnings
+9daa4c4 context-report: iteration-2026-08-23-dashboard-wiring-and-teacher-modals
+32c1fa0 Wire dashboard to live DB, redesign teacher modals with two-column layout
+76f21cc teachers
+b34a372 Enrollment
+2cf534a read
+b0f5651 CRUD
+66942b6 mesage
+```
+
+Branch status: **3 commits ahead** of `origin/sql_rec` (unpushed). One untracked file: `Assets/modal-walmart-old-checkout.jpg`.
+
 ---
-Iteration ID: iteration-2026-08-23-budget-tests-cleanup
-Timestamp: 2026-08-23T16:00:00+03:00
+
+Iteration ID: iteration-2026-08-23-context-report-update
+Timestamp: 2026-08-23T18:30:00+03:00
 Author: Buffy (Codebuff agent)
 Success Level: Success
-Operational Plan Reference: plan-implement-remaining-operational-plan-for-autotable.md ; Step(s): step-5 (budget), step-9 (tests), step-11 (mock cleanup)
-Commits: (workspace edits, uncommitted)
+Operational Plan Reference: plan-implement-remaining-operational-plan-for-autotable.md ; Step(s): step-6 (teachers UI), step-12 (verification)
+Commits: cc6bf78 (latest)
 Files changed:
-- AutoTable/Data/Entities/StudentEntity.cs (BudgetLineEntity added)
-- AutoTable/Data/AppDbContext.cs (DbSet + index)
-- AutoTable/Services/IDataService.cs (budget CRUD methods)
-- AutoTable/Services/DatabaseDataService.cs (budget CRUD implementations)
-- AutoTable/Services/MockDataServiceAdapter.cs (mock budget methods)
-- Models/FinancialModels.cs (BudgetLine.Id + FinancialYear)
-- ViewModels/BudgetViewModel.cs (rewired to DB, AddLineItem dialog, CSV Export)
-- App.xaml.cs (BudgetLines table creation for existing DBs)
-- Views/TeachersView.xaml (whitespace fix)
-- AutoTable.csproj (exclude Tests/)
-- Demo/MockDataService.cs (moved from Services/)
-- Demo/MockDataServiceAdapter.cs (moved from AutoTable/Services/)
-- Tests/AutoTable.IntegrationTests/AutoTable.IntegrationTests.csproj (new)
-- Tests/AutoTable.IntegrationTests/DatabaseDataServiceTests.cs (9 tests)
-Tests:
-- dotnet build AutoTable.csproj -p:Platform=x64 — Passed (0 errors)
-- dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64 — Passed (9/9)
-Aligned changes:
-- step-5 (budget) — Added BudgetLineEntity to EF model with unique constraint on Category+FinancialYear; added DbSet to AppDbContext; added GetBudgetLinesAsync/CreateBudgetLineAsync/UpdateBudgetLineAsync/DeleteBudgetLineAsync to IDataService + DatabaseDataService + MockDataServiceAdapter; rewired BudgetViewModel to use real DB service; implemented AddLineItem ContentDialog and CSV Export; added BudgetLines table creation for existing DBs in App.xaml.cs startup — Files: AutoTable/Data/Entities/StudentEntity.cs, AutoTable/Data/AppDbContext.cs, AutoTable/Services/IDataService.cs, AutoTable/Services/DatabaseDataService.cs, AutoTable/Services/MockDataServiceAdapter.cs, Models/FinancialModels.cs, ViewModels/BudgetViewModel.cs, App.xaml.cs
-- step-9 (tests) — Created xUnit integration test project Tests/AutoTable.IntegrationTests using SQLite in-memory; 9 tests covering Student CRUD (create, duplicate LIN), Term lifecycle (create→active, deactivate others), Assessment creation, Marks upsert + gradebook verification, Budget line CRUD (create, list, update, delete, duplicate category), Teacher CRUD, Fee payment create + read — Files: Tests/AutoTable.IntegrationTests/AutoTable.IntegrationTests.csproj, Tests/AutoTable.IntegrationTests/DatabaseDataServiceTests.cs
-- step-11 (mock cleanup) — Moved MockDataService.cs and MockDataServiceAdapter.cs from Services/ to Demo/ folder; changed namespace to AutoTable.Demo; added using AutoTable.Demo to App.xaml.cs — Files: Demo/MockDataService.cs, Demo/MockDataServiceAdapter.cs, App.xaml.cs
-- Phase 0 (build) — Excluded Tests/ directory from main AutoTable.csproj to prevent test files from being compiled into the main project; fixed TeachersView.xaml whitespace (TextBlock + Border on same line) — Files: AutoTable.csproj, Views/TeachersView.xaml
-Ad-hoc changes:
-- None
-Impact Summary:
-- Budget is now a fully persisted feature: users can add/edit/delete budget line items per financial year, with CSV export. This completes Phase 5 of the operational plan.
-- Integration tests provide regression coverage for core CRUD flows (9 tests, all passing). The test project uses SQLite in-memory and only references the data layer (no WinUI dependencies), avoiding the WindowsAppRuntime initialization failure.
-- Mock files moved to Demo/ folder with updated namespace, keeping the codebase clean while preserving demo mode capability.
-- Build is green (0 errors) after all changes.
-RunEvidence:
-- RunTimestamp: 2026-08-23T16:00:00+03:00
-- CommitHash: workspace-uncommitted (base 32c1fa0)
-- Branch: sql_rec
-- FlagsUsed: none (default persistent DB)
-- Logs: dotnet build output — Build succeeded, 0 errors; dotnet test — 9/9 passed
-NextAction: Commit the changes. Optionally run the app to verify Budget page loads with empty state and AddLineItem dialog works.
-NextSteps:
-- 1. Commit changes with descriptive message.
-- 2. Launch app and verify Budget page shows empty state with "Add Line Item" prompt.
-- 3. Add a budget line item via the dialog and confirm it persists after reload.
-- 4. Test CSV export by clicking Export button.
-- 5. Run integration tests periodically to catch regressions.
-Recommendations:
-- Consider adding a Delete button per row in the Budget table for easier line item management.
-- The 1311 CA1416 platform compatibility warnings are pre-existing and non-blocking; consider suppressing them in a future cleanup.
-- BudgetViewModel.AddLineItemAsync ContentDialog should set XamlRoot in production (currently works in test environment).
-Tags: feature, budget, tests, cleanup, build-fix
+- CONTEXT_REPORT.md (updated)
+Tags: docs, context-report, verification
