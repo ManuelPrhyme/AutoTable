@@ -266,3 +266,53 @@ Recommendations:
 Tags: bugfix, feature, plan-revision, diagnostics
 
 
+
+---
+Iteration ID: iteration-2026-08-23-dashboard-wiring-and-teacher-modals
+Timestamp: 2026-08-23T14:30:00+03:00
+Author: Buffy (Codebuff agent)
+Success Level: Success
+Operational Plan Reference: plan-implement-remaining-operational-plan-for-autotable.md ; Step(s): step-5 (financials), step-6 (teacher CRUD), Phase 2 (dashboard)
+Commits:
+- 32c1fa0 — Wire dashboard to live DB, redesign teacher modals with two-column layout
+Files changed:
+- ViewModels/DashboardViewModel.cs
+- ViewModels/TeachersViewModel.cs
+- Views/ClassesView.xaml.cs
+- Views/TeachersView.xaml
+- Views/TeachersView.xaml.cs
+- modal-size.md (NEW)
+- AUTO_TABLE_ASSESSMENT_AND_PLAN.md (NEW)
+Tests:
+- dotnet build AutoTable.csproj -p:Platform=x64 --no-restore — Passed (0 errors, 12 warnings)
+Aligned changes:
+- step-5 (dashboard) — DashboardViewModel.LoadKpiMetricsAsync computes avg score from gradebook, revenue from fee payments; LoadAiInsightsAsync derives at-risk alerts and assessment lifecycle recommendations from DB; LoadRecentActivityAsync queries payments, terminations, and assessments — Files: ViewModels/DashboardViewModel.cs — 32c1fa0
+- step-6 (teacher CRUD) — Added Teacher edit dialog with pre-filled ContentDialog; TeachersViewModel.UpdateTeacherAsync persists changes to DB; AddTeacher_Click and EditTeacher_Click use multi-select checkbox flyouts for subjects/classes — Files: Views/TeachersView.xaml.cs, ViewModels/TeachersViewModel.cs — 32c1fa0
+- Phase 0 (build fix) — Added using System.Linq to ClassesView.xaml.cs fixing CS1061 that cascaded into 7 XAML compiler errors — Files: Views/ClassesView.xaml.cs — 32c1fa0
+Ad-hoc changes:
+- TeachersView table layout redesigned with fixed column widths (200/140/100/140/120/Auto) for tighter alignment — Reason: user requested fields align with header start lines — Files: Views/TeachersView.xaml — 32c1fa0
+- TeachersView Add/Edit modal redesigned to 800x577px two-column layout matching Walmart checkout modal reference — Reason: user requested design consistency — Files: Views/TeachersView.xaml.cs, modal-size.md (NEW) — 32c1fa0
+- Created AUTO_TABLE_ASSESSMENT_AND_PLAN.md — comprehensive status report and prioritized roadmap — Files: AUTO_TABLE_ASSESSMENT_AND_PLAN.md — 32c1fa0
+Impact Summary:
+- Dashboard now displays live data from the database: student count, average score across gradebooks, assessment count, and revenue from fee payments. AI insights derive at-risk alerts, assessment status, and fee collection rates from DB queries. Recent activity shows real payments, terminations, and assessments.
+- Teachers page has full CRUD: Add teacher with multi-select checkbox dropdowns for subjects/classes, Edit teacher with pre-filled form, Delete teacher. Both Add and Edit use 800x577px two-column modal layout.
+- Build is green (0 errors) after fixing the missing System.Linq import that cascaded into 7 XAML errors.
+RunEvidence:
+- RunTimestamp: 2026-08-23T14:30:00+03:00
+- CommitHash: 32c1fa0
+- Branch: sql_rec
+- FlagsUsed: none (default persistent DB)
+- Logs: dotnet build output — Build succeeded, 0 errors, 12 warnings (CS8602 nullable warnings)
+- Screenshots: none captured (app not launched this iteration)
+NextAction: Launch the app and verify the dashboard displays live KPIs, AI insights populate from gradebook data, and teacher Add/Edit/Delete dialogs function correctly with multi-select controls.
+NextSteps:
+- 1. Launch app, verify Dashboard KPIs show real student count, avg score, and revenue.
+- 2. Open Teachers page, add a teacher using checkbox dropdowns, verify persistence.
+- 3. Edit an existing teacher, confirm changes persist across reload.
+- 4. Implement Budget entity + wiring (Phase 3 from operational plan).
+- 5. Create integration tests for core CRUD flows (Phase 5 from plan).
+Recommendations:
+- Consider caching subject/class lookups to avoid re-fetching on every dialog open.
+- The 12 CS8602 nullable warnings should be addressed to keep the build warning-clean.
+- Teacher edit dialog should be tested with existing comma-separated values to verify pre-selection works correctly.
+Tags: feature, dashboard, teacher-crud, ui-redesign, build-fix
