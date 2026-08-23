@@ -31,5 +31,11 @@ namespace AutoTable.Models
             IsRegisteredTeacher && !IsStudentTeacher ? "Registered Teacher"
             : IsStudentTeacher ? "Student Teacher"
             : "Unregistered";
+
+        /// <summary>Next of kin display: "Name (Relationship)" or just the name if no relationship.</summary>
+        public string NextOfKinDisplay =>
+            string.IsNullOrWhiteSpace(NextOfKinRelationship)
+                ? NextOfKinName ?? string.Empty
+                : $"{NextOfKinName} ({NextOfKinRelationship})";
     }
 }

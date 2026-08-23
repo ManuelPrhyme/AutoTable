@@ -76,10 +76,8 @@
                                     <TextBlock Grid.Column="3" FontSize="12" VerticalAlignment="Center"
                                                Text="{x:Bind ClassesTaught}" TextWrapping="Wrap" />
                                     <StackPanel Grid.Column="4" Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock FontSize="12" Text="{x:Bind NextOfKinName}" TextWrapping="Wrap" />
-                                        <TextBlock FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap">
-                                            <Run Text="{x:Bind NextOfKinRelationship}" /><Run Text="  \u2022  " /><Run Text="{x:Bind NextOfKinPhone}" />
-                                        </TextBlock>
+                                        <TextBlock FontSize="12" Text="{x:Bind NextOfKinDisplay}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" Text="{x:Bind NextOfKinPhone}" TextWrapping="Wrap" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                         <Button Content="Edit" Click="EditTeacher_Click" Tag="{x:Bind Id}" />
