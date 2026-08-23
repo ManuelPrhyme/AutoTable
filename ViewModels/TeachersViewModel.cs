@@ -60,6 +60,18 @@ namespace AutoTable.ViewModels
             }
         }
 
+        /// <summary>Updates an existing teacher and refreshes the list item in place.</summary>
+        public async Task UpdateTeacherAsync(Teacher teacher)
+        {
+            var updated = await _dataService.UpdateTeacherAsync(teacher);
+            if (updated != null)
+            {
+                var index = System.Linq.Enumerable.ToList(Teachers).FindIndex(x => x.Id == updated.Id);
+                if (index >= 0) Teachers[index] = updated;
+                StatusMessage = $"Updated teacher '{updated.FullName}'.";
+            }
+        }
+
         [RelayCommand]
         private async Task RefreshAsync() => await LoadAsync();
     }

@@ -44,8 +44,8 @@ namespace AutoTable.ViewModels
         {
             await LoadKpiMetricsAsync();
             LoadQuickActions();
-            LoadAiInsights();
-            LoadRecentActivity();
+            await LoadAiInsightsAsync();
+            await LoadRecentActivityAsync();
 
             // Initialize searchable items (combined list from all observable collections)
             InitializeSearchableItems();
@@ -60,23 +60,50 @@ namespace AutoTable.ViewModels
 
             int studentCount = 0;
             int assessmentCount = 0;
+            double avgScore = 0;
+            int gradebookRows = 0;
+            decimal revenue = 0;
             try
             {
                 var students = await _dataService.GetStudentsAsync();
                 var assessments = await _dataService.GetAssessmentsAsync();
                 studentCount = students?.Count ?? 0;
                 assessmentCount = assessments?.Count ?? 0;
+
+                // Compute average score across all classes and subjects
+                var classes = await _dataService.GetClassesAsync();
+                var subjects = await _dataService.GetSubjectsAsync();
+                double totalAvg = 0;
+                int classSubjectCount = 0;
+                foreach (var cls in classes)
+                {
+                    foreach (var subj in subjects)
+                    {
+                        var rows = await _dataService.GetGradebookAsync(cls.Name, subj.Name);
+                        if (rows.Count > 0)
+                        {
+                            totalAvg += rows.Average(r => r.Average);
+                            classSubjectCount++;
+                            gradebookRows += rows.Count;
+                        }
+                    }
+                }
+                if (classSubjectCount > 0) avgScore = totalAvg / classSubjectCount;
+
+                // Revenue from fee payments
+                var payments = await _dataService.GetFeePaymentsAsync();
+                revenue = (decimal)payments.Sum(p => p.Amount);
             }
             catch
             {
                 // Keep counters at zero if the data layer is unavailable.
             }
 
-            KpiMetrics.Add(new KpiMetric { Title = "Total Students", Value = studentCount.ToString("N0"), Subtitle = "from database", IconGlyph = "\uE77B", AccentColor = "#007BFF" });
-            KpiMetrics.Add(new KpiMetric { Title = "Avg Score", Value = "—", Subtitle = "—", IconGlyph = "\uE9D2", AccentColor = "#28A745" });
-            KpiMetrics.Add(new KpiMetric { Title = "Assessments", Value = assessmentCount.ToString("N0"), Subtitle = "from database", IconGlyph = "\uE9F9", AccentColor = "#FD7E14" });
-            KpiMetrics.Add(new KpiMetric { Title = "Attendance", Value = "—", Subtitle = "from database", IconGlyph = "\uE7E7", AccentColor = "#6610F2" });
-            KpiMetrics.Add(new KpiMetric { Title = "Revenue", Value = "—", Subtitle = "from database", IconGlyph = "\uE929", AccentColor = "#20C997" });
+            KpiMetrics.Add(new KpiMetric { Title = "Total Students", Value = studentCount.ToString("N0"), Subtitle = "registered", IconGlyph = "\uE77B", AccentColor = "#007BFF" });
+            KpiMetrics.Add(new KpiMetric { Title = "Avg Score", Value = gradebookRows > 0 ? $"{avgScore:F1}%" : "—", Subtitle = gradebookRows > 0 ? $"across {gradebookRows} records" : "no marks entered", IconGlyph = "\uE9D2", AccentColor = "#28A745" });
+            KpiMetrics.Add(new KpiMetric { Title = "Assessments", Value = assessmentCount.ToString("N0"), Subtitle = "created", IconGlyph = "\uE9F9", AccentColor = "#FD7E14" });
+            KpiMetrics.Add(new KpiMetric { Title = "Attendance", Value = "—", Subtitle = "tracking not yet implemented", IconGlyph = "\uE7E7", AccentColor = "#6610F2" });
+            KpiMetrics.Add(new KpiMetric { Title = "Revenue", Value = revenue > 0 ? $"UGX {revenue:N0}" : "—", Subtitle = revenue > 0 ? "collected" : "no payments recorded", IconGlyph = "\uE929", AccentColor = "#20C997" });
         }
 
         private void LoadQuickActions()
@@ -90,22 +117,89 @@ namespace AutoTable.ViewModels
             QuickActions.Add("Record Fees Payment");
         }
 
-        private void LoadAiInsights()
+        private async Task LoadAiInsightsAsync()
         {
             AiInsights.Clear();
-            AiInsights.Add("P6 English average dropped 8% — schedule extra revision.");
-            AiInsights.Add("3 students at risk of failing Mathematics in P5.");
-            AiInsights.Add("Attendance improved 4% after new late policy.");
-            AiInsights.Add("Fee collection is 82% for Term 2 — 18% outstanding.");
+            try
+            {
+                var classes = await _dataService.GetClassesAsync();
+                var subjects = await _dataService.GetSubjectsAsync();
+                var assessments = await _dataService.GetAssessmentsAsync();
+
+                // At-risk alerts from gradebook
+                foreach (var cls in classes)
+                {
+                    foreach (var subj in subjects)
+                    {
+                        var rows = await _dataService.GetGradebookAsync(cls.Name, subj.Name);
+                        if (rows.Count == 0) continue;
+
+                        var atRisk = rows.Count(r => r.Average < 40);
+                        if (atRisk > 0)
+                            AiInsights.Add($"{atRisk} student(s) at risk in {cls.Name} {subj.Name} (below 40% average).");
+
+                        var classAvg = rows.Average(r => r.Average);
+                        if (classAvg < 50)
+                            AiInsights.Add($"{cls.Name} {subj.Name} class average is {classAvg:F1}% — consider remedial sessions.");
+                    }
+                }
+
+                // Assessment lifecycle recommendations
+                var pending = assessments.Count(a => !a.IsVerified && a.MarksEnteredPercent >= 100);
+                if (pending > 0)
+                    AiInsights.Add($"{pending} assessment(s) complete and ready for moderation.");
+
+                var incomplete = assessments.Count(a => a.MarksEnteredPercent < 100);
+                if (incomplete > 0)
+                    AiInsights.Add($"{incomplete} assessment(s) still have marks pending entry.");
+
+                // Fee collection status
+                var payments = await _dataService.GetFeePaymentsAsync();
+                var students = (await _dataService.GetStudentsAsync()).Where(s => s.IsActive).ToList();
+                if (students.Count > 0)
+                {
+                    var payingStudents = payments.Select(p => p.StudentId).Distinct().Count();
+                    var collectionRate = (double)payingStudents / students.Count * 100;
+                    if (collectionRate < 100)
+                        AiInsights.Add($"Fee collection is {collectionRate:F0}% — {students.Count - payingStudents} student(s) with no payments recorded.");
+                }
+            }
+            catch
+            {
+                // Gracefully degrade — show no insights rather than crash
+            }
+
+            if (AiInsights.Count == 0)
+                AiInsights.Add("No alerts — all indicators look healthy.");
         }
 
-        private void LoadRecentActivity()
+        private async Task LoadRecentActivityAsync()
         {
             RecentActivity.Clear();
-            RecentActivity.Add("Brian Okello's marks were updated by A. Namukasa");
-            RecentActivity.Add("New assessment 'End Term' created for P6 English");
-            RecentActivity.Add("Report cards published for P1 - Term 1");
-            RecentActivity.Add("Grace Nabwire's fee payment of UGX 850,000 recorded");
+            try
+            {
+                // Recent fee payments
+                var payments = await _dataService.GetFeePaymentsAsync();
+                foreach (var p in payments.Take(3))
+                    RecentActivity.Add($"{p.StudentName} paid UGX {p.Amount:N0} ({p.TermName}) on {p.PaymentDate:dd MMM}");
+
+                // Recent terminations
+                var terminations = await _dataService.GetTerminationLogAsync();
+                foreach (var t in terminations.Take(2))
+                    RecentActivity.Add($"{t.StudentName} terminated ({t.Reason}) on {t.TerminationDate:dd MMM}");
+
+                // Recent assessments (newest first by due date)
+                var assessments = await _dataService.GetAssessmentsAsync();
+                foreach (var a in assessments.OrderByDescending(a => a.DueDate).Take(2))
+                    RecentActivity.Add($"Assessment '{a.Name}' created for {a.ClassName} {a.Subject} (due {a.DueDate:dd MMM})");
+            }
+            catch
+            {
+                // Gracefully degrade
+            }
+
+            if (RecentActivity.Count == 0)
+                RecentActivity.Add("No recent activity recorded.");
         }
 
         private void InitializeSearchableItems()
