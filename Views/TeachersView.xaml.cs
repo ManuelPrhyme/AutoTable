@@ -136,8 +136,8 @@ namespace AutoTable.Views
         private async void AddTeacher_Click(object sender, RoutedEventArgs e)
         {
             // Load data for multi-select controls
-            var allSubjects = (await AppServices.DataService.GetSubjectsAsync()).Select(s => s.Name).ToList();
-            var allClasses = (await AppServices.DataService.GetClassesAsync()).Select(c => c.Name).ToList();
+            var allSubjects = (await AppServices.DataService!.GetSubjectsAsync()).Select(s => s.Name).ToList();
+            var allClasses = (await AppServices.DataService!.GetClassesAsync()).Select(c => c.Name).ToList();
 
             // ── LEFT COLUMN: Personal Information ──
             var leftColumn = new StackPanel { Spacing = 10, Width = FieldWidth };
@@ -316,8 +316,8 @@ namespace AutoTable.Views
             if (teacher == null) return;
 
             // Load data for multi-select controls
-            var allSubjects = (await AppServices.DataService.GetSubjectsAsync()).Select(s => s.Name).ToList();
-            var allClasses = (await AppServices.DataService.GetClassesAsync()).Select(c => c.Name).ToList();
+            var allSubjects = (await AppServices.DataService!.GetSubjectsAsync()).Select(s => s.Name).ToList();
+            var allClasses = (await AppServices.DataService!.GetClassesAsync()).Select(c => c.Name).ToList();
             var currentSubjects = ParseCommaSeparated(teacher.SubjectsTaught);
             var currentClasses = ParseCommaSeparated(teacher.ClassesTaught);
 

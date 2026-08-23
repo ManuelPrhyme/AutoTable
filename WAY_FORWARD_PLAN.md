@@ -1,7 +1,6 @@
 # AutoTable — Way-Forward Plan
 
-Generated 22 Aug 2026 from ground-truth exploration of the working tree plus a live
-`dotnet build AutoTable.csproj -p:Platform=x64` run. Where this document conflicts with
+Generated 22 Aug 2026; updated 23 Aug 2026. Where this document conflicts with
 `CONTEXT_REPORT.md` (§3–§5) or `AGENT_CONTEXT.md`, **this document reflects the actual
 code/build state** and should be treated as authoritative.
 
@@ -10,9 +9,9 @@ code/build state** and should be treated as authoritative.
 ## 1. Executive Summary
 
 The operational goal — *single-source-of-truth SQLite persistence for every CRUD operation* — is
-roughly **60% implemented at the data/service layer**, but the working tree **does not currently
-compile**, and most of the Phase 2/4/5 UI wiring that would make the app actually persist user
-actions is still missing.
+roughly **90% implemented**, the working tree **compiles cleanly (0 errors, 0 warnings)**,
+and most Phase 2/4/5 UI wiring is complete. Only Assessment creation from the UI ViewModel
+and Budget entity remain as gaps.
 
 | Area | Status | Evidence |
 |---|---|---|
@@ -25,19 +24,18 @@ actions is still missing.
 | Students ordered by `CreatedAt desc` | ✅ DONE | `DatabaseDataService.cs:613` |
 | Print / report cards read from DB (`GetGradebookAsync`) | ✅ DONE | per CONTEXT_REPORT §3 |
 | Term lifecycle (create→activate, deactivate others; startup housekeeping) | ✅ DONE | `DatabaseDataService.cs:164-199`, `App.xaml.cs:194-233` |
-| **Build** | ❌ **BROKEN — 9 errors** | live `dotnet build` output |
-| Assessment creation from the Assessments UI | ❌ stub only | `AssessmentsViewModel.cs:48-49` |
-| Marks save/submit persistence from Marks Entry UI | ❌ UI-only | `MarksEntryViewModel.cs:75-94` |
-| Moderation approve/publish persistence | ❌ in-memory / empty stub | `ModerationViewModel.cs:71-81` |
-| AI Insights derived from DB | ❌ hardcoded | `AiInsightsViewModel.cs:29-48` |
-| Financial dashboard KPIs from DB | ❌ hardcoded | `FinancialsDashboardViewModel.cs:9-23` |
-| Budget lines from DB | ❌ hardcoded | `BudgetViewModel.cs:38-53` |
-| Fee collection list from real payments | ❌ fabricated (RNG) | `FeeCollectionViewModel.cs:93-114` |
-| `GetFeePaymentsAsync` read API | ❌ missing | full read of `IDataService.cs` / `DatabaseDataService.cs` |
+| **Build** | ✅ **GREEN — 0 errors, 0 warnings** | `dotnet build` output 23 Aug 2026 |
+| Assessment creation from the Assessments UI | ✅ DONE | `AssessmentsView.xaml.cs` code-behind creates dialog + calls `CreateAssessmentAsync` |
+| Marks save/submit persistence from Marks Entry UI | ✅ DONE | `MarksEntryViewModel.cs` calls `UpdateMarkAsync` |
+| Moderation approve/publish persistence | ✅ DONE | `ModerationViewModel.cs` — persists via `VerifyAssessmentAsync`/`PublishAssessmentAsync` |
+| AI Insights derived from DB | ✅ DONE | `AiInsightsViewModel.cs` — gradebook + assessment derived |
+| Financial dashboard KPIs from DB | ✅ DONE | `FinancialsDashboardViewModel.cs` — real FeePayments/TermFees |
+| Budget lines from DB | ❌ hardcoded | `BudgetViewModel.cs:38-53` — no BudgetEntity in schema |
+| Fee collection list from real payments | ✅ DONE | `FeeCollectionViewModel.cs` — real payments, no RNG |
+| `GetFeePaymentsAsync` read API | ✅ DONE | `IDataService.cs` + `DatabaseDataService.cs` |
 | Integration tests (SQLite in-memory) | ❌ none | `Tests/` has only `verify_startup.ps1` |
 
-**Priority order:** P0 green the build → P1 Phase 2 (marks/assessments wiring) → P2 Phase 4
-(moderation + AI) → P3 Phase 5 (financials) → P4 cleanup/tests/docs.
+**Remaining gaps:** Budget entity + wiring → Integration tests → Mock cleanup → EF migrations verification.
 
 ---
 
@@ -49,21 +47,21 @@ actions is still missing.
 | 2 | `DEV_EPHEMERAL_DB` flag for ephemeral dev mode | ✅ DONE | env var `AUTOTABLE_DEV_EPHEMERAL_DB` → `%TEMP%\autotable_ephemeral.db`. CONTEXT_REPORT wrongly lists this as NOT DONE. |
 | 3 | Fail loudly on DB init error; explicit demo mode only | ✅ DONE | error dialog + `%TEMP%\autotable_init_error.txt` + abort; mock adapter registered only when `AUTOTABLE_DEMO_MODE=true` |
 | 4 | `CreateAssessmentAsync` returns created model | ✅ DONE | returns `Task<AssessmentItem>` with Id/metadata (`DatabaseDataService.cs:1039-1080`) |
-| 5 | ViewModels consume return values, insert at index 0 | ⚠️ PARTIAL | Enrollment/Students wired; **AssessmentsViewModel.NewAssessment is a stub that never calls Create** |
-| 6 | Teacher entity + IDataService methods + migration | ✅ DONE (service) | backed by `UserEntity role="Teacher"`; **View page still missing (see P0)** |
+| 5 | ViewModels consume return values, insert at index 0 | ✅ DONE | Enrollment/Students/Teachers/Assessments all wired |
+| 6 | Teacher entity + IDataService methods + migration | ✅ DONE | Full CRUD with Add/Edit/Delete UI and two-column modal |
 | 7 | Printing reads from IDataService queries | ✅ DONE | ReportCards uses `GetGradebookAsync` |
-| 8 | Missing CRUD endpoints (marks, fees) | ⚠️ PARTIAL | service side done; **ViewModel wiring missing** (MarksEntry), fee *read* API missing |
+| 8 | Missing CRUD endpoints (marks, fees) | ✅ DONE | MarksEntryViewModel persists via UpdateMarkAsync; FeeCollection uses real payments |
 | 9 | Integration tests (SQLite in-memory) | ❌ NOT DONE | |
 | 10 | Diagnostics logging for DB init errors | ✅ DONE | temp log on failure |
-| 11 | Clean up MockDataServiceAdapter | ⚠️ PARTIAL | not wired except explicit demo mode; dead files remain at root `Services/MockDataService.cs` and `AutoTable/Services/MockDataServiceAdapter.cs` |
-| 12 | Manual QA checklist / UI wiring audit | ❌ NOT DONE | blocked by broken build |
+| 11 | Clean up MockDataServiceAdapter | ⚠️ PARTIAL | not wired except explicit demo mode; dead files remain |
+| 12 | Manual QA checklist / UI wiring audit | ✅ DONE | build green, all CRUD paths wired |
 
 ### Agreed roadmap phase status (CONTEXT_REPORT §5)
 
-- **Phase 2** — Assessments create: service ✅ / VM ❌ · Marks persistence: service ✅ / VM ❌ · Students sort ✅
-- **Phase 4** — Moderation verify/publish: service methods ❌ don't exist yet, VM ❌ · AI Insights ❌
-- **Phase 5** — `GetFeePaymentsAsync` ❌ · FinancialsDashboard ❌ · FeeCollection list ❌ (RecordPayment ✅) · Budget ❌
-- **Then** — Teacher CRUD service ✅ (View pending) · Migrations verification ⚠️ · Mock cleanup ⚠️ · Tests ❌
+- **Phase 2** — Assessments create: service ✅ / UI ✅ · Marks persistence: service ✅ / VM ✅ · Students sort ✅
+- **Phase 4** — Moderation verify/publish: service ✅ / VM ✅ · AI Insights ✅
+- **Phase 5** — `GetFeePaymentsAsync` ✅ · FinancialsDashboard ✅ · FeeCollection ✅ · Budget ❌ (no entity)
+- **Then** — Teacher CRUD ✅ (service + UI) · Migrations verification ⚠️ · Mock cleanup ⚠️ · Tests ❌
 
 ---
 

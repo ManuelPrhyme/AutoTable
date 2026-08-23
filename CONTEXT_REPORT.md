@@ -5,7 +5,7 @@ Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, th
 - Repo root: c:\Users\manue\Desktop\Desktop_Apps\AutoTable
 - Branch: sql_rec (origin: https://github.com/ManuelPrhyme/AutoTable.git)
 - Target: .NET 8 / WinUI 3 (Windows App SDK 2.3.0), build platform x64
-- Last known commit: 2cf534ad3ddfd7be903c40c1158029e01bbbe890
+- Last known commit: 9daa4c4
 
 ## 1. The Operational Plan
 
@@ -22,36 +22,37 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 ## 2. Phase Roadmap (from Prompts/Cursor Prompt.txt)
 
 - Phase 1: Login, SignUp, Dashboard - DONE
-- Phase 2: Assessments, MarksEntry, Gradebook - UI done, CRUD write paths incomplete
+- Phase 2: Assessments, MarksEntry, Gradebook - UI done, CRUD write paths DONE (only assessment creation from UI remains a stub)
 - Phase 3: StudentPerformance, Analytics, ReportCards - UI done, DB reads wired
-- Phase 4: Moderation, AI Insights + admin pages (Classes, Students, Audit) - Partial, stubs remain
-- Phase 5: Financials (Fin.Dashboard, FeeCollection, Budget) - Not started
+- Phase 4: Moderation, AI Insights + admin pages (Classes, Students, Audit) - DONE
+- Phase 5: Financials (Fin.Dashboard, FeeCollection) - DONE; Budget remains hardcoded sample data
 - Phase 6: PostgreSQL, VBA/PowerAutomate - Not started (skipped)
 
-## 3. Implementation Status (audit, 21 Aug 2026)
+## 3. Implementation Status (audit, 23 Aug 2026)
 
 ### DONE vs Operational Plan
 - Step 1 Persistent DB path (LocalApplicationData + directory creation)
-- Step 2 No silent mock fallback (temp log + dialog + abort on init error)
-- Step 3 DatabaseDataService always registered; ViewModels throw if null
-- Step 4 CreateStudent returns created model; Enrollment returns via callback and StudentsView inserts at index 0
+- Step 2 DEV_EPHEMERAL_DB config flag for ephemeral dev mode (env var `AUTOTABLE_DEV_EPHEMERAL_DB`)
+- Step 3 Fail-loud startup, diagnostics log, no silent mock fallback (error dialog + temp log + abort)
+- Step 4 CreateAssessmentAsync returns Task<AssessmentItem>; DatabaseDataService implements it
+- Step 5 ViewModels consume return values and insert at index 0 (Students, Enrollment, Teachers all wired)
+- Step 6 Teacher entity + CRUD (service layer backed by UserEntity role="Teacher"; full Add/Edit/Delete UI with two-column modal)
 - Step 7 Print/gradebook/report cards read from DB (GetGradebookAsync)
-- Termination + audit log transactional
-- Student termination, audit trail
-- Classes management (create/delete/assign classes, subjects, streams)
-- Navigation Shell registers all pages
-- Diagnostics and startup error handling
+- Step 8 Marks persistence (MarksEntryViewModel.SaveDraft/SubmitMarks persist via UpdateMarkAsync)
+- Step 8 Fee payments (CreateFeePaymentAsync + GetFeePaymentsAsync + FeeCollection wired to real data)
+- Step 10 Diagnostics logging for DB init errors
+- Step 12 Navigation shell with all page routes
+- Student termination + audit log (transactional)
+- Class/Subject management (create/delete/assign/remove)
+- Term lifecycle (create→activate, deactivate others; startup housekeeping)
+- Students ordered by CreatedAt desc
 
-### NOT DONE vs Operational Plan (updated assessment)
-- DEV_EPHEMERAL_DB flag (not implemented)
-- Teacher entity + CRUD (no TeacherEntity, no teacher methods anywhere)
-- Marks entry UI wiring: IDataService provides UpdateMarkAsync/DeleteMarkAsync, but MarksEntryViewModel.SaveDraft and SubmitMarks remain UI-only and are not yet persisting marks to the data service.
-- Moderation: ApproveAll operates in-memory only; Publish is still an empty stub; update/verify/publish are not persisted to DB.
-- Mock/demo adapter: MockDataService and MockDataServiceAdapter exist in the codebase; they are not used by default at startup and should be labelled/removed or moved to an explicit demo mode.
-- DEV_EPHEMERAL_DB flag (not implemented)
-- Teacher entity + CRUD (no TeacherEntity, no teacher methods anywhere)
-- FinancialsDashboardViewModel, BudgetViewModel and AiInsightsViewModel still include hardcoded values or recommendations and need DB wiring for production data.
-- EF Migrations are present in Data/Migrations but migration coverage and CI integration remain to be verified.
+### NOT DONE vs Operational Plan
+- Assessment creation from UI: AssessmentsViewModel.NewAssessment() is a stub that never calls CreateAssessmentAsync (service method exists)
+- BudgetViewModel: entirely hardcoded sample data (no BudgetEntity in EF model; Export/AddLineItem are stubs)
+- Integration tests with in-memory SQLite (Tests/ has only verify_startup.ps1)
+- EF Migrations verification and CI integration
+- Mock cleanup: MockDataService.cs and MockDataServiceAdapter.cs are dead code (only used with AUTOTABLE_DEMO_MODE=true)
 
 ### BY DESIGN (not a gap)
 - SeedData.cs is NOT called from App.xaml.cs. Users configure their own classes/subjects/terms/streams via the Classes screen. The DB starts empty (this is why Assessment creation uses FirstOrDefaultAsync which will throw until a class/subject/year/term exist).
@@ -60,13 +61,13 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 
 Concrete Steps (from OPERATIONAL_PLAN.md):
 1. Persist DB path to LocalApplicationData and ensure directory - DONE in App.xaml.cs (lines ~55-57).
-2. Add DEV_EPHEMERAL_DB config flag for ephemeral dev mode - NOT DONE.
+2. Add DEV_EPHEMERAL_DB config flag for ephemeral dev mode - DONE (env var AUTOTABLE_DEV_EPHEMERAL_DB → %TEMP%\autotable_ephemeral.db).
 3. Make App.OnLaunched fail loudly on DB init error; remove silent mock auto-substitution - DONE (error dialog + temp log + abort).
 4. Audit DatabaseDataService: CreateAssessmentAsync now returns Task<AssessmentItem> and DatabaseDataService implements it; AssessmentsView inserts created item at index 0. (DONE)
-5. Update ViewModels to consume return values and insert at index 0 - StudentsView and AssessmentsView consume created items; others to follow. (PARTIAL)
-6. Teacher entity and IDataService methods + migration - NOT DONE.
+5. Update ViewModels to consume return values and insert at index 0 - DONE for Students, Enrollment, Teachers. AssessmentsViewModel.NewAssessment is a stub (service method exists but UI doesn't call it yet). (PARTIAL — needs assessment creation dialog)
+6. Teacher entity and IDataService methods + migration - DONE (service layer + full UI with Add/Edit/Delete and two-column modal).
 7. Re-wire printing to IDataService queries - DONE (ReportCards uses GetGradebookAsync).
-8. Missing CRUD: Marks persistence methods (Add/Update/Delete) are implemented in IDataService/DatabaseDataService. ViewModels (MarksEntryViewModel) are not yet wired to call them. Fee creation (CreateFeePaymentAsync) is implemented and is used by FeeCollectionView and FeeCollectionViewModel. (PARTIAL)
+8. Missing CRUD: Marks persistence done; Fee payments done (CreateFeePaymentAsync + GetFeePaymentsAsync + FeeCollection wired). (DONE)
 9. Integration tests with in-memory SQLite - NOT DONE.
 10. Diagnostics logging for DB init errors - DONE (temp log on failure).
 11. Clean up MockDataServiceAdapter: remove fallback or make explicit demo - pending (dead file exists).
@@ -76,51 +77,57 @@ Concrete Steps (from OPERATIONAL_PLAN.md):
 
 Build order confirmed by user: Phase 2 -> Phase 4 -> Phase 5 -> re-evaluate vs OPERATIONAL_PLAN.md.
 
-### Phase 2 - Complete CRUD write paths
-- Assessments: change CreateAssessmentAsync to Task of AssessmentItem (IDataService + DatabaseDataService); return created item with Id/metadata; AssessmentsView inserts created item at index 0 instead of full reload.
-- Marks: add AddMarkAsync, UpdateMarkAsync, DeleteMarkAsync, GetAssessmentAsync, UpdateAssessmentCompletionAsync to IDataService + DatabaseDataService; wire MarksEntryViewModel.SaveDraft and SubmitMarks to persist marks and refresh completion.
-- Students: change GetStudentsAsync to order by CreatedAt desc.
+### Phase 2 - Complete CRUD write paths ✅
+- Assessments: CreateAssessmentAsync returns Task<AssessmentItem>; service layer done. UI creation is a stub (needs ContentDialog).
+- Marks: AddMarkAsync, UpdateMarkAsync, DeleteMarkAsync, GetAssessmentAsync, UpdateAssessmentCompletionAsync all in IDataService + DatabaseDataService; MarksEntryViewModel.SaveDraft and SubmitMarks persist marks.
+- Students: GetStudentsAsync orders by CreatedAt desc. ✅
 
-### Phase 4 - Moderation + AI Insights
-- Add assessment update/verify/publish to IDataService + DatabaseDataService.
-- Wire ModerationViewModel.ApproveAll to set IsVerified=true in DB; Publish to set IsPublished=true; add UI error handling in ModerationView.
-- Wire AiInsightsViewModel to IDataService (derive at-risk alerts from gradebook).
+### Phase 4 - Moderation + AI Insights ✅
+- VerifyAssessmentAsync and PublishAssessmentAsync added to IDataService + DatabaseDataService.
+- ModerationViewModel.ApproveAll/Publish and per-row Approve/Reject persist IsVerified/IsPublished to DB.
+- AiInsightsViewModel derives at-risk alerts (gradebook avg < 40) and recommendations (assessment lifecycle) from live DB queries.
 
-### Phase 5 - Financials
-- Add GetFeePaymentsAsync + CreateFeePaymentAsync to IDataService + DatabaseDataService.
-- Wire FinancialsDashboardViewModel KPIs (total collected, outstanding) + recent transactions from DB.
-- Fix FeeCollectionViewModel Load to use real fee data; wire RecordPayment to CreateFeePaymentAsync.
-- Wire BudgetViewModel to DB.
+### Phase 5 - Financials ✅ (Budget excluded)
+- GetFeePaymentsAsync + FeePaymentSummary added to IDataService + DatabaseDataService.
+- FinancialsDashboardViewModel KPIs and recent transactions computed from FeePayments/TermFees/students.
+- FeeCollectionViewModel.Load uses real payments vs configured term fees (RNG fabrication removed).
+- RecordPayment attributes payments to the selected term.
+- BudgetViewModel: remains hardcoded sample data (no BudgetEntity in schema). Export/AddLineItem are stubs.
 
 ### Then - remaining Operational Plan
-- Step 6: Teacher entity + CRUD
-- Steps 10/11: EF Migrations, clean up MockDataService, DEV_EPHEMERAL_DB flag
+- Assessment creation from UI (service done, UI dialog needed)
+- Budget entity + wiring
 - Step 9: Integration tests (SQLite in-memory)
+- Steps 10/11: EF Migrations verification, clean up MockDataService
 
 ## 6. Files to be Modified / Review
 
-- ViewModels/MarksEntryViewModel.cs — wire SaveDraft/SubmitMarks to IDataService.UpdateMarkAsync/DeleteMarkAsync and implement submit persistence/verification flow.
-- ViewModels/ModerationViewModel.cs & Views/ModerationView.xaml.cs — persist Approve/Publish actions to IDataService (UpdateAssessment/Verify/Publish) and handle errors.
-- ViewModels/FinancialsDashboardViewModel.cs, ViewModels/BudgetViewModel.cs, ViewModels/AiInsightsViewModel.cs — replace hardcoded values with IDataService queries and add unit tests.
-- AutoTable/Services/IDataService.cs & AutoTable/Services/DatabaseDataService.cs — review existing marks and fee methods for correctness, add missing teacher CRUD methods.
-- AutoTable/Data/* Migration files — verify migrations cover schema changes and integrate into CI/migration workflow.
-- App.xaml.cs — add optional DEV_EPHEMERAL_DB flag support and explicit demo-mode wiring for MockDataServiceAdapter if desired.
+- ViewModels/AssessmentsViewModel.cs — NewAssessment() is a stub; needs ContentDialog + CreateAssessmentAsync call
+- ViewModels/BudgetViewModel.cs — hardcoded sample data; needs BudgetEntity in EF model + service methods
+- Tests/ — integration tests needed (SQLite in-memory)
+- Services/MockDataService.cs and AutoTable/Services/MockDataServiceAdapter.cs — dead code, should be moved under Demo/ or removed
+- AutoTable/Data/* Migration files — verify migrations cover schema changes
 
 ## 7. Build & Environment
 
 - Build command: dotnet build AutoTable.csproj -p:Platform=x64 --no-restore - succeeds (build verified during this session).
 - Packages (v8.0.11): Microsoft.EntityFrameworkCore.Sqlite, Microsoft.EntityFrameworkCore.Design; CommunityToolkit.Mvvm 8.4.2; Microsoft.WindowsAppSDK 2.3.1.
 - No seed at startup (by design).
-- MockDataService.cs and MockDataServiceAdapter.cs exist in the codebase: MockDataService is an in-memory demo helper; MockDataServiceAdapter implements IDataService over the demo data. They are present but not wired as the runtime fallback (good). Consider moving them under /Demo or marking explicitly as demo.
+- MockDataService.cs and MockDataServiceAdapter.cs exist in the codebase: they are present but not wired as the runtime fallback (good). Consider moving them under /Demo or marking explicitly as demo.
 - EF Migrations are present under AutoTable/Data/Migrations (add to CI deploy path as needed).
+- 12 CS8602 nullable warnings remain (AssessmentsView.xaml.cs, FeeCollectionView.xaml.cs, etc.).
 
 ## 8. Key Current Code References (observations)
 
-- IDataService.CreateAssessmentAsync: now declared as Task<AssessmentItem> and implemented by DatabaseDataService; AssessmentsView uses the returned item and inserts it into the ViewModel list.
-- DatabaseDataService: implements CreateAssessmentAsync, UpdateMarkAsync, DeleteMarkAsync, CreateFeePaymentAsync and other CRUD methods. These service-side implementations are present and exercised by several views.
-- MarksEntryViewModel.SaveDraft and SubmitMarks are still UI-only: they compute completion and set StatusMessage but do not call IDataService.UpdateMarkAsync; this is the main missing integration for marks persistence.
-- ModerationViewModel.ApproveAll updates view-model state only; Publish remains an empty method. Service APIs to update assessment verification/publication exist in the data layer but are not yet consistently used by the moderation UI.
-- Financials and AiInsights viewmodels contain hardcoded values or recommendations; Fee creation is implemented and used by FeeCollectionView/VM but dashboard KPIs should be re-wired to live DB queries.
+- IDataService.CreateAssessmentAsync: declared as Task<AssessmentItem> and implemented by DatabaseDataService; AssessmentsView uses the returned item and inserts it into the ViewModel list.
+- DatabaseDataService: implements CreateAssessmentAsync, UpdateMarkAsync, DeleteMarkAsync, CreateFeePaymentAsync, GetFeePaymentsAsync, VerifyAssessmentAsync, PublishAssessmentAsync, and other CRUD methods.
+- MarksEntryViewModel.SaveDraft and SubmitMarks now persist marks via IDataService.UpdateMarkAsync (upsert + completion recompute).
+- ModerationViewModel.ApproveAll/Publish and per-row Approve/Reject persist IsVerified/IsPublished to DB via VerifyAssessmentAsync/PublishAssessmentAsync.
+- AiInsightsViewModel derives at-risk alerts and recommendations from live gradebook and assessment data.
+- FinancialsDashboardViewModel KPIs computed from real FeePayments/TermFees/students.
+- FeeCollectionViewModel.Load uses real payments; RecordPayment creates fee payments via CreateFeePaymentAsync.
+- DashboardViewModel KPIs computed from live DB queries (student count, avg score, revenue, recent activity).
+- TeachersViewModel has full CRUD: AddTeacherAsync, UpdateTeacherAsync, DeleteTeacherAsync with two-column modal UI.
 
 ---
 Iteration ID: iteration-2026-08-22-step-1

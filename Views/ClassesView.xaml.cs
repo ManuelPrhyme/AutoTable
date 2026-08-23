@@ -32,7 +32,7 @@ namespace AutoTable.Views
         private async void CreateClass_Click(object sender, RoutedEventArgs e)
         {
             // Only fully qualified teachers may be assigned as class teachers.
-            var teachers = await AppServices.DataService.GetTeachersAsync();
+            var teachers = await AppServices.DataService!.GetTeachersAsync();
             var qualified = teachers.Where(t => t.IsRegisteredTeacher && !t.IsStudentTeacher).ToList();
 
             if (qualified.Count == 0)

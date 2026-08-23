@@ -25,7 +25,7 @@ namespace AutoTable.Views
             int? termId = null;
             try
             {
-                var fees = await AppServices.DataService.GetTermFeesAsync();
+                var fees = await AppServices.DataService!.GetTermFeesAsync();
                 var match = fees.FirstOrDefault(tf => tf.ClassName == selectedClass && tf.TermName == selectedTerm);
                 if (match != null)
                 {
@@ -57,12 +57,12 @@ namespace AutoTable.Views
                 if (string.IsNullOrWhiteSpace(lin)) return;
                 if (!double.TryParse(amountBox.Text, out var amt)) return;
 
-                var students = await AppServices.DataService.GetStudentsAsync();
+                var students = await AppServices.DataService!.GetStudentsAsync();
                 var student = students.FirstOrDefault(s => string.Equals(s.LIN, lin, StringComparison.OrdinalIgnoreCase) || string.Equals(s.AdmissionNumber, lin, StringComparison.OrdinalIgnoreCase));
                 if (student == null) return;
 
-                await AppServices.DataService.CreateFeePaymentAsync(student.Id, amt, termId, null, "Recorded via UI");
-                await ViewModel.RefreshCommand.ExecuteAsync(null);
+                await AppServices.DataService!.CreateFeePaymentAsync(student.Id, amt, termId, null, "Recorded via UI");
+                await ViewModel.RefreshCommand!.ExecuteAsync(null);
             }
         }
     }

@@ -33,7 +33,7 @@ namespace AutoTable.Views
             var streamPicker = new ComboBox { Header = "Stream (when not class-wide)", Width = 240, DisplayMemberPath = "Name", SelectedIndex = -1, IsEnabled = false };
 
             // load classes into classPicker
-            var classes = await AppServices.DataService.GetClassesAsync();
+            var classes = await AppServices.DataService!.GetClassesAsync();
             classPicker.ItemsSource = classes;
             if (classes.Count > 0) classPicker.SelectedIndex = 0;
 
@@ -46,11 +46,11 @@ namespace AutoTable.Views
                 subjectPicker.SelectedIndex = -1;
                 if (classPicker.SelectedItem is AutoTable.Models.SimpleLookup cls)
                 {
-                    var streams = await AppServices.DataService.GetStreamsForClassAsync(cls.Id);
+                    var streams = await AppServices.DataService!.GetStreamsForClassAsync(cls.Id);
                     streamPicker.ItemsSource = streams;
                     if (streams.Count > 0) streamPicker.SelectedIndex = 0;
 
-                    var subjectsForClass = await AppServices.DataService.GetSubjectsForClassAsync(cls.Id);
+                    var subjectsForClass = await AppServices.DataService!.GetSubjectsForClassAsync(cls.Id);
                     subjectPicker.ItemsSource = subjectsForClass.Select(x => x.Name).ToList();
                     if (subjectPicker.Items.Count > 0) subjectPicker.SelectedIndex = 0;
                 }
@@ -103,7 +103,7 @@ namespace AutoTable.Views
                         StreamName = selectedStream?.Name
                     };
 
-                    var created = await AppServices.DataService.CreateAssessmentAsync(item);
+                    var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                     // Insert created assessment at top of list in the view model if present
                     if (created != null)
                     {
