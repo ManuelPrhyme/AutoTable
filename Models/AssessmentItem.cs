@@ -9,10 +9,12 @@ namespace AutoTable.Models
     {
         /// <summary>Assessment applies to a single subject (default).</summary>
         Single,
-        /// <summary>Assessment applies to all subjects in the class/stream.</summary>
-        AllSubjects,
-        /// <summary>Assessment applies to a user-selected set of subjects.</summary>
-        SpecificSubjects
+        /// <summary>Assessment applies to all subjects in the selected class/stream.</summary>
+        AllInClass,
+        /// <summary>Assessment applies to a user-selected set of subjects in the class.</summary>
+        SpecificSubjects,
+        /// <summary>Assessment applies to all subjects across all classes (general/school-wide exam).</summary>
+        AllInSchool
     }
 
     public class AssessmentItem
