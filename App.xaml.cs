@@ -16,6 +16,7 @@ using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using AutoTable.Data;
+using AutoTable.Demo;
 using AutoTable.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -246,6 +247,30 @@ namespace AutoTable
                             }
                         }
                         catch { }
+
+                        // Create BudgetLines table if missing (new table added after initial schema)
+                        try
+                        {
+                            using var cmdB = sqliteConnection.CreateCommand();
+                            cmdB.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='BudgetLines';";
+                            var exists = cmdB.ExecuteScalar() != null;
+                            if (!exists)
+                            {
+                                cmdB.CommandText = @"CREATE TABLE BudgetLines (
+                                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    Category TEXT NOT NULL,
+                                    Budgeted REAL NOT NULL DEFAULT 0,
+                                    Spent REAL NOT NULL DEFAULT 0,
+                                    FinancialYear TEXT NOT NULL DEFAULT '',
+                                    CreatedAt TEXT NOT NULL DEFAULT ''
+                                );";
+                                cmdB.ExecuteNonQuery();
+                                // Add unique index on Category + FinancialYear
+                                cmdB.CommandText = "CREATE UNIQUE INDEX IX_BudgetLines_Category_FinancialYear ON BudgetLines(Category, FinancialYear);";
+                                try { cmdB.ExecuteNonQuery(); } catch { /* index may already exist */ }
+                            }
+                        }
+                        catch { /* best-effort */ }
 
                         // Before registering the data service, perform term activation housekeeping:
                         try

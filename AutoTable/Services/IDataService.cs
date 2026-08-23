@@ -85,5 +85,11 @@ namespace AutoTable.Services
         Task<AutoTable.Models.Teacher> CreateTeacherAsync(AutoTable.Models.Teacher teacher);
         Task<AutoTable.Models.Teacher?> UpdateTeacherAsync(AutoTable.Models.Teacher teacher);
         Task DeleteTeacherAsync(int teacherId);
+
+        // Budget line CRUD
+        Task<IReadOnlyList<AutoTable.Models.BudgetLine>> GetBudgetLinesAsync(string? financialYear = null);
+        Task<AutoTable.Models.BudgetLine> CreateBudgetLineAsync(AutoTable.Models.BudgetLine line);
+        Task<AutoTable.Models.BudgetLine?> UpdateBudgetLineAsync(AutoTable.Models.BudgetLine line);
+        Task DeleteBudgetLineAsync(int budgetLineId);
     }
 }

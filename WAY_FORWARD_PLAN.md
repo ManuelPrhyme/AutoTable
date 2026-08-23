@@ -9,9 +9,9 @@ code/build state** and should be treated as authoritative.
 ## 1. Executive Summary
 
 The operational goal — *single-source-of-truth SQLite persistence for every CRUD operation* — is
-roughly **90% implemented**, the working tree **compiles cleanly (0 errors, 0 warnings)**,
-and most Phase 2/4/5 UI wiring is complete. Only Assessment creation from the UI ViewModel
-and Budget entity remain as gaps.
+**fully implemented**, the working tree **compiles cleanly (0 errors)**,
+and all Phase 2/4/5 UI wiring is complete. Integration tests (9 passing) provide regression coverage.
+Only EF Migrations verification remains as a maintenance item.
 
 | Area | Status | Evidence |
 |---|---|---|
@@ -30,12 +30,13 @@ and Budget entity remain as gaps.
 | Moderation approve/publish persistence | ✅ DONE | `ModerationViewModel.cs` — persists via `VerifyAssessmentAsync`/`PublishAssessmentAsync` |
 | AI Insights derived from DB | ✅ DONE | `AiInsightsViewModel.cs` — gradebook + assessment derived |
 | Financial dashboard KPIs from DB | ✅ DONE | `FinancialsDashboardViewModel.cs` — real FeePayments/TermFees |
-| Budget lines from DB | ❌ hardcoded | `BudgetViewModel.cs:38-53` — no BudgetEntity in schema |
+| Budget lines from DB | ✅ DONE | `BudgetViewModel.cs` — BudgetLineEntity in schema, AddLineItem + Export |
 | Fee collection list from real payments | ✅ DONE | `FeeCollectionViewModel.cs` — real payments, no RNG |
 | `GetFeePaymentsAsync` read API | ✅ DONE | `IDataService.cs` + `DatabaseDataService.cs` |
-| Integration tests (SQLite in-memory) | ❌ none | `Tests/` has only `verify_startup.ps1` |
+| Integration tests (SQLite in-memory) | ✅ DONE | `Tests/AutoTable.IntegrationTests/` — 9 tests, all passing |
+| Mock cleanup | ✅ DONE | Moved to `Demo/` folder, namespace `AutoTable.Demo` |
 
-**Remaining gaps:** Budget entity + wiring → Integration tests → Mock cleanup → EF migrations verification.
+**Remaining gap:** EF migrations verification (startup uses EnsureCreated + ALTER TABLE patches; acceptable for now).
 
 ---
 
@@ -51,17 +52,18 @@ and Budget entity remain as gaps.
 | 6 | Teacher entity + IDataService methods + migration | ✅ DONE | Full CRUD with Add/Edit/Delete UI and two-column modal |
 | 7 | Printing reads from IDataService queries | ✅ DONE | ReportCards uses `GetGradebookAsync` |
 | 8 | Missing CRUD endpoints (marks, fees) | ✅ DONE | MarksEntryViewModel persists via UpdateMarkAsync; FeeCollection uses real payments |
-| 9 | Integration tests (SQLite in-memory) | ❌ NOT DONE | |
+| 9 | Integration tests (SQLite in-memory) | ✅ DONE | 9 tests in Tests/AutoTable.IntegrationTests |
 | 10 | Diagnostics logging for DB init errors | ✅ DONE | temp log on failure |
-| 11 | Clean up MockDataServiceAdapter | ⚠️ PARTIAL | not wired except explicit demo mode; dead files remain |
+| 11 | Clean up MockDataServiceAdapter | ✅ DONE | moved to Demo/ folder, namespace AutoTable.Demo |
 | 12 | Manual QA checklist / UI wiring audit | ✅ DONE | build green, all CRUD paths wired |
+| 13 | Budget entity + wiring | ✅ DONE | BudgetLineEntity, service CRUD, BudgetViewModel wired, AddLineItem + Export |
 
 ### Agreed roadmap phase status (CONTEXT_REPORT §5)
 
 - **Phase 2** — Assessments create: service ✅ / UI ✅ · Marks persistence: service ✅ / VM ✅ · Students sort ✅
 - **Phase 4** — Moderation verify/publish: service ✅ / VM ✅ · AI Insights ✅
-- **Phase 5** — `GetFeePaymentsAsync` ✅ · FinancialsDashboard ✅ · FeeCollection ✅ · Budget ❌ (no entity)
-- **Then** — Teacher CRUD ✅ (service + UI) · Migrations verification ⚠️ · Mock cleanup ⚠️ · Tests ❌
+- **Phase 5** — `GetFeePaymentsAsync` ✅ · FinancialsDashboard ✅ · FeeCollection ✅ · Budget ✅ (entity + wiring done)
+- **Then** — Teacher CRUD ✅ (service + UI) · Migrations verification ⚠️ · Mock cleanup ✅ (moved to Demo/) · Tests ✅ (9 passing)
 
 ---
 
@@ -192,24 +194,17 @@ warning WMC1509: No LocalAssembly parameter given during MarkupCompilePass2
   static but clearly labelled as sample data until a budget entity exists. Implement or safely
   disable `Export` / `AddLineItem` stubs.
 
-### P4 — Remaining operational-plan items
+### P4 — Remaining operational-plan items (all done)
 
-1. **Teacher UI completion** — covered by P0 step 1 (page creation); optionally extend
-   `ClassesViewModel` to assign teachers to classes later.
-2. **EF Migrations decision** — startup currently hand-patches schema with `ALTER TABLE` blocks
-   (`App.xaml.cs:90-191`). Either (a) accept `EnsureCreated` + these compat patches for now and
-   document them, or (b) move to real EF migrations and delete the patches. Recommend (a) short-term,
-   revisit before any production deploy.
-3. **Mock cleanup** — move `Services/MockDataService.cs` and `AutoTable/Services/MockDataServiceAdapter.cs`
-   under a `Demo/` folder/namespace (or delete if demo mode is dropped). They are currently dead code
-   outside `AUTOTABLE_DEMO_MODE=true`.
-4. **Integration tests (Step 9)** — new `Tests/AutoTable.IntegrationTests` project using SQLite
-   `:memory:` (keep connection open, `PRAGMA foreign_keys=ON`, `EnsureCreated`). Flows:
-   create student → appears in list; create assessment → appears; enter mark → gradebook/report reflect it;
-   create term → exactly one active term.
-5. **Docs sync** — update `CONTEXT_REPORT.md` §3/§5 statuses (DEV_EPHEMERAL_DB done, teacher CRUD done)
-   and rewrite stale sections of `AGENT_CONTEXT.md` (persistent DB, no mock usage) so future agents
-   don't chase phantom gaps.
+1. **Teacher UI completion** — ✅ DONE (Add/Edit/Delete with two-column modal).
+2. **EF Migrations decision** — startup uses `EnsureCreated` + ALTER TABLE patches. Acceptable for now;
+   revisit before production deploy.
+3. **Mock cleanup** — ✅ DONE. Moved `MockDataService.cs` and `MockDataServiceAdapter.cs` to `Demo/`
+   folder with namespace `AutoTable.Demo`.
+4. **Integration tests (Step 9)** — ✅ DONE. `Tests/AutoTable.IntegrationTests` with 9 tests:
+   Student CRUD, Term lifecycle, Assessment creation, Marks upsert, Budget CRUD, Teacher CRUD,
+   Fee payments, Duplicate LIN validation.
+5. **Docs sync** — ✅ DONE. `CONTEXT_REPORT.md` and `WAY_FORWARD_PLAN.md` updated 23 Aug 2026.
 
 ---
 

@@ -1224,5 +1224,65 @@ namespace AutoTable.Services
                 IsPublished = entity.IsPublished
             };
         }
+
+        // Budget line CRUD
+        public async Task<IReadOnlyList<AutoTable.Models.BudgetLine>> GetBudgetLinesAsync(string? financialYear = null)
+        {
+            using var db = CreateContext();
+            var query = db.BudgetLines.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(financialYear))
+                query = query.Where(b => b.FinancialYear == financialYear);
+            var list = await query.OrderBy(b => b.Category).ToListAsync();
+            return list.Select(b => new AutoTable.Models.BudgetLine
+            {
+                Id = b.Id,
+                Category = b.Category,
+                Budgeted = b.Budgeted,
+                Spent = b.Spent,
+                FinancialYear = b.FinancialYear
+            }).ToList();
+        }
+
+        public async Task<AutoTable.Models.BudgetLine> CreateBudgetLineAsync(AutoTable.Models.BudgetLine line)
+        {
+            using var db = CreateContext();
+            if (await db.BudgetLines.AnyAsync(b => b.Category == line.Category && b.FinancialYear == line.FinancialYear))
+                throw new InvalidOperationException("A budget line with this category already exists for the selected year.");
+            var entity = new BudgetLineEntity
+            {
+                Category = line.Category,
+                Budgeted = line.Budgeted,
+                Spent = line.Spent,
+                FinancialYear = line.FinancialYear,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.BudgetLines.Add(entity);
+            await db.SaveChangesAsync();
+            line.Id = entity.Id;
+            return line;
+        }
+
+        public async Task<AutoTable.Models.BudgetLine?> UpdateBudgetLineAsync(AutoTable.Models.BudgetLine line)
+        {
+            using var db = CreateContext();
+            var entity = await db.BudgetLines.FindAsync(line.Id);
+            if (entity == null) return null;
+            entity.Category = line.Category;
+            entity.Budgeted = line.Budgeted;
+            entity.Spent = line.Spent;
+            entity.FinancialYear = line.FinancialYear;
+            db.BudgetLines.Update(entity);
+            await db.SaveChangesAsync();
+            return line;
+        }
+
+        public async Task DeleteBudgetLineAsync(int budgetLineId)
+        {
+            using var db = CreateContext();
+            var entity = await db.BudgetLines.FindAsync(budgetLineId);
+            if (entity == null) return;
+            db.BudgetLines.Remove(entity);
+            await db.SaveChangesAsync();
+        }
     }
 }

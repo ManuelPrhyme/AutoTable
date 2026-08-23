@@ -35,9 +35,11 @@ namespace AutoTable.Models
 
     public class BudgetLine
     {
+        public int Id { get; set; }
         public string Category { get; set; } = string.Empty;
         public decimal Budgeted { get; set; }
         public decimal Spent { get; set; }
+        public string FinancialYear { get; set; } = string.Empty;
         public decimal Remaining => Budgeted - Spent;
         public double UtilisationPercent => Budgeted == 0 ? 0 : (double)(Spent / Budgeted * 100);
         public string Status => UtilisationPercent >= 100 ? "Over Budget" : UtilisationPercent >= 80 ? "Near Limit" : "On Track";

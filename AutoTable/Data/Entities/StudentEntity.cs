@@ -238,4 +238,15 @@ namespace AutoTable.Data.Entities
 
         public double Amount { get; set; }
     }
+
+    // Budget line entity: a single budget category with budgeted and spent amounts
+    public class BudgetLineEntity
+    {
+        public int Id { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public decimal Budgeted { get; set; }
+        public decimal Spent { get; set; }
+        public string FinancialYear { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
 }

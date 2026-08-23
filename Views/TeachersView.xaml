@@ -12,7 +12,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="16">
             <TextBlock Style="{ThemeResource PageTitleStyle}" Text="Teachers" />
-            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Register and manage teachers, their subjects, classes, next of kin and qualification status." />          
+            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Register and manage teachers, their subjects, classes, next of kin and qualification status." />
             <Border Style="{ThemeResource TableCardStyle}">
                 <StackPanel>
                     <Border Style="{ThemeResource CardHeaderBorderStyle}">

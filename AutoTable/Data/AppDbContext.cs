@@ -22,6 +22,7 @@ namespace AutoTable.Data
         // New entities
         public DbSet<ClassStreamEntity> ClassStreams => Set<ClassStreamEntity>();
         public DbSet<TermFeeEntity> TermFees => Set<TermFeeEntity>();
+        public DbSet<BudgetLineEntity> BudgetLines => Set<BudgetLineEntity>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -129,6 +130,11 @@ namespace AutoTable.Data
             // Term fees: unique per term+class
             modelBuilder.Entity<TermFeeEntity>()
                 .HasIndex(tf => new { tf.TermId, tf.ClassId })
+                .IsUnique();
+
+            // Budget lines: unique per category+year
+            modelBuilder.Entity<BudgetLineEntity>()
+                .HasIndex(b => new { b.Category, b.FinancialYear })
                 .IsUnique();
 
             base.OnModelCreating(modelBuilder);

@@ -1,10 +1,11 @@
 using AutoTable.Models;
+using AutoTable.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace AutoTable.Services
+namespace AutoTable.Demo
 {
     // Lightweight adapter that exposes the in-memory MockDataService via the IDataService interface.
     // Used as a safe fallback when the real database cannot be initialized.
@@ -246,5 +247,21 @@ namespace AutoTable.Services
         {
             return Task.CompletedTask;
         }
+
+        // Budget line CRUD (mock)
+        public Task<IReadOnlyList<AutoTable.Models.BudgetLine>> GetBudgetLinesAsync(string? financialYear = null)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.BudgetLine>>(Array.Empty<AutoTable.Models.BudgetLine>());
+
+        public Task<AutoTable.Models.BudgetLine> CreateBudgetLineAsync(AutoTable.Models.BudgetLine line)
+        {
+            line.Id = 0;
+            return Task.FromResult(line);
+        }
+
+        public Task<AutoTable.Models.BudgetLine?> UpdateBudgetLineAsync(AutoTable.Models.BudgetLine line)
+            => Task.FromResult<AutoTable.Models.BudgetLine?>(line);
+
+        public Task DeleteBudgetLineAsync(int budgetLineId)
+            => Task.CompletedTask;
     }
 }
