@@ -27,6 +27,7 @@ namespace AutoTable.Views
         private async void AddStudent_Click(object sender, RoutedEventArgs e)
         {
             var form = new EnrollmentFormView();
+
             ContentDialog? dialog = null;
             form.ViewModel.OnSubmittedAsync = async (createdStudent) =>
             {
@@ -39,21 +40,22 @@ namespace AutoTable.Views
                 {
                     // Fallback: reload full list
                     await _vm.LoadAsync();
-                    if (dialog != null) StudentsList.ItemsSource = _vm.Students;
+                    StudentsList.ItemsSource = _vm.Students;
                 }
                 dialog?.Hide();
             };
 
+            // Modal-size.md standard: 1040 x 577 dialog. WinUI clamps ContentDialog width
+            // via ContentDialogMaxWidth (~548px default) — the override is REQUIRED or the
+            // two-column layout gets silently clipped.
             dialog = new ContentDialog
             {
-                Title = "Student Enrollment",
+                Title = "Enroll New Student",
                 Content = form,
                 CloseButtonText = "Close",
-                XamlRoot = this.XamlRoot,
-                Width = 600,
-                Height = 720,
-                IsPrimaryButtonEnabled = false
+                XamlRoot = this.XamlRoot
             };
+            dialog.Resources["ContentDialogMaxWidth"] = 1040d + 48d; // width + padding allowance
 
             await dialog.ShowAsync();
         }

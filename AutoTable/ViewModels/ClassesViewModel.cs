@@ -16,6 +16,7 @@ namespace AutoTable.ViewModels
         public ObservableCollection<SimpleLookup> SubjectsForClass { get; } = new();
         public ObservableCollection<SimpleLookup> StreamsForClass { get; } = new();
         public ObservableCollection<SimpleLookup> AllStreams { get; } = new();
+        public ObservableCollection<AutoTable.Models.GradingSystemInfo> GradingSystems { get; } = new();
 
         public ClassesViewModel()
         {
@@ -34,8 +35,9 @@ namespace AutoTable.ViewModels
                 Classes.Add(new SimpleLookup { Id = c.Id, Name = c.Name });
             }
 
-            // Build ClassInfos with streams, subjects, student counts and class teacher
+            // Build ClassInfos with streams, subjects, student counts, class teacher and grading system
             var teacherNames = await _dataService.GetClassTeacherNamesAsync();
+            var gradingNames = await _dataService.GetClassGradingSystemNamesAsync();
             foreach (var c in classes)
             {
                 var streamsForClass = await _dataService.GetStreamsForClassAsync(c.Id);
@@ -48,7 +50,8 @@ namespace AutoTable.ViewModels
                     StreamsCsv = string.Join(", ", streamsForClass.Select(s => s.Name)),
                     SubjectsCsv = string.Join(", ", subjectsForClass.Select(s => s.Name)),
                     StudentCount = count,
-                    ClassTeacherName = teacherNames.TryGetValue(c.Id, out var tn) ? tn : string.Empty
+                    ClassTeacherName = teacherNames.TryGetValue(c.Id, out var tn) ? tn : string.Empty,
+                    GradingSystemName = gradingNames.TryGetValue(c.Id, out var gn) ? gn : string.Empty
                 };
                 ClassInfos.Add(info);
             }
@@ -56,11 +59,36 @@ namespace AutoTable.ViewModels
             var allSubjects = await _dataService.GetSubjectsAsync();
             AllSubjects.Clear();
             foreach (var s in allSubjects) AllSubjects.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
+
+            await LoadGradingSystemsAsync();
         }
 
-        public async Task CreateClassAsync(string name, int? classTeacherId = null)
+        public async Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null, int? gradingSystemId = null)
         {
-            await _dataService.CreateClassAsync(name, classTeacherId);
+            return await _dataService.CreateClassAsync(name, classTeacherId, gradingSystemId);
+        }
+
+        public async Task LoadGradingSystemsAsync()
+        {
+            var systems = await _dataService.GetGradingSystemsAsync();
+            GradingSystems.Clear();
+            foreach (var g in systems) GradingSystems.Add(g);
+        }
+
+        public async Task<AutoTable.Models.GradingSystemInfo> CreateGradingSystemWithBandsAsync(
+            string name, bool isDefault,
+            System.Collections.Generic.IEnumerable<(string Label, double Min, double Max, bool Pass, bool Repeat)> bands,
+            double passMark = 50)
+        {
+            var created = await _dataService.CreateGradingSystemAsync(name, isDefault, passMark);
+            foreach (var b in bands)
+            {
+                // A band promotes unless it was explicitly flagged as a repeat/failure range.
+                await _dataService.CreateGradeBandAsync(created.Id, b.Label, b.Min, b.Max,
+                    isPromotionalPass: !b.Repeat, isRepeater: b.Repeat, isPromotionalFail: b.Repeat);
+            }
+            await LoadGradingSystemsAsync();
+            return created;
         }
 
         public async Task DeleteClassAsync(int classId)

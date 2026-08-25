@@ -39,6 +39,31 @@ namespace AutoTable.Views
             var start = TermStart.Date;
             var end = TermEnd.Date;
             if (string.IsNullOrWhiteSpace(name)) return;
+
+            // ── Unusual-timing warning ──────────────────────────────────────────
+            // Expected creation windows (by current calendar month):
+            //   Term 1: January-April   (usually February or earlier, through April)
+            //   Term 2: April-July      (late April, e.g. last week, through July)
+            //   Term 3: September-November
+            var termNo = ExtractTermNumber(name);
+            if (termNo.HasValue && IsOutsideExpectedWindow(termNo.Value, DateTime.Now.Month))
+            {
+                var window = DescribeWindow(termNo.Value);
+                var confirm = new ContentDialog
+                {
+                    Title = "Unusual creation date",
+                    Content = $"It is currently {DateTime.Now:MMMM}. {window}.\r\n\r\n" +
+                              $"Are you sure you want to continue creating '{name}' now?",
+                    PrimaryButtonText = "Yes, create it",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var choice = await confirm.ShowAsync();
+                if (choice != ContentDialogResult.Primary) return;
+            }
+
             try
             {
                 await _vm.CreateTermAsync(name, start.DateTime, end.DateTime);
@@ -54,6 +79,32 @@ namespace AutoTable.Views
                 await dlg.ShowAsync();
             }
         }
+
+        /// <summary>Extracts the first 1-digit term number from a name like "Term 2, 2026" or "TERM3".</summary>
+        private static int? ExtractTermNumber(string name)
+        {
+            // Look for a digit 1-3 attached to the word "term" so years ("2026") never match.
+            var m = System.Text.RegularExpressions.Regex.Match(name, @"term\D{0,3}([1-3])",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (m.Success) return m.Groups[1].Value[0] - '0';
+            return null; // no recognisable term number - skip the timing check
+        }
+
+        private static bool IsOutsideExpectedWindow(int termNumber, int month) => termNumber switch
+        {
+            1 => month < 1 || month > 4,   // Jan-Apr
+            2 => month < 4 || month > 7,   // late Apr-Jul
+            3 => month < 9 || month > 11,  // Sep-Nov
+            _ => false
+        };
+
+        private static string DescribeWindow(int termNumber) => termNumber switch
+        {
+            1 => "Term 1 usually runs between February (or earlier) and April",
+            2 => "Term 2 usually runs between late April and July",
+            3 => "Term 3 usually runs between September and November",
+            _ => string.Empty
+        };
 
         private async void SetFee_Click(object sender, RoutedEventArgs e)
         {

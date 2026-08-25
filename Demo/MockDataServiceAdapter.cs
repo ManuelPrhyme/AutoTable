@@ -40,6 +40,12 @@ namespace AutoTable.Demo
         public Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync()
             => Task.FromResult<IReadOnlyList<AssessmentItem>>(_mock.GetAssessments());
 
+        public Task<ReportCardSheetModel?> GetReportCardSheetAsync(string studentName, string className, string term)
+        {
+            // Mock has no persisted report-card data; the real service builds the sheet.
+            return Task.FromResult<ReportCardSheetModel?>(null);
+        }
+
         public Task<AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
         {
             var found = _mock.GetAssessments().FirstOrDefault(a => a.Name == name && a.ClassName == className && a.Subject == subject);
@@ -92,6 +98,9 @@ namespace AutoTable.Demo
 
         public Task<IReadOnlyList<SimpleLookup>> GetTermLookupsAsync()
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Terms.Select((t, i) => new SimpleLookup { Id = i + 1, Name = t }).ToList());
+
+        public Task<SimpleLookup?> GetActiveTermAsync()
+            => Task.FromResult<SimpleLookup?>(_mock.Terms.Count > 0 ? new SimpleLookup { Id = 1, Name = _mock.Terms[0] } : null);
 
         public Task<IReadOnlyList<string>> GetAcademicYearsAsync()
             => Task.FromResult<IReadOnlyList<string>>(_mock.AcademicYears);
@@ -147,8 +156,27 @@ namespace AutoTable.Demo
         public Task<IReadOnlyList<SimpleLookup>> GetClassesAsync()
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Classes.Select((c, i) => new SimpleLookup { Id = i + 1, Name = c }).ToList());
 
-        public Task<SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null)
+        public Task<SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null, int? gradingSystemId = null)
             => Task.FromResult(new SimpleLookup { Id = 0, Name = name });
+
+        public Task<IReadOnlyDictionary<int, string>> GetClassGradingSystemNamesAsync()
+            => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
+
+        public Task<IReadOnlyList<AutoTable.Models.GradingSystemInfo>> GetGradingSystemsAsync()
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.GradingSystemInfo>>(Array.Empty<AutoTable.Models.GradingSystemInfo>());
+
+        public Task<AutoTable.Models.GradingSystemInfo> CreateGradingSystemAsync(string name, bool isDefault = false, double passMark = 50)
+            => Task.FromResult(new AutoTable.Models.GradingSystemInfo { Id = 0, Name = name, IsDefault = isDefault });
+
+        public Task DeleteGradingSystemAsync(int gradingSystemId)
+            => Task.CompletedTask;
+
+        public Task<IReadOnlyList<AutoTable.Models.GradeBandInfo>> GetGradeBandsAsync(int gradingSystemId)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.GradeBandInfo>>(Array.Empty<AutoTable.Models.GradeBandInfo>());
+
+        public Task CreateGradeBandAsync(int gradingSystemId, string label, double minScore, double maxScore,
+            bool isPromotionalPass, bool isRepeater, bool isPromotionalFail)
+            => Task.CompletedTask;
 
         public Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync()
             => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
@@ -263,5 +291,24 @@ namespace AutoTable.Demo
 
         public Task DeleteBudgetLineAsync(int budgetLineId)
             => Task.CompletedTask;
+        // Promotion / repeat (Term 3 move-up) — mock has no persisted promotion data.
+        public Task<IReadOnlyList<AutoTable.Models.PromotionRow>> GetPromotionOverviewAsync(int? classId = null)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.PromotionRow>>(Array.Empty<AutoTable.Models.PromotionRow>());
+
+        public Task<AutoTable.Models.SimpleLookup?> SuggestNextClassAsync(int currentClassId)
+            => Task.FromResult<AutoTable.Models.SimpleLookup?>(null);
+
+        public Task PromoteStudentAsync(int studentId, int? targetClassId = null)
+            => Task.CompletedTask;
+
+        public Task RepeatStudentAsync(int studentId)
+            => Task.CompletedTask;
+
+        public Task ShiftStudentClassAsync(int studentId, int targetClassId)
+            => Task.CompletedTask;
+
+        public Task ResetPromotionAsync(int studentId)
+            => Task.CompletedTask;
+
     }
 }

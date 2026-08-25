@@ -15,10 +15,11 @@ namespace AutoTable.Views
     {
         private readonly TeachersViewModel _vm;
 
-        // Modal dimensions matching Walmart old checkout modal reference
-        private const double ModalWidth = 800;
+        // Modal dimensions matching Walmart old checkout modal reference,
+        // expanded 30% wider than the original 800px spec to fit both columns comfortably
+        private const double ModalWidth = 1040;   // was 800 (+30%)
         private const double ModalHeight = 577;
-        private const double FieldWidth = 320;
+        private const double FieldWidth = 408;    // column width reduced 15% (480 × 0.85); dialog width unchanged
         private const double ColumnGap = 24;
 
         public TeachersView()
@@ -272,6 +273,9 @@ namespace AutoTable.Views
                 IsPrimaryButtonEnabled = true,
                 DefaultButton = ContentDialogButton.Primary
             };
+            // WinUI clamps ContentDialog width via ContentDialogMaxWidth (default ~548px),
+            // which clips the second column. Raise the cap so the full two-column layout fits.
+            dialog.Resources["ContentDialogMaxWidth"] = ModalWidth + 48d;
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
@@ -419,6 +423,8 @@ namespace AutoTable.Views
                 IsPrimaryButtonEnabled = true,
                 DefaultButton = ContentDialogButton.Primary
             };
+            // Same ContentDialogMaxWidth clamp fix as the Register dialog (keeps both columns visible).
+            dialog.Resources["ContentDialogMaxWidth"] = ModalWidth + 48d;
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary)

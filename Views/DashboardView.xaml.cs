@@ -132,21 +132,25 @@ namespace AutoTable.Views
 
         private void QuickAction_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as Button)?.Content is string action)
+            if ((sender as Button)?.Content is not string action) return;
+
+            // Map quick actions to shell route tags. Navigation goes through the
+            // shell's CONTENT frame (NavigateToShellPage) so the sidebar persists.
+            // Never use the root-frame Navigate() here — it replaces the whole
+            // ShellView and the sidebar disappears.
+            var tag = action switch
             {
-                switch (action)
-                {
-                    case "Create Term":
-                        NavigationService.Instance.Navigate(typeof(Views.TermManagementView));
-                        break;
-                    case "Record Fees Payment":
-                        NavigationService.Instance.Navigate(typeof(Views.FeeCollectionView));
-                        break;
-                    default:
-                        // Other quick actions could be routed to different pages or show dialogs
-                        break;
-                }
-            }
+                "Enter Marks"          => "MarksEntry",
+                "Add Assessment"       => "Assessments",
+                "View Gradebook"       => "Gradebook",
+                "Generate Report Card" => "ReportCards",
+                "Create Term"          => "TermManagement",
+                "Record Fees Payment"  => "FeeCollection",
+                _                      => string.Empty
+            };
+
+            if (!string.IsNullOrEmpty(tag))
+                NavigationService.Instance.NavigateToShellPage(tag);
         }
     }
 }

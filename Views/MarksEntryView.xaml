@@ -138,9 +138,10 @@
                                                Text="{Binding AdmissionNumber}" />
                                     <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding ClassName}" />
-                                    <TextBox Grid.Column="4" Text="{Binding MarkDisplay}"
+                                    <TextBox Grid.Column="4" Text="{Binding MarkText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              IsEnabled="{Binding IsEditable}"
                                              FontSize="14" FontWeight="SemiBold"
+                                             PlaceholderText="-"
                                              VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="5" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding Grade}" />

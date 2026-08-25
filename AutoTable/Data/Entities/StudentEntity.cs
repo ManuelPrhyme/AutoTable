@@ -13,6 +13,12 @@ namespace AutoTable.Data.Entities
         public ClassEntity? Class { get; set; }
         public int? StreamId { get; set; }
         public StreamEntity? Stream { get; set; }
+        // End-of-year promotion (Term 3 move-up): 0 = Pending, 1 = Promoted,
+        // 2 = Repeat, 3 = Shifted (manual class change)
+        public int PromotionStatus { get; set; }
+        public int? PromotedToClassId { get; set; }
+        public ClassEntity? PromotedToClass { get; set; }
+        public DateTime? PromotionProcessedAt { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string? Gender { get; set; }
         public bool IsActive { get; set; } = true;
@@ -43,17 +49,48 @@ namespace AutoTable.Data.Entities
         public ICollection<FeePaymentEntity> FeePayments { get; set; } = new List<FeePaymentEntity>();
     }
 
-    public class ClassEntity
+        public class ClassEntity
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         // Optional class teacher — must be an existing registered teacher (Users.Role == "Teacher")
         public int? ClassTeacherId { get; set; }
         public UserEntity? ClassTeacher { get; set; }
+        // Optional grading system — null falls back to the school default
+        public int? GradingSystemId { get; set; }
+        public GradingSystemEntity? GradingSystem { get; set; }
         public ICollection<StudentEntity> Students { get; set; } = new List<StudentEntity>();
         public ICollection<AssessmentEntity> Assessments { get; set; } = new List<AssessmentEntity>();
         public ICollection<ClassSubjectEntity> ClassSubjects { get; set; } = new List<ClassSubjectEntity>();
         public ICollection<ClassStreamEntity> ClassStreams { get; set; } = new List<ClassStreamEntity>();
+    }
+
+    // A named grading system (e.g. "CBSE-10", "IGCSE") owned by the school
+    public class GradingSystemEntity
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public bool IsDefault { get; set; }
+        // The mark (%) a student must average to be promoted under this system.
+        // The class author sets this when creating the grading scale.
+        public double PassMark { get; set; } = 50;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public ICollection<GradeBandEntity> GradeBands { get; set; } = new List<GradeBandEntity>();
+                public ICollection<ClassEntity> Classes { get; set; } = new List<ClassEntity>();
+    }
+
+    // A single grade band/range within a grading system (e.g. A:90-100, B:75-89 ...)
+    public class GradeBandEntity
+    {
+        public int Id { get; set; }
+        public int GradingSystemId { get; set; }
+        public GradingSystemEntity? GradingSystem { get; set; }
+        public string Label { get; set; } = string.Empty;          // e.g. "A", "B+", "C4"
+        public double MinScore { get; set; }
+        public double MaxScore { get; set; }
+        public bool IsPromotionalPass { get; set; }                 // this band passes for promotion
+        public bool IsRepeater { get; set; }                        // this band means "repeat the class"
+        public bool IsPromotionalFail { get; set; }                 // this band fails promotion
     }
 
     public class StreamEntity

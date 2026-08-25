@@ -4,6 +4,8 @@ using AutoTable.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
@@ -24,180 +26,373 @@ namespace AutoTable.Views
 
         private async void ClassesView_Loaded(object sender, RoutedEventArgs e)
         {
-            await _vm.LoadAsync();
+            await _vm.LoadAsync();          // also loads grading systems
             await _vm.LoadAllStreamsAsync();
-            SelectedClassTitle.Text = "Select a class";
         }
 
+        private const string NewGradingSystemOption = "➕ New grading system…";
+
+        // One editable grade-band row inside the grading-system builder
+        private sealed class BandInputs
+        {
+            public TextBox Label = new();
+            public TextBox Min = new();
+            public TextBox Max = new();
+            public CheckBox Pass = new();
+            public CheckBox Repeat = new();
+            public CheckBox Fail = new();
+        }
+
+        private readonly List<BandInputs> _bandRows = new();
+
+        // CREATE CLASS — single modal containing everything: name, class teacher
+        // (registered OR student teacher), grading system (pick existing or build
+        // new inline), streams and subjects (assign existing or create new inline).
         private async void CreateClass_Click(object sender, RoutedEventArgs e)
         {
-            // Only fully qualified teachers may be assigned as class teachers.
+            // Any teacher qualifies — registered teachers AND student teachers.
             var teachers = await AppServices.DataService!.GetTeachersAsync();
-            var qualified = teachers.Where(t => t.IsRegisteredTeacher && !t.IsStudentTeacher).ToList();
-
-            if (qualified.Count == 0)
+            if (teachers.Count == 0)
             {
-                await ShowErrorAsync("No qualified teachers available.",
-                    "A class teacher must be a registered teacher. Register one first under Administration → Teachers (tick 'Registered by the teachers' board').");
+                await ShowErrorAsync("No teachers available.",
+                    "Add at least one teacher first under Administration → Teachers. Both registered and student teachers can be assigned.");
                 return;
             }
 
-            var nameBox = new TextBox { Header = "Class name", PlaceholderText = "e.g. P4", Width = 280 };
+            await _vm.LoadAllStreamsAsync();
+            await _vm.LoadGradingSystemsAsync();
+            var allSubjects = await AppServices.DataService.GetSubjectsAsync();
+
+            var nameBox = new TextBox { Header = "Class name", PlaceholderText = "e.g. P4", Width = 300 };
             var teacherPicker = new ComboBox
             {
-                Header = "Class teacher (registered teachers only)",
-                Width = 280,
+                Header = "Class teacher (registered or student teacher)",
+                Width = 300,
                 DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
-                ItemsSource = qualified,
-                SelectedIndex = -1,
+                ItemsSource = teachers,
                 Margin = new Thickness(0, 8, 0, 0)
             };
 
-            var panel = new StackPanel { Spacing = 4 };
-            panel.Children.Add(nameBox);
-            panel.Children.Add(teacherPicker);
+            // Grading system: pick an existing one, or build a new one inline
+            var gsItems = new List<object>();
+            foreach (var g in _vm.GradingSystems) gsItems.Add(g);
+            gsItems.Add(NewGradingSystemOption);
+
+            var gsPicker = new ComboBox
+            {
+                Header = "Grading system this class will use",
+                Width = 300,
+                ItemsSource = gsItems,
+                SelectedIndex = 0,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+
+            var (newGsPanel, gsNameBox, gsDefaultChk, gsPassMarkBox, _) = BuildGradingSystemEditor();
+            newGsPanel.Visibility = Visibility.Collapsed;
+            gsPicker.SelectionChanged += (_, _) =>
+                newGsPanel.Visibility = ReferenceEquals(gsPicker.SelectedItem, NewGradingSystemOption)
+                    ? Visibility.Visible : Visibility.Collapsed;
+
+            // Streams & subjects: assign existing or type names for new ones
+            var pendingStreams = new ObservableCollection<SimpleLookup>();
+            var pendingSubjects = new ObservableCollection<SimpleLookup>();
+            var streamsSection = BuildAssignSection("Streams (optional)", _vm.AllStreams, "Name", pendingStreams);
+            var subjectsSection = BuildAssignSection("Subjects (optional)", allSubjects, "Name", pendingSubjects);
+
+            var content = new StackPanel { Spacing = 12 };
+            content.Children.Add(nameBox);
+            content.Children.Add(teacherPicker);
+            content.Children.Add(gsPicker);
+            content.Children.Add(newGsPanel);
+            foreach (var c in streamsSection.Children.ToList()) { streamsSection.Children.Remove(c); content.Children.Add(c); }
+            foreach (var c in subjectsSection.Children.ToList()) { subjectsSection.Children.Remove(c); content.Children.Add(c); }
 
             var dialog = new ContentDialog
             {
                 Title = "New Class",
-                Content = panel,
-                PrimaryButtonText = "Create",
+                Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 540, Content = content },
+                PrimaryButtonText = "Create Class",
                 CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot,
-                IsPrimaryButtonEnabled = true
+                XamlRoot = this.XamlRoot
             };
 
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            var name = nameBox.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
             {
-                var name = nameBox.Text?.Trim();
-                if (string.IsNullOrWhiteSpace(name)) return;
+                await ShowErrorAsync("Class name required.", "Enter a name for the class.");
+                return;
+            }
 
-                int? classTeacherId = null;
-                if (teacherPicker.SelectedItem is AutoTable.Models.Teacher t) classTeacherId = t.Id;
+            try
+            {
+                int? teacherId = teacherPicker.SelectedItem is AutoTable.Models.Teacher t ? t.Id : null;
+                int? gradingSystemId = null;
 
-                try
+                if (gsPicker.SelectedItem is GradingSystemInfo existingGs)
+                    gradingSystemId = existingGs.Id;
+                else if (ReferenceEquals(gsPicker.SelectedItem, NewGradingSystemOption))
+                    gradingSystemId = (await CreateGradingSystemFromEditorAsync(gsNameBox.Text?.Trim(), gsDefaultChk.IsChecked == true,
+                        double.TryParse(gsPassMarkBox.Text, out var pm) ? pm : null)).Id;
+
+                var createdClass = await _vm.CreateClassAsync(name, teacherId, gradingSystemId);
+
+                // Attach pending streams/subjects to the freshly created class.
+                foreach (var item in pendingStreams)
                 {
-                    await _vm.CreateClassAsync(name, classTeacherId);
-                    await _vm.LoadAsync();
+                    if (item.Id < 0) await _vm.CreateStreamAsync(item.Name, createdClass.Id);   // new → create & assign
+                    else await _vm.AssignStreamToClassAsync(createdClass.Id, item.Id);
                 }
-                catch (System.Exception ex)
+                foreach (var item in pendingSubjects)
                 {
-                    await ShowErrorAsync("Unable to create class.", ex.Message);
+                    if (item.Id < 0)
+                    {
+                        var subj = await AppServices.DataService.CreateSubjectAsync(item.Name); // new → create & assign
+                        await _vm.AssignSubjectToClassAsync(createdClass.Id, subj.Id);
+                    }
+                    else await _vm.AssignSubjectToClassAsync(createdClass.Id, item.Id);
                 }
+
+                await _vm.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorAsync("Unable to create class.", ex.Message);
             }
         }
 
+        // The old select-class detail card was removed; row click is now a no-op hook.
         private async void ClassesList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.ClickedItem is AutoTable.Models.ClassInfo cls)
+            await Task.CompletedTask;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // GRADING SYSTEMS — standalone creation from the page card and
+        // deletion; the same builder is reused inside Create Class.
+        // ─────────────────────────────────────────────────────────────
+        private async void CreateGradingSystem_Click(object sender, RoutedEventArgs e)
+        {
+            var (panel, nameBox, defaultChk, passMarkBox, _) = BuildGradingSystemEditor();
+
+            var dialog = new ContentDialog
             {
-                await _vm.LoadSubjectsForClassAsync(cls.Id);
-                SelectedClassTitle.Text = cls.Name;
+                Title = "New Grading System",
+                Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 480, Content = panel },
+                PrimaryButtonText = "Create",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            try
+            {
+                await CreateGradingSystemFromEditorAsync(nameBox.Text?.Trim(), defaultChk.IsChecked == true,
+                    double.TryParse(passMarkBox.Text, out var pm) ? pm : null);
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorAsync("Unable to create grading system.", ex.Message);
             }
         }
 
-        private async void AssignSubject_Click(object sender, RoutedEventArgs e)
+        private async void DeleteGradingSystem_Click(object sender, RoutedEventArgs e)
         {
-            if (ClassesList.SelectedItem is not SimpleLookup cls) return;
-            if (SubjectPicker.SelectedItem is not SimpleLookup subj) return;
+            if ((sender as Button)?.Tag is not int id) return;
+            var confirm = new ContentDialog
+            {
+                Title = "Delete grading system?",
+                Content = "Classes using it will fall back to no specific grading system.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+            if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
             try
             {
-                await _vm.AssignSubjectToClassAsync(cls.Id, subj.Id);
-                await _vm.LoadSubjectsForClassAsync(cls.Id);
+                await AppServices.DataService!.DeleteGradingSystemAsync(id);
+                await _vm.LoadGradingSystemsAsync();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                await ShowErrorAsync("Unable to assign subject.", ex.Message);
+                await ShowErrorAsync("Unable to delete grading system.", ex.Message);
             }
         }
 
-        private async void CreateSubject_Click(object sender, RoutedEventArgs e)
+        // ─────────────────────────────────────────────────────────────
+
+        /// <summary>Validates + persists the grading system currently described by _bandRows.</summary>
+        private async Task<GradingSystemInfo> CreateGradingSystemFromEditorAsync(string? name, bool isDefault, double? passMark)
         {
-            var name = NewSubjectName.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(name)) return;
-            try
+            if (string.IsNullOrWhiteSpace(name))
+                throw new InvalidOperationException("Give the grading system a name (e.g. \"PLE\", \"IGCSE\").");
+
+            var bands = new List<(string Label, double Min, double Max, bool Pass, bool Repeat)>();
+            foreach (var row in _bandRows)
             {
-                await _vm.CreateSubjectAsync(name);
-                await _vm.LoadAsync();
-                NewSubjectName.Text = string.Empty;
+                var label = row.Label.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(label)) continue; // skip empty rows
+                double.TryParse(row.Min.Text, out var min);
+                double.TryParse(row.Max.Text, out var max);
+                if (min > max) (min, max) = (max, min);
+                bands.Add((label, min, max, row.Pass.IsChecked == true, row.Repeat.IsChecked == true));
             }
-            catch (System.Exception ex)
-            {
-                await ShowErrorAsync("Unable to create subject.", ex.Message);
-            }
+            if (bands.Count == 0)
+                throw new InvalidOperationException("Fill in at least one complete grade band row (label + range).");
+
+            var parsedPass = passMark ?? 50;
+            if (parsedPass < 0 || parsedPass > 100)
+                throw new InvalidOperationException("Pass mark must be between 0 and 100.");
+
+            _bandRows.Clear();
+            return await _vm.CreateGradingSystemWithBandsAsync(name, isDefault, bands, parsedPass);
         }
 
-        private async void CreateStream_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Builds the name + default + band-rows editor used both standalone
+        /// and inside the Create Class dialog. Populates _bandRows.
+        /// </summary>
+        private (StackPanel Panel, TextBox NameBox, CheckBox DefaultChk, TextBox PassMarkBox, StackPanel BandsHost) BuildGradingSystemEditor()
         {
-            var name = NewStreamName.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(name)) return;
-            try
+            _bandRows.Clear();
+
+            var nameBox = new TextBox { Header = "New system name", PlaceholderText = "e.g. PLE Scale", Width = 300 };
+            var defaultChk = new CheckBox { Content = "Use as the school-wide default grading system", Margin = new Thickness(0, 4, 0, 0) };
+            // The class author decides the pass mark: a student's terminal average must be
+            // at least this percentage to be promoted under this grading system.
+            var passMarkBox = new TextBox
             {
-                int? selectedClassId = null;
-                if (ClassesList.SelectedItem is AutoTable.Models.SimpleLookup cls) selectedClassId = cls.Id;
-                await _vm.CreateStreamAsync(name, selectedClassId);
-                await _vm.LoadAllStreamsAsync();
-                if (selectedClassId.HasValue) await _vm.LoadSubjectsForClassAsync(selectedClassId.Value); // reload streams for class
-                NewStreamName.Text = string.Empty;
-            }
-            catch (System.Exception ex)
+                Header = "Pass mark % (average required to be promoted)",
+                PlaceholderText = "e.g. 50",
+                Text = "50",
+                Width = 300,
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+
+            var headerGrid = new Grid { ColumnSpacing = 8 };
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            for (int i = 0; i < 4; i++) headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            string[] headers = { "Grade label", "Min %", "Max %", "Promotes", "Repeat" };
+            for (int i = 0; i < headers.Length; i++)
             {
-                await ShowErrorAsync("Unable to create stream.", ex.Message);
+                var tb = new TextBlock { Text = headers[i], FontSize = 12, VerticalAlignment = VerticalAlignment.Bottom };
+                Grid.SetColumn(tb, i);
+                headerGrid.Children.Add(tb);
             }
+
+            var bandsHost = new StackPanel { Spacing = 6 };
+            AddBandRow(bandsHost);
+
+            var addRowBtn = new Button { Content = "+ Add band row" };
+            addRowBtn.Click += (_, _) => AddBandRow(bandsHost);
+
+            var panel = new StackPanel { Spacing = 10 };
+            panel.Children.Add(nameBox);
+            panel.Children.Add(defaultChk);
+            panel.Children.Add(passMarkBox);
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Grade bands — what each mark range is called, and whether that range promotes or means repeat:",
+                Style = (Style)Application.Current.Resources["MutedTextStyle"],
+                TextWrapping = TextWrapping.Wrap
+            });
+            panel.Children.Add(headerGrid);
+            panel.Children.Add(bandsHost);
+            panel.Children.Add(addRowBtn);
+
+            return (panel, nameBox, defaultChk, passMarkBox, bandsHost);
         }
 
-        private async void AssignStream_Click(object sender, RoutedEventArgs e)
+        private void AddBandRow(StackPanel host)
         {
-            if (ClassesList.SelectedItem is not SimpleLookup cls) return;
-            if (StreamPicker.SelectedItem is not SimpleLookup stream) return;
-            try
+            var row = new BandInputs
             {
-                await _vm.AssignStreamToClassAsync(cls.Id, stream.Id);
-                await _vm.LoadSubjectsForClassAsync(cls.Id);
-                await _vm.LoadAllStreamsAsync();
-            }
-            catch (System.Exception ex)
+                Label = new TextBox { PlaceholderText = "A" },
+                Min = new TextBox { PlaceholderText = "90" },
+                Max = new TextBox { PlaceholderText = "100" },
+                Pass = new CheckBox { Content = "", MinWidth = 0 },
+                Repeat = new CheckBox { Content = "", MinWidth = 0 }
+            };
+            _bandRows.Add(row);
+
+            var grid = new Grid { ColumnSpacing = 8 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            for (int i = 0; i < 4; i++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+
+            grid.Children.Add(row.Label); Grid.SetColumn(row.Label, 0);
+            grid.Children.Add(row.Min); Grid.SetColumn(row.Min, 1);
+            grid.Children.Add(row.Max); Grid.SetColumn(row.Max, 2);
+            grid.Children.Add(row.Pass); Grid.SetColumn(row.Pass, 3);
+            grid.Children.Add(row.Repeat); Grid.SetColumn(row.Repeat, 4);
+
+            host.Children.Add(grid);
+        }
+
+        /// <summary>
+        /// Builds an "assign existing / type a new name" section for the
+        /// Create Class dialog. The "Add →" button moves the picked item —
+        /// or a newly typed name (negative Id) — into the pending list.
+        /// </summary>
+        private static StackPanel BuildAssignSection(string title, System.Collections.Generic.IEnumerable<SimpleLookup> source,
+            string displayPath, ObservableCollection<SimpleLookup> pending)
+        {
+            var picker = new ComboBox
             {
-                // Provide full exception details for diagnostics and write to temp log for later inspection
-                try
+                Width = 220,
+                ItemsSource = source,
+                DisplayMemberPath = displayPath,
+                PlaceholderText = "Existing…"
+            };
+            var newBox = new TextBox { PlaceholderText = "or new name…", Width = 220 };
+
+            var pendingList = new ListView
+            {
+                ItemsSource = pending,
+                DisplayMemberPath = displayPath,
+                SelectionMode = ListViewSelectionMode.None,
+                MaxHeight = 110
+            };
+
+            void AddClick(object sender, RoutedEventArgs e)
+            {
+                if (picker.SelectedItem is SimpleLookup existing)
                 {
-                    var diag = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autotable_assign_stream_error.txt");
-                    System.IO.File.WriteAllText(diag, ex.ToString());
+                    pending.Add(existing);
+                    picker.Items.Remove(existing);
+                    picker.SelectedIndex = -1;
                 }
-                catch { }
-                await ShowErrorAsync("Unable to assign stream.", ex.ToString());
+                else if (!string.IsNullOrWhiteSpace(newBox.Text))
+                {
+                    var nm = newBox.Text.Trim();
+                    if (!pending.Any(p => string.Equals(p.Name, nm, StringComparison.OrdinalIgnoreCase)))
+                        pending.Add(new SimpleLookup { Id = -1, Name = nm });   // negative id → create on submit
+                    newBox.Text = string.Empty;
+                }
             }
-        }
 
-        private async void RemoveStream_Click(object sender, RoutedEventArgs e)
-        {
-            if (ClassesList.SelectedItem is not SimpleLookup cls) return;
-            if ((sender as Button)?.DataContext is not SimpleLookup stream) return;
-            try
-            {
-                await _vm.RemoveStreamFromClassAsync(cls.Id, stream.Id);
-                await _vm.LoadSubjectsForClassAsync(cls.Id);
-            }
-            catch (System.Exception ex)
-            {
-                await ShowErrorAsync("Unable to remove stream.", ex.Message);
-            }
-        }
+            var addBtn = new Button { Content = "Add →" };
+            addBtn.Click += AddClick;
 
-        private async void RemoveSubject_Click(object sender, RoutedEventArgs e)
-        {
-            if (ClassesList.SelectedItem is not SimpleLookup cls) return;
-            if ((sender as Button)?.DataContext is not SimpleLookup subj) return;
-            try
+            var assignRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            assignRow.Children.Add(picker);
+            assignRow.Children.Add(addBtn);
+
+            var newRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            newRow.Children.Add(newBox);
+
+            var panel = new StackPanel { Spacing = 8 };
+            panel.Children.Add(new TextBlock
             {
-                await _vm.RemoveSubjectFromClassAsync(cls.Id, subj.Id);
-                await _vm.LoadSubjectsForClassAsync(cls.Id);
-            }
-            catch (System.Exception ex)
-            {
-                await ShowErrorAsync("Unable to remove subject.", ex.Message);
-            }
+                Text = title,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Margin = new Thickness(0, 8, 0, 0)
+            });
+            panel.Children.Add(assignRow);
+            panel.Children.Add(newRow);
+            panel.Children.Add(pendingList);
+            return panel;
         }
 
         private async Task ShowErrorAsync(string header, string message)

@@ -173,6 +173,16 @@
                             <TextBlock Text="Classes Management" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
+                    <Button x:Name="NavPromotion" Tag="Promotion" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE9D9;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Promotion / Repeat" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+
 
                     <Button x:Name="NavAuditLog" Tag="AuditLog" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"

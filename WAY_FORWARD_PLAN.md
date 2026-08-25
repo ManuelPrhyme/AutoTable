@@ -1,6 +1,6 @@
 # AutoTable — Way-Forward Plan
 
-Generated 22 Aug 2026; updated 23 Aug 2026. Where this document conflicts with
+Generated 22 Aug 2026; updated 24 Aug 2026. Where this document conflicts with
 `CONTEXT_REPORT.md` (§3–§5) or `AGENT_CONTEXT.md`, **this document reflects the actual
 code/build state** and should be treated as authoritative.
 
@@ -11,7 +11,11 @@ code/build state** and should be treated as authoritative.
 The operational goal — *single-source-of-truth SQLite persistence for every CRUD operation* — is
 **fully implemented**, the working tree **compiles cleanly (0 errors)**,
 and all Phase 2/4/5 UI wiring is complete. Integration tests (9 passing) provide regression coverage.
-Only EF Migrations verification remains as a maintenance item.
+
+Since 23 Aug the app gained two major features: **native Windows A4 report-card printing**
+(promotional + contributory assessments, bio data, teacher comments, batch print via PrintManager)
+and a complete **grading-systems domain** (named scales with promotion/repeat bands), integrated
+into a fully reworked Class Management page where class creation happens in one modal.
 
 | Area | Status | Evidence |
 |---|---|---|
@@ -22,9 +26,7 @@ Only EF Migrations verification remains as a maintenance item.
 | Marks CRUD service methods (`UpdateMarkAsync` upserts, deletes, completion recompute) | ✅ DONE | `DatabaseDataService.cs:99-140` |
 | Fee payment create (`CreateFeePaymentAsync`) | ✅ DONE | `DatabaseDataService.cs:71-97` |
 | Students ordered by `CreatedAt desc` | ✅ DONE | `DatabaseDataService.cs:613` |
-| Print / report cards read from DB (`GetGradebookAsync`) | ✅ DONE | per CONTEXT_REPORT §3 |
 | Term lifecycle (create→activate, deactivate others; startup housekeeping) | ✅ DONE | `DatabaseDataService.cs:164-199`, `App.xaml.cs:194-233` |
-| **Build** | ✅ **GREEN — 0 errors, 0 warnings** | `dotnet build` output 23 Aug 2026 |
 | Assessment creation from the Assessments UI | ✅ DONE | `AssessmentsView.xaml.cs` code-behind creates dialog + calls `CreateAssessmentAsync` |
 | Marks save/submit persistence from Marks Entry UI | ✅ DONE | `MarksEntryViewModel.cs` calls `UpdateMarkAsync` |
 | Moderation approve/publish persistence | ✅ DONE | `ModerationViewModel.cs` — persists via `VerifyAssessmentAsync`/`PublishAssessmentAsync` |
@@ -32,11 +34,15 @@ Only EF Migrations verification remains as a maintenance item.
 | Financial dashboard KPIs from DB | ✅ DONE | `FinancialsDashboardViewModel.cs` — real FeePayments/TermFees |
 | Budget lines from DB | ✅ DONE | `BudgetViewModel.cs` — BudgetLineEntity in schema, AddLineItem + Export |
 | Fee collection list from real payments | ✅ DONE | `FeeCollectionViewModel.cs` — real payments, no RNG |
-| `GetFeePaymentsAsync` read API | ✅ DONE | `IDataService.cs` + `DatabaseDataService.cs` |
 | Integration tests (SQLite in-memory) | ✅ DONE | `Tests/AutoTable.IntegrationTests/` — 9 tests, all passing |
 | Mock cleanup | ✅ DONE | Moved to `Demo/` folder, namespace `AutoTable.Demo` |
+| **A4 report-card sheet + native Windows printing** | ✅ DONE (24 Aug) | `Views/Controls/ReportCardSheetView.xaml`, `ReportCardsView.xaml.cs` PrintManager pipeline |
+| **Grading systems (entities, service CRUD, schema patches)** | ✅ DONE (24 Aug) | `AutoTable/Models/GradingSystemModels.cs`, `IDataService.cs`, `DatabaseDataService.cs`, `App.xaml.cs` startup patches |
+| **Class creation single-modal rework** (name + any teacher incl. student teachers + grading system pick-or-create + streams/subjects assign-or-create) | ✅ DONE (24 Aug) | `Views/ClassesView.xaml(.cs)`, `AutoTable/ViewModels/ClassesViewModel.cs`; select-class detail card removed |
 
 **Remaining gap:** EF migrations verification (startup uses EnsureCreated + ALTER TABLE patches; acceptable for now).
+
+**Next feature backlog** (documented in `OPERATIONAL_PLAN.md`): promotion/repeat flow with Term-3 promotional exams; per-assessment promotion-role checkboxes (none / contributory / promotional); admin role-gating for Term/Class/Budget pages; defaulters/cohort finance analytics; mid-term slips; global active-term enforcement.
 
 ---
 
@@ -69,23 +75,27 @@ Only EF Migrations verification remains as a maintenance item.
 
 ## 3. Discrepancies between the reports and reality
 
-1. **“dotnet build … Passed” claims are false for the current tree.** A fresh build fails with
-   9 errors (see §4). Both `build_final.txt` and the live rebuild confirm failure.
+> **UPDATE (24 Aug 2026):** every discrepancy listed below was subsequently verified and fixed.
+> The build is green; the Teachers page exists and routes; all ViewModels use `AppServices.DataService`.
+> Items kept for historical context.
+
+1. **“dotnet build … Passed” claims are false for the current tree.** ✅ RESOLVED — fresh builds now pass with 0 errors (verified repeatedly, most recently 24 Aug).
 2. **AGENT_CONTEXT.md is stale on two counts:** it says the DB is deleted/recreated each start in
    Temp (actually persistent LocalApplicationData now), and that “many ViewModels still use
    `MockDataService.Instance`” (13 ViewModels verified to use `AppServices.DataService`; none use mock).
-3. **CONTEXT_REPORT §3 says Teacher CRUD is NOT DONE** while its own iteration log (§8,
-   step-2 entry) says it was added. Code confirms: **it IS done** at the service layer.
-4. **CONTEXT_REPORT says DEV_EPHEMERAL_DB is NOT DONE**; code shows it IS implemented.
-5. **Teachers feature is half-scaffolded and actively breaking the build**: `TeachersViewModel`
-   exists, ShellView routes to `typeof(TeachersView)`, but **no TeachersView page exists anywhere**
-   (checked root `Views/` and `AutoTable/Views/`).
+3. **CONTEXT_REPORT §3 said Teacher CRUD is NOT DONE** while its own iteration log says it was added. Code confirmed: **it IS done** at the service layer. Report has since been corrected.
+4. **CONTEXT_REPORT said DEV_EPHEMERAL_DB is NOT DONE**; code shows it IS implemented. Corrected.
+5. **Teachers feature half-scaffolded / breaking the build**: ✅ RESOLVED — `Views/TeachersView.xaml(.cs)` exists, route compiles, full Add/Edit/Delete modal shipped.
 
 ---
 
-## 4. Build diagnosis (P0 BLOCKER — fix first)
+## 4. Build diagnosis (P0 BLOCKER — ~~fix first~~ RESOLVED)
 
-### Live build symptoms (9 errors)
+> **UPDATE (24 Aug 2026):** the MVVMTK0007 command-generation error and the missing TeachersView
+> were fixed; the six `WMC0001 Unknown type '<Converter>'` errors cleared as a cascade once the
+> C# compile succeeded again. A later corruption (a literal `\n` at `AppDbContext.cs:24` plus a
+> duplicated `GradeBandEntity`) was also repaired. Current state: **0 errors** on
+> `dotnet build AutoTable.csproj -p:Platform=x64`.
 
 ```
 ViewModels/TeachersViewModel.cs(30,27): error MVVMTK0007: CreateTeacherAsync(string, string?)
@@ -204,34 +214,57 @@ warning WMC1509: No LocalAssembly parameter given during MarkupCompilePass2
 4. **Integration tests (Step 9)** — ✅ DONE. `Tests/AutoTable.IntegrationTests` with 9 tests:
    Student CRUD, Term lifecycle, Assessment creation, Marks upsert, Budget CRUD, Teacher CRUD,
    Fee payments, Duplicate LIN validation.
-5. **Docs sync** — ✅ DONE. `CONTEXT_REPORT.md` and `WAY_FORWARD_PLAN.md` updated 23 Aug 2026.
+5. **Docs sync** — ✅ DONE. `CONTEXT_REPORT.md` and `WAY_FORWARD_PLAN.md` updated 24 Aug 2026.
+
+### P5 — Next priorities (24 Aug 2026)
+
+Features agreed in `OPERATIONAL_PLAN.md` ("Feature — Assessment promotion role & configurable
+grading systems") and the Prototype roadmap, not yet implemented:
+
+1. **Assessment promotion role** — tri-state on assessment creation (`None` / contributory /
+   promotional exam); store as a column + migration; restrict "promotional exam" designation to
+   Term 3 (`IsPromotionTerm`). Switch `GetReportCardSheetAsync` from its current heuristic
+   classification to these explicit flags.
+2. **Promotion / repeat flow** — promote/repeat decision per student; Term-3 auto-move-up;
+   manual class shift; surface PASS/REPEAT verdicts already present on the report card.
+3. **Grade resolution via grading systems** — replace hard-coded `GradeFromAverage`
+   (`DatabaseDataService.cs`, `>=80→A … else F`) with data-driven band lookup per class's
+   `GradingSystemId` (falls back to school default).
+4. **Admin role-gating** — extend the Moderation gate pattern to Term Management, Classes and
+   Budget pages.
+5. **Defaulters / cohort finance analytics** — top-N defaulters, % paid within window,
+   unpaid-above-threshold queries.
+6. **Mid-term slips** — 3–4-per-A4 slip layout alongside full report cards.
+7. **Active-term enforcement** — block enrollment/assessment/fee writes when no term is active.
 
 ---
 
-## 6. Risks & open questions
+## 6. Risks & open questions (updated 24 Aug)
 
-- **Build-first discipline:** every phase's "verify" depends on a green build; do not stack features
-  on top of the current red state.
 - **Empty-database UX:** by design there is no seeding; assessment creation throws when
   class/subject/year/term are missing. The UI must translate that into guidance ("configure Classes &
   Terms first") rather than a raw exception.
 - **Demo vs production data:** default DB is persistent; developers testing destructive flows should
   set `AUTOTABLE_DEV_EPHEMERAL_DB=true` or `AUTOTABLE_DEMO_MODE=true` to avoid polluting real data.
-- **MVVMTK0007 exact trigger unconfirmed** — try the non-nullable param fix first; fall back to the
-  parameterless-command pattern (guaranteed compatible).
 - **Dual tree layout** (root `Views/`,`ViewModels`,`Services` + `AutoTable/…` subtree, same namespaces)
   compiles today because file sets are disjoint, but it is fragile — consider consolidating in a
   future cleanup pass.
-- **Large print exports** (ops-plan risk) still unaddressed; paginate/stream when wiring bulk report cards.
+- **Report-card promotional classification is heuristic** until P5.1 lands: per subject, the
+  top-weighted/latest-due paper is treated as the promotional exam. Documented in
+  `GetReportCardSheetAsync`; swap to explicit flags when available.
+- **EnsureCreated + ALTER TABLE patches** accumulate with each feature (latest: GradingSystems,
+  GradeBands, Classes.GradingSystemId). Consolidate into EF migrations before production.
 
 ---
 
 ## Suggested execution order (atomic commits)
 
-1. P0: add TeachersView page + fix TeachersViewModel command → green build (verify with dotnet build).
-2. P1a: assessment create dialog + insert-at-0.
-3. P1b: marks save/submit persistence + error dialogs.
-4. P2a/b: verify/publish service methods + Moderation wiring.
-5. P2c: AI insights from gradebook queries.
-6. P3a–d: fee read API + dashboard/fee-collection/budget rewiring.
-7. P4: tests, mock cleanup, docs sync.
+1. Promotion-role column + migration + creation-dialog checkboxes (P5.1) — unlocks explicit report-card classification.
+2. Grade-band lookup replacing `GradeFromAverage` (P5.3) — wires the grading-systems feature built 24 Aug into marks/reporting.
+3. Promotion/repeat flow (P5.2) — completes the student lifecycle.
+4. Role gates (P5.4), then defaulters analytics (P5.5), then slips (P5.6) and active-term enforcement (P5.7).
+5. Maintenance: EF migrations verification before any production deploy.
+
+Historical order (all complete): Teachers page → assessment create dialog → marks persistence →
+moderation wiring → AI insights → fee read API + financial rewiring → tests/mock cleanup/docs sync →
+A4 report-card printing → grading systems + single-modal class creation.

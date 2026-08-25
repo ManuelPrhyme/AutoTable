@@ -65,7 +65,84 @@ You want AutoTable to be a single-source-of-truth desktop app where every CRUD o
 8. Add UI error dialogs on all submit/update operations to surface DB errors. (View code-behind or centralized error service)
 9. Add integration tests using SQLite in-memory for basic CRUD flows.
 10. QA and iterate: manual tests for each quick action and button.
+## Feature — Assessment promotion role & configurable grading systems
 
+> Companion to the promotion/repeat work in Prototype roadmap.md §4. These additions make the
+> assessment model and grade scale *data-driven* instead of hard-coded.
+
+### Goal
+- When creating an assessment, choose its **promotion role**: *just an assessment*, *counts
+  toward promotion* (contributory), or a *promotion exam* (the Term 3 / end-of-year paper that
+  decides promotion).
+- Term 3 is the **promotion term**: a promotion-classified exam sits there and drives the
+  promotion decision.
+- Add a **grading system** capability in class management: name a system, define its score →
+  label bands, and set the promotion pass/fail (promote vs repeat) boundary. Each class picks a
+  grading system (falls back to a school default).
+- This replaces the hard-coded `Grade` / `Status` logic in `DatabaseDataService.cs`
+  (`GradeFromAverage` at :425, `Status` at :417), so bands and the promote/repeat line are
+  user-defined.
+
+### Concrete steps
+1. **Assessment promotion-role field**
+   - Add `enum AssessmentPromotionRole { None, CountsTowardPromotion, PromotionExam }` to
+     `Models/AssessmentItem.cs`, plus `PromotionRole` on `AssessmentEntity` and a migration.
+   - In assessment creation, show a selection: **Just an assessment** / **Counts toward
+     promotion** / **Promotion exam** (the latter intended for a promotion term).
+2. **Promotion term (Term 3)**
+   - Add a `IsPromotionTerm` flag (or reuse a `TermSequence` value) to `TermEntity` so the app
+     knows promotion is due.
+   - Restrict the "Promotion exam" designation to that term; surface promotion-type tests in
+     gradebook/report flows there.
+3. **Grading-system entities**
+   - `GradingSystemEntity`: Id, Name, `IsDefault` (school default).
+   - `GradeBandEntity` (child): Id, GradingSystemId, `MinScore`, `MaxScore`, `Label` (e.g.
+     "A","B","C","D","F"), `IsPromotion` (promoted), `IsRepeat` (failed/repeat), optional
+     `Designation` ("Pass"/"Fail"/"Exceptional").
+   - Register both in `AppDbContext.OnModelCreating` (FK + indexed by MinScore).
+4. **Class grading assignment**
+   - Add nullable `GradingSystemId` to `ClassEntity` (students fall back to the school default
+     when null).
+   - In **Class management**: create/edit grading systems (name + grade-band rows) and assign
+     one per class; the default system applies when none is chosen.
+5. **Replace hard-coded grade/status resolution**
+   - Swap `GradeFromAverage` / the `Status` expression for a `GradingService` that resolves a
+     mark against the class's system → returns a band label plus promote/repeat flags.
+   - Thread it through `GetGradebookAsync`, `GetStudentPerformanceDetailAsync`, and report
+     cards, so grades and the promotion status reflect the class's chosen system.
+
+### Done criteria
+- [ ] Assessment creation offers the three promotion-role options; a promotion term accepts
+      "Promotion exam".
+- [ ] Admin can create a named grading system with unbounded-band definitions.
+- [ ] A class can carry its grading system; null falls back to the school default.
+- [ ] Grade column and the promote/repeat decision follow the class system, not hard thresholds.
+
+## Feature — A4 report-card printing (promotional & contributory) ✅ implemented
+
+> The Report Cards page now produces a real, print-ready A4 sheet per student, driven by
+> `Models/ReportCardSheetModel` + `Views/Controls/ReportCardSheetView.xaml`, and prints through
+> the Windows-native `PrintManager` / `PrintDocument` pipeline (no third-party PDF library).
+
+### What the sheet contains (top → bottom)
+1. **School header + term label** ("PROMOTIONAL / END-OF-TERM REPORT CARD").
+2. **Bio block** — student name, LIN/admission no, class, stream, gender, DOB, guardian name + phone.
+3. **Promotional exam results** — per subject the promotional (end-of-term) paper: subject, assessment, mark (%), grade, and a PASS / REPEAT verdict.
+4. **Contributory assessments** — the papers that count toward promotion (mark + weight), shown only when present.
+5. **Overall summary** — average, overall grade, position in class, status.
+6. **Class teacher's comment** — an auto-composed comment block (strengths / weaknesses / promote-vs-repeat) + class teacher name line.
+7. **Signature lines** — Class Teacher / Head Teacher / Date.
+
+### Data flow
+- `IDataService.GetReportCardSheetAsync(studentName, className, term)` → `DatabaseDataService` aggregates the student's assessment + marks for the class/term, classifies the per-subject top-weighted (or latest-due) paper as **promotional** and the rest as **contributory** (today a deterministic heuristic; it will honour the explicit `PromotionRole` once the assessment promotion-role feature lands), and returns a `ReportCardSheetModel`.
+- `ReportCardsView` builds a `ReportCardSheetView` per student (View / Print / Print All buttons) and shows an A4 preview in a `ContentDialog`; choosing **Print** opens the Windows system print dialog.
+- **Print All** paginates one A4 sheet per student (multi-page `PrintDocument`) — nothing is printed through an external tool.
+
+### Done criteria
+- [x] A4 sheet layout with bio, promotional + contributory tables, summary, comments, signatures.
+- [x] Native Windows printing (single card + print-all, one page per student).
+- [x] Integrated into the Report Cards page (View / Print / Print All buttons).
+- [ ] Wire to the per-class grading system / promotion-role field once those land (swap the heuristic classification for the explicit flags).
 ## Commands & checks
 - Inspect runtime DB path and file: (PowerShell)
   $db = Join-Path $env:LOCALAPPDATA "AutoTable\autotable.db"; Test-Path $db

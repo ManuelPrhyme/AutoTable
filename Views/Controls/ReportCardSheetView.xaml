@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AutoTable.Views.Controls.ReportCardSheetView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="794" Height="1123" Background="White" FontFamily="Segoe UI">
+
+    <!-- A4 report-card sheet. Binds to ReportCardSheetModel. -->
+    <Border BorderBrush="#1F3864" BorderThickness="3" Margin="14" CornerRadius="2">
+        <Grid Margin="20" RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- School header -->
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="1">
+                <TextBlock Text="{Binding SchoolName}" FontSize="22" FontWeight="Bold" Foreground="#1F3864" />
+                <TextBlock Text="{Binding TermLabel}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Title bar -->
+            <Border Grid.Row="1" Background="#1F3864" CornerRadius="3" Padding="12,5">
+                <TextBlock Text="PROMOTIONAL / END-OF-TERM REPORT CARD" FontSize="15" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center" />
+            </Border>
+
+            <!-- Bio block -->
+            <Border Grid.Row="2" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Column="0" Grid.Row="0" Spacing="1">
+                        <TextBlock Text="STUDENT NAME" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding StudentName}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Grid.Row="0" Spacing="1">
+                        <TextBlock Text="ADM NO / LIN" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding AdmissionNumber}" FontSize="11" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Grid.Row="0" Spacing="1">
+                        <TextBlock Text="CLASS" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding ClassName}" FontSize="11" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Grid.Row="0" Spacing="1">
+                        <TextBlock Text="STREAM" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding Stream}" FontSize="11" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="0" Grid.Row="1" Spacing="1">
+                        <TextBlock Text="GENDER" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding Gender}" FontSize="11" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Grid.Row="1" Spacing="1">
+                        <TextBlock Text="DATE OF BIRTH" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding DateOfBirth}" FontSize="11" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Grid.Row="1" Spacing="1">
+                        <TextBlock Text="GUARDIAN" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding GuardianName}" FontSize="11" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Grid.Row="1" Spacing="1">
+                        <TextBlock Text="GUARDIAN TEL" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding GuardianPhone}" FontSize="11" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+<!-- Promotional exam results -->
+            <StackPanel Grid.Row="3" Spacing="3" Visibility="{Binding HasPromotional}">
+                <TextBlock Text="PROMOTIONAL EXAM RESULTS" FontSize="11" FontWeight="Bold" Foreground="#1F3864" />
+                <Border BorderBrush="#C9D3E6" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.ColumnSpan="5" Background="#E8EDF7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="SUBJECT" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="1" Text="ASSESSMENT" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="2" Text="MARK (%)" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="3" Text="GRADE" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="4" Text="VERDICT" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                            </Grid>
+                        </Border>
+                        <ItemsControl Grid.Row="1" Grid.ColumnSpan="5" ItemsSource="{Binding PromotionalAssessments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Subject}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="1" Text="{Binding AssessmentName}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Mark}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Grade}" FontSize="10" FontWeight="SemiBold" Padding="5,2" />
+                                        <TextBlock Grid.Column="4" Text="{Binding Verdict}" FontSize="10" FontWeight="Bold" Padding="5,2" Foreground="#1E8449" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </StackPanel>
+<!-- Contributory assessments -->
+            <StackPanel Grid.Row="4" Spacing="3" Margin="0,4,0,0" Visibility="{Binding HasContributory}">
+                <TextBlock Text="CONTRIBUTORY ASSESSMENTS (COUNTS TOWARD PROMOTION)" FontSize="11" FontWeight="Bold" Foreground="#1F3864" />
+                <Border BorderBrush="#C9D3E6" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Grid.ColumnSpan="5" Background="#E8EDF7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="SUBJECT" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="1" Text="ASSESSMENT" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="2" Text="MARK (%)" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="3" Text="GRADE" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                                <TextBlock Grid.Column="4" Text="WEIGHT" FontSize="9" FontWeight="Bold" Padding="5,3" />
+                            </Grid>
+                        </Border>
+                        <ItemsControl Grid.Row="1" Grid.ColumnSpan="5" ItemsSource="{Binding ContributoryAssessments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Subject}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="1" Text="{Binding AssessmentName}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Mark}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Grade}" FontSize="10" Padding="5,2" />
+                                        <TextBlock Grid.Column="4" Text="{Binding WeightPercent}" FontSize="10" Padding="5,2" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </StackPanel>
+<!-- Overall summary -->
+            <Grid Grid.Row="5" Margin="0,4,0,0" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="8,4">
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="OVERALL AVERAGE" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding OverallAverage}" FontSize="13" FontWeight="Bold" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="8,4">
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="OVERALL GRADE" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding OverallGrade}" FontSize="13" FontWeight="Bold" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="8,4">
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="POSITION" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding Rank}" FontSize="13" FontWeight="Bold" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="3" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="8,4">
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="STATUS" FontSize="8" Foreground="#77809A" />
+                        <TextBlock Text="{Binding Status}" FontSize="13" FontWeight="Bold" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Teacher comment -->
+            <Border Grid.Row="6" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="10" MinHeight="90">
+                <StackPanel Spacing="5">
+                    <TextBlock Text="CLASS TEACHER'S COMMENT" FontSize="10" FontWeight="Bold" Foreground="#1F3864" />
+                    <TextBlock Text="{Binding TeacherComment}" FontSize="11" TextWrapping="Wrap" Foreground="#2C3E50" />
+                    <TextBlock Text="{Binding ClassTeacherLine}" FontSize="11" FontWeight="SemiBold"
+                               Foreground="#444444" HorizontalAlignment="Right" />
+                </StackPanel>
+            </Border>
+<!-- Signatures -->
+            <Grid Grid.Row="7" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Spacing="3">
+                    <Rectangle Height="1" Fill="#555555" Margin="0,26,0,0" />
+                    <TextBlock Text="Class Teacher" FontSize="9" Foreground="#555555" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="3">
+                    <Rectangle Height="1" Fill="#555555" Margin="0,26,0,0" />
+                    <TextBlock Text="Head Teacher" FontSize="9" Foreground="#555555" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="3">
+                    <Rectangle Height="1" Fill="#555555" Margin="0,26,0,0" />
+                    <TextBlock Text="Date" FontSize="9" Foreground="#555555" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

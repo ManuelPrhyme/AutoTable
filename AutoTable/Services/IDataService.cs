@@ -15,6 +15,8 @@ namespace AutoTable.Services
         Task<IReadOnlyList<string>> GetTermsAsync();
         // Returns terms with Ids for UI that needs real DB ids
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetTermLookupsAsync();
+        // Returns the currently active term (IsActive), or null when no term is active
+        Task<AutoTable.Models.SimpleLookup?> GetActiveTermAsync();
         Task<IReadOnlyList<string>> GetAcademicYearsAsync();
         Task<AutoTable.Models.SimpleLookup> CreateAcademicYearAsync(string name);
         Task<IReadOnlyList<string>> GetStreamsAsync();
@@ -42,6 +44,9 @@ namespace AutoTable.Services
         // Student performance detail
         Task<Models.StudentPerformanceDetail> GetStudentPerformanceDetailAsync(string studentName, string className, string subject, string academicYear, string term, string stream);
 
+        // Report-card assembly
+        Task<Models.ReportCardSheetModel?> GetReportCardSheetAsync(string studentName, string className, string term);
+
         Task<IReadOnlyList<Student>> GetStudentsAsync();
         Task<Student?> GetStudentByIdAsync(int id);
         Task<Student> CreateStudentAsync(Student student);
@@ -54,9 +59,28 @@ namespace AutoTable.Services
 
         // Class & Subject management
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetClassesAsync();
-        Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null);
+        // Class creation: any teacher (registered or student teacher) may be assigned,
+        // and the class is tied to a grading system (falls back to school default when null).
+        Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null, int? gradingSystemId = null);
         Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync();
+        Task<IReadOnlyDictionary<int, string>> GetClassGradingSystemNamesAsync();
         Task DeleteClassAsync(int classId);
+
+        // Grading systems (named scales with promotion/repeat bands)
+        Task<IReadOnlyList<AutoTable.Models.GradingSystemInfo>> GetGradingSystemsAsync();
+        Task<AutoTable.Models.GradingSystemInfo> CreateGradingSystemAsync(string name, bool isDefault = false, double passMark = 50);
+        Task DeleteGradingSystemAsync(int gradingSystemId);
+        Task<IReadOnlyList<AutoTable.Models.GradeBandInfo>> GetGradeBandsAsync(int gradingSystemId);
+        Task CreateGradeBandAsync(int gradingSystemId, string label, double minScore, double maxScore,
+            bool isPromotionalPass, bool isRepeater, bool isPromotionalFail);
+
+        // Promotion / repeat (Term 3 move-up)
+        Task<IReadOnlyList<AutoTable.Models.PromotionRow>> GetPromotionOverviewAsync(int? classId = null);
+        Task<AutoTable.Models.SimpleLookup?> SuggestNextClassAsync(int currentClassId);
+        Task PromoteStudentAsync(int studentId, int? targetClassId = null);
+        Task RepeatStudentAsync(int studentId);
+        Task ShiftStudentClassAsync(int studentId, int targetClassId);
+        Task ResetPromotionAsync(int studentId);
 
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetSubjectsAsync();
         Task<AutoTable.Models.SimpleLookup> CreateSubjectAsync(string name);

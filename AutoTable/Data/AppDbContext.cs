@@ -1,11 +1,32 @@
 using AutoTable.Data.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Data.Common;
 
 namespace AutoTable.Data
 {
     public class AppDbContext : DbContext
     {
+        /// <summary>
+        /// EF Core interceptor that enables <c>PRAGMA foreign_keys = ON</c> every time
+        /// a new SQLite connection is opened.  This is required because the pragma is
+        /// per-connection and EF Core opens a fresh connection for each DbContext.
+        /// </summary>
+        public sealed class ForeignKeyInterceptor : DbConnectionInterceptor
+        {
+            public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
+            {
+                try
+                {
+                    using var cmd = connection.CreateCommand();
+                    cmd.CommandText = "PRAGMA foreign_keys = ON;";
+                    cmd.ExecuteNonQuery();
+                }
+                catch { /* best-effort */ }
+            }
+        }
+
         public DbSet<StudentEntity> Students => Set<StudentEntity>();
         public DbSet<ClassEntity> Classes => Set<ClassEntity>();
         public DbSet<StreamEntity> Streams => Set<StreamEntity>();
@@ -23,6 +44,10 @@ namespace AutoTable.Data
         public DbSet<ClassStreamEntity> ClassStreams => Set<ClassStreamEntity>();
         public DbSet<TermFeeEntity> TermFees => Set<TermFeeEntity>();
         public DbSet<BudgetLineEntity> BudgetLines => Set<BudgetLineEntity>();
+
+        // Grading system entities
+        public DbSet<GradingSystemEntity> GradingSystems => Set<GradingSystemEntity>();
+        public DbSet<GradeBandEntity> GradeBands => Set<GradeBandEntity>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -106,17 +131,65 @@ namespace AutoTable.Data
                 .HasForeignKey(a => a.StreamId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<StudentEntity>()
-                .HasMany(s => s.Marks)
-                .WithOne(m => m.Student)
+            // =========================================================================
+            // Referential integrity (explicit)
+            // Every Marks and FeePayments row must reference a real student. The
+            // Students table is the single source of the student's name + LIN; mark/fee
+            // rows never duplicate name/LIN text. SQLite enforces this via FK + PK.
+            // =========================================================================
+            modelBuilder.Entity<MarkEntity>()
+                .HasOne(m => m.Student)
+                .WithMany(s => s.Marks)
                 .HasForeignKey(m => m.StudentId)
-                .OnDelete(DeleteBehavior.Restrict); // prevent accidental removal
+                .OnDelete(DeleteBehavior.Restrict); // cannot orphan a mark; terminate the student instead
+            modelBuilder.Entity<MarkEntity>()
+                .HasIndex(m => m.StudentId);
+            modelBuilder.Entity<MarkEntity>()
+                .HasOne<UserEntity>()
+                .WithMany()
+                .HasForeignKey(m => m.EnteredByUserId)
+                .OnDelete(DeleteBehavior.SetNull); // keep the mark if the teacher account is removed
 
-            modelBuilder.Entity<StudentEntity>()
-                .HasMany(s => s.FeePayments)
-                .WithOne(fp => fp.Student)
+            modelBuilder.Entity<FeePaymentEntity>()
+                .HasOne(fp => fp.Student)
+                .WithMany(s => s.FeePayments)
                 .HasForeignKey(fp => fp.StudentId)
+                .OnDelete(DeleteBehavior.Restrict); // cannot orphan a payment
+            modelBuilder.Entity<FeePaymentEntity>()
+                .HasOne<UserEntity>()
+                .WithMany()
+                .HasForeignKey(fp => fp.RecordedByUserId)
+                .OnDelete(DeleteBehavior.SetNull); // keep the payment if the officer account is removed
+            modelBuilder.Entity<FeePaymentEntity>()
+                .HasIndex(fp => new { fp.StudentId, fp.TermId });
+
+            // Assessment obligations: term + academic year must exist before a paper can record marks
+            modelBuilder.Entity<AssessmentEntity>()
+                .HasOne(a => a.Term)
+                .WithMany()
+                .HasForeignKey(a => a.TermId)
+                .OnDelete(DeleteBehavior.Restrict); // prevents deleting a term with assessments
+            modelBuilder.Entity<AssessmentEntity>()
+                .HasOne(a => a.AcademicYear)
+                .WithMany()
+                .HasForeignKey(a => a.AcademicYearId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<AssessmentEntity>()
+                .HasIndex(a => a.TermId);
+
+            // Class teacher must be a real registered user (Users.Role == "Teacher")
+            modelBuilder.Entity<ClassEntity>()
+                .HasOne(c => c.ClassTeacher)
+                .WithMany()
+                .HasForeignKey(c => c.ClassTeacherId)
+                .OnDelete(DeleteBehavior.SetNull); // keep the class if the teacher leaves
+
+            // Student promotion target class (Term 3 move-up): set to next class when promoted.
+            modelBuilder.Entity<StudentEntity>()
+                .HasOne(s => s.PromotedToClass)
+                .WithMany()
+                .HasForeignKey(s => s.PromotedToClassId)
+                .OnDelete(DeleteBehavior.SetNull); // clear target if class is deleted
 
             // Termination log FK — preserve audit trail if student removed
             modelBuilder.Entity<TerminationLogEntity>()
@@ -138,6 +211,35 @@ namespace AutoTable.Data
                 .IsUnique();
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        // Helper to create a connection with foreign_keys ON (used by startup)
+        /// <summary>
+        /// Runs SQLite's <c>PRAGMA foreign_key_check</c> on the mark + fee tables. Any orphaned
+        /// row (Marks/FeePayments pointing at a missing student, etc.) is returned as a line.
+        /// An empty string means every mark and fee payment has a valid student reference.
+        /// </summary>
+        public static string CheckReferentialIntegrity(SqliteConnection conn)
+        {
+            var sb = new System.Text.StringBuilder();
+            try
+            {
+                foreach (var table in new[] { "Marks", "FeePayments", "Assessments" })
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = $"PRAGMA foreign_key_check('{table}');";
+                    using var rdr = cmd.ExecuteReader();
+                    while (rdr.Read())
+                    {
+                        sb.AppendLine($"[{table}] FK violation: rowid={rdr.GetValue(1)} refs {rdr.GetValue(2)} (id {rdr.GetValue(3)}) -> {rdr.GetValue(4)}");
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                sb.AppendLine($"integrity check failed: {ex.Message}");
+            }
+            return sb.ToString().Trim();
         }
 
         // Helper to create a connection with foreign_keys ON (used by startup)

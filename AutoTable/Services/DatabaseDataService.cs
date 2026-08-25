@@ -1,4 +1,4 @@
-using AutoTable.Data;
+﻿using AutoTable.Data;
 using AutoTable.Data.Entities;
 using AutoTable.Models;
 using Microsoft.EntityFrameworkCore;
@@ -238,11 +238,22 @@ namespace AutoTable.Services
         public async Task<AutoTable.Models.AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
         {
             using var db = CreateContext();
-            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == className);
-            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == subject);
+            var clsName = className?.Trim() ?? string.Empty;
+            var subjName = subject?.Trim() ?? string.Empty;
+            var assName = name?.Trim() ?? string.Empty;
+
+            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name.ToLower() == clsName.ToLower());
+            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name.ToLower() == subjName.ToLower());
             if (cls == null || subj == null) return null;
-            var a = await db.Assessments.FirstOrDefaultAsync(x => x.Name == name && x.ClassId == cls.Id && x.SubjectId == subj.Id);
+
+            // Case-insensitive / trim-tolerant match so a name typed or stored with
+            // different casing still resolves instead of failing with "not found".
+            var a = await db.Assessments.FirstOrDefaultAsync(x =>
+                x.ClassId == cls.Id && x.SubjectId == subj.Id &&
+                x.Name.Trim().ToLower() == assName.ToLower());
+
             if (a == null) return null;
+
             return new AutoTable.Models.AssessmentItem
             {
                 Id = a.Id.ToString(),
@@ -403,7 +414,8 @@ namespace AutoTable.Services
                         EndTerm = scores.ElementAtOrDefault(3),
                         Average = avg,
                         Grade = avg > 0 ? GradeFromAverage(avg) : "-",
-                        Status = avg < 40 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
+                        // Default passmark: 50% average across all subjects
+                        Status = avg < 50 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
                     };
                 }).OrderByDescending(r => r.Average).ToList();
 
@@ -424,12 +436,22 @@ namespace AutoTable.Services
         public async Task<IReadOnlyList<StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName)
         {
             using var db = CreateContext();
-            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == className) ?? db.Classes.FirstOrDefault();
-            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == subject) ?? db.Subjects.FirstOrDefault();
-            var clsId = cls?.Id ?? 0;
-            var subjId = subj?.Id ?? 0;
+            // Trim + case-insensitive resolution; NO silent fallback to an arbitrary
+            // class/subject (the old FirstOrDefault fallback made existing marks vanish).
+            var clsName = className?.Trim() ?? string.Empty;
+            var subjName = subject?.Trim() ?? string.Empty;
+            var assName = assessmentName?.Trim() ?? string.Empty;
+
+            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name.ToLower() == clsName.ToLower());
+            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name.ToLower() == subjName.ToLower());
+            if (cls == null || subj == null || clsName.Length == 0 || subjName.Length == 0)
+                return new List<StudentMarkRow>();
+
+            var clsId = cls.Id;
+            var subjId = subj.Id;
             var assess = await db.Assessments.FirstOrDefaultAsync(a =>
-                a.Name == assessmentName && a.ClassId == clsId && a.SubjectId == subjId);
+                a.ClassId == clsId && a.SubjectId == subjId &&
+                a.Name.Trim().ToLower() == assName.ToLower());
 
             if (cls == null || subj == null || assess == null)
             {
@@ -491,6 +513,13 @@ namespace AutoTable.Services
             using var db = CreateContext();
             var list = await db.Terms.OrderBy(t => t.Name).ToListAsync();
             return list.Select(t => new SimpleLookup { Id = t.Id, Name = t.Name }).ToList();
+        }
+
+        public async Task<SimpleLookup?> GetActiveTermAsync()
+        {
+            using var db = CreateContext();
+            var t = await db.Terms.FirstOrDefaultAsync(x => x.IsActive);
+            return t == null ? null : new SimpleLookup { Id = t.Id, Name = t.Name };
         }
 
         public async Task<IReadOnlyList<string>> GetAcademicYearsAsync()
@@ -678,13 +707,14 @@ namespace AutoTable.Services
                     EndTerm = scores.ElementAtOrDefault(3),
                     Average = avg,
                     Grade = avg > 0 ? GradeFromAverage(avg) : "-",
-                    Status = avg < 40 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
+                    // Default passmark: 50% average across all subjects
+                    Status = avg < 50 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
                 });
             }
 
             if (detail.SubjectPerformances.Count == 0)
             {
-                // No marks available for selected filters — show a placeholder row for the subject
+                // No marks available for selected filters â€” show a placeholder row for the subject
                 detail.SubjectPerformances.Add(new Models.StudentSubjectPerformance
                 {
                     Subject = subject,
@@ -697,7 +727,8 @@ namespace AutoTable.Services
             detail.OverallAverage = detail.SubjectPerformances.Count == 0 ? 0
                 : Math.Round(detail.SubjectPerformances.Average(s => s.Average), 1);
             detail.OverallGrade = detail.OverallAverage > 0 ? GradeFromAverage(detail.OverallAverage) : "-";
-            detail.Status = detail.OverallAverage < 40 ? "At Risk" : detail.OverallAverage >= 70 ? "Excellent" : detail.OverallAverage > 0 ? "On Track" : "No Data";
+            // Default passmark: a student passes with a 50% average across all subjects
+            detail.Status = detail.OverallAverage < 50 ? "At Risk" : detail.OverallAverage >= 70 ? "Excellent" : detail.OverallAverage > 0 ? "On Track" : "No Data";
 
             // Rank within class for the requested subject
             var cls = student?.ClassId != null ? await db.Classes.FindAsync(student.ClassId) : null;
@@ -714,6 +745,136 @@ namespace AutoTable.Services
             }
 
             return detail;
+        }
+
+        public async Task<Models.ReportCardSheetModel?> GetReportCardSheetAsync(
+            string studentName, string className, string term)
+        {
+            using var db = CreateContext();
+
+            var clsName = (className ?? string.Empty).Trim().ToLower();
+            var cls = await db.Classes
+                .Include(c => c.ClassTeacher)
+                .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == clsName);
+            var termEntity = await db.Terms.FirstOrDefaultAsync(t => t.Name == term);
+            if (cls == null || termEntity == null) return null;
+
+            var student = await db.Students
+                .Include(s => s.Class)
+                .Include(s => s.Stream)
+                .FirstOrDefaultAsync(s => s.FullName == studentName && s.IsActive);
+            if (student == null) return null;
+
+            var assessments = await db.Assessments
+                .Include(a => a.Subject)
+                .Where(a => a.ClassId == cls.Id && a.TermId == termEntity.Id)
+                .OrderBy(a => a.Subject!.Name).ThenByDescending(a => a.DueDate)
+                .ToListAsync();
+
+            var marks = await db.Marks
+                .Where(m => m.StudentId == student.Id)
+                .Where(m => assessments.Select(a => a.Id).Contains(m.AssessmentId))
+                .ToListAsync();
+
+            // Per-subject, the highest-weighted / last-due assessment is treated as the
+            // promotional (end-of-term) paper; the remaining ones are contributory.
+            // (Once the assessment promotion-role field lands, this classification will
+            //  honour the explicit PromotionRole instead of this heuristic.)
+            var promotional = new List<ReportCardAssessmentRow>();
+            var contributory = new List<ReportCardAssessmentRow>();
+
+            foreach (var subjectGroup in assessments.GroupBy(a => a.Subject?.Name ?? "General").OrderBy(g => g.Key))
+            {
+                var ordered = subjectGroup.OrderByDescending(a => a.WeightPercent).ThenByDescending(a => a.DueDate).ToList();
+                for (int i = 0; i < ordered.Count; i++)
+                {
+                    var a = ordered[i];
+                    var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
+                    var avg = mark ?? 0;
+                    var grade = avg > 0 ? GradeFromAverage(avg) : "-";
+                    var row = new ReportCardAssessmentRow
+                    {
+                        Subject = subjectGroup.Key,
+                        AssessmentName = a.Name,
+                        Mark = Math.Round(avg, 1),
+                        Grade = grade,
+                        WeightPercent = a.WeightPercent,
+                        IsPromotional = i == 0,
+                        IsPass = avg >= 50
+                    };
+                    if (i == 0) promotional.Add(row); else contributory.Add(row);
+                }
+            }
+
+            var allRows = promotional.Concat(contributory).ToList();
+            var overallAverage = allRows.Count > 0
+                ? Math.Round(allRows.Average(r => r.Mark), 1)
+                : 0;
+            var overallGrade = overallAverage > 0 ? GradeFromAverage(overallAverage) : "-";
+            // Default passmark: a student passes with a 50% average across all subjects
+            var status = overallAverage < 50 ? "At Risk" : overallAverage >= 70 ? "Excellent" : overallAverage > 0 ? "On Track" : "No Data";
+
+// Rank within class using overall averages of all students in the class.
+            var classStudents = await db.Students.Where(s => s.ClassId == cls.Id && s.IsActive).Select(s => s.Id).ToListAsync();
+            var rank = 0;
+            if (classStudents.Count > 0)
+            {
+                var classMarks = await db.Marks
+                    .Where(m => classStudents.Contains(m.StudentId))
+                    .Where(m => assessments.Select(a => a.Id).Contains(m.AssessmentId))
+                    .ToListAsync();
+                var avgs = classMarks.GroupBy(m => m.StudentId)
+                    .Select(g => g.Average(m => m.Mark ?? 0))
+                    .OrderByDescending(v => v).ToList();
+                rank = avgs.Count == 0 ? 0 : avgs.TakeWhile(v => v > overallAverage).Count() + 1;
+            }
+
+            var teacherComment = BuildTeacherComment(overallAverage, status, promotional);
+
+            return new Models.ReportCardSheetModel
+            {
+                SchoolName = "AutoTable Academy",
+                StudentName = student.FullName,
+                AdmissionNumber = student.LIN,
+                ClassName = cls.Name,
+                Stream = student.Stream?.Name ?? string.Empty,
+                Term = termEntity.Name,
+                AcademicYear = termEntity.Name,
+                Gender = student.Gender ?? string.Empty,
+                DateOfBirth = student.DateOfBirth?.ToString("dd MMM yyyy") ?? string.Empty,
+                GuardianName = student.GuardianName ?? string.Empty,
+                GuardianPhone = student.GuardianPhone ?? string.Empty,
+                ClassTeacher = cls.ClassTeacher?.FullName ?? string.Empty,
+                PromotionalAssessments = promotional,
+                ContributoryAssessments = contributory,
+                OverallAverage = overallAverage,
+                OverallGrade = overallGrade,
+                Rank = rank,
+                Status = status,
+                TeacherComment = teacherComment
+            };
+        }
+
+        private static string BuildTeacherComment(double average, string status, List<ReportCardAssessmentRow> promotional)
+        {
+            var passed = promotional.Count(r => r.IsPass);
+            var total = promotional.Count;
+            var verdict = total > 0 ? $"{passed}/{total} promotional papers passed" : "No promotional paper on record";
+            var core = status switch
+            {
+                "Excellent" => "A very strong term. ",
+                "On Track" => "Good progress; keep the momentum. ",
+                "At Risk" => "Performance is below expectation and needs urgent attention. ",
+                _ => "No results recorded for this term yet. "
+            };
+            var strongest = promotional.OrderByDescending(r => r.Mark).FirstOrDefault();
+            var weakest = promotional.OrderByDescending(r => r.Mark).LastOrDefault();
+            var detail = string.Empty;
+            if (strongest != null && strongest.Mark > 0)
+                detail = $"Strongest: {strongest.Subject} ({strongest.Mark:F0}%). ";
+            if (weakest != null && weakest.Mark > 0 && weakest.Mark < 50)
+                detail += $"Needs extra help in {weakest.Subject} ({weakest.Mark:F0}%). ";
+            return $"{core}{verdict}. {detail}Recommended next step: {(average >= 50 ? "promote to the next class." : "repeat the class.")}";
         }
 
         public async Task<IReadOnlyList<Student>> GetStudentsAsync()
@@ -1056,24 +1217,39 @@ namespace AutoTable.Services
             return list.Select(c => new AutoTable.Models.SimpleLookup { Id = c.Id, Name = c.Name }).ToList();
         }
 
-        public async Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null)
+        public async Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null, int? gradingSystemId = null)
         {
             using var db = CreateContext();
             if (await db.Classes.AnyAsync(c => c.Name == name))
                 throw new InvalidOperationException("Class already exists.");
 
-            // Validate the class teacher when provided: must be an existing teacher.
+            // Validate the class teacher when provided: any teacher qualifies
+            // (registered teachers AND student teachers are both allowed).
             if (classTeacherId.HasValue)
             {
                 var teacher = await db.Users.FindAsync(classTeacherId.Value);
                 if (teacher == null || teacher.Role != "Teacher")
-                    throw new InvalidOperationException("Selected class teacher was not found among registered teachers.");
+                    throw new InvalidOperationException("Selected class teacher was not found among teachers.");
             }
 
-            var c = new ClassEntity { Name = name, ClassTeacherId = classTeacherId };
+            // Validate the grading system when provided.
+            if (gradingSystemId.HasValue && !await db.GradingSystems.AnyAsync(g => g.Id == gradingSystemId.Value))
+                throw new InvalidOperationException("Selected grading system was not found.");
+
+            var c = new ClassEntity { Name = name, ClassTeacherId = classTeacherId, GradingSystemId = gradingSystemId };
             db.Classes.Add(c);
             await db.SaveChangesAsync();
             return new AutoTable.Models.SimpleLookup { Id = c.Id, Name = c.Name };
+        }
+
+        public async Task<IReadOnlyDictionary<int, string>> GetClassGradingSystemNamesAsync()
+        {
+            using var db = CreateContext();
+            var list = await db.Classes
+                .Where(c => c.GradingSystemId != null)
+                .Select(c => new { c.Id, GsName = c.GradingSystem != null ? c.GradingSystem.Name : string.Empty })
+                .ToListAsync();
+            return list.ToDictionary(x => x.Id, x => x.GsName);
         }
 
         public async Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync()
@@ -1097,6 +1273,107 @@ namespace AutoTable.Services
             if (hasStudents || hasAssessments)
                 throw new InvalidOperationException("Cannot delete class with existing students or assessments.");
             db.Classes.Remove(c);
+            await db.SaveChangesAsync();
+        }
+
+        // â”€â”€ Grading systems â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+        public async Task<IReadOnlyList<AutoTable.Models.GradingSystemInfo>> GetGradingSystemsAsync()
+        {
+            using var db = CreateContext();
+            var systems = await db.GradingSystems.OrderBy(g => g.Name).ToListAsync();
+            var bands = await db.GradeBands.OrderBy(b => b.MinScore).ToListAsync();
+
+            var result = new List<AutoTable.Models.GradingSystemInfo>();
+            foreach (var g in systems)
+            {
+                var info = new AutoTable.Models.GradingSystemInfo { Id = g.Id, Name = g.Name, IsDefault = g.IsDefault, PassMark = g.PassMark };
+                foreach (var b in bands.Where(b => b.GradingSystemId == g.Id))
+                {
+                    info.Bands.Add(new AutoTable.Models.GradeBandInfo
+                    {
+                        Id = b.Id,
+                        Label = b.Label,
+                        MinScore = b.MinScore,
+                        MaxScore = b.MaxScore,
+                        IsPromotionalPass = b.IsPromotionalPass,
+                        IsRepeater = b.IsRepeater,
+                        IsPromotionalFail = b.IsPromotionalFail
+                    });
+                }
+                result.Add(info);
+            }
+            return result;
+        }
+
+        public async Task<AutoTable.Models.GradingSystemInfo> CreateGradingSystemAsync(string name, bool isDefault = false, double passMark = 50)
+        {
+            using var db = CreateContext();
+            if (await db.GradingSystems.AnyAsync(g => g.Name == name))
+                throw new InvalidOperationException("A grading system with that name already exists.");
+
+            // Only one school default at a time.
+            if (isDefault)
+            {
+                var defaults = await db.GradingSystems.Where(g => g.IsDefault).ToListAsync();
+                foreach (var d in defaults) d.IsDefault = false;
+            }
+
+            var g = new GradingSystemEntity { Name = name, IsDefault = isDefault, PassMark = passMark };
+            db.GradingSystems.Add(g);
+            await db.SaveChangesAsync();
+            return new AutoTable.Models.GradingSystemInfo { Id = g.Id, Name = g.Name, IsDefault = g.IsDefault, PassMark = g.PassMark };
+        }
+
+        public async Task DeleteGradingSystemAsync(int gradingSystemId)
+        {
+            using var db = CreateContext();
+            var g = await db.GradingSystems.FindAsync(gradingSystemId);
+            if (g == null) return;
+            // Detach any classes using this system before removing it.
+            var classes = await db.Classes.Where(c => c.GradingSystemId == gradingSystemId).ToListAsync();
+            foreach (var c in classes) c.GradingSystemId = null;
+            var bands = db.GradeBands.Where(b => b.GradingSystemId == gradingSystemId);
+            db.GradeBands.RemoveRange(bands);
+            db.GradingSystems.Remove(g);
+            await db.SaveChangesAsync();
+        }
+
+        public async Task<IReadOnlyList<AutoTable.Models.GradeBandInfo>> GetGradeBandsAsync(int gradingSystemId)
+        {
+            using var db = CreateContext();
+            var bands = await db.GradeBands
+                .Where(b => b.GradingSystemId == gradingSystemId)
+                .OrderBy(b => b.MinScore)
+                .ToListAsync();
+            return bands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id,
+                Label = b.Label,
+                MinScore = b.MinScore,
+                MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
+        }
+
+        public async Task CreateGradeBandAsync(int gradingSystemId, string label, double minScore, double maxScore,
+            bool isPromotionalPass, bool isRepeater, bool isPromotionalFail)
+        {
+            using var db = CreateContext();
+            if (!await db.GradingSystems.AnyAsync(g => g.Id == gradingSystemId))
+                throw new InvalidOperationException("Grading system was not found.");
+            db.GradeBands.Add(new GradeBandEntity
+            {
+                GradingSystemId = gradingSystemId,
+                Label = label,
+                MinScore = minScore,
+                MaxScore = maxScore,
+                IsPromotionalPass = isPromotionalPass,
+                IsRepeater = isRepeater,
+                IsPromotionalFail = isPromotionalFail
+            });
             await db.SaveChangesAsync();
         }
 
@@ -1187,11 +1464,11 @@ namespace AutoTable.Services
 
             // Report precisely which prerequisite is missing so the UI can guide the user.
             if (cls == null)
-                throw new InvalidOperationException("No class exists yet. Create a class under Administration → Classes Management first.");
+                throw new InvalidOperationException("No class exists yet. Create a class under Administration â†’ Classes Management first.");
             if (subj == null)
-                throw new InvalidOperationException("No subject exists yet. Create a subject under Administration → Classes Management first.");
+                throw new InvalidOperationException("No subject exists yet. Create a subject under Administration â†’ Classes Management first.");
             if (term == null)
-                throw new InvalidOperationException("No term exists yet. Create a term under Administration → Term Management first.");
+                throw new InvalidOperationException("No term exists yet. Create a term under Administration â†’ Term Management first.");
 
             var entity = new AssessmentEntity
             {
@@ -1282,6 +1559,202 @@ namespace AutoTable.Services
             var entity = await db.BudgetLines.FindAsync(budgetLineId);
             if (entity == null) return;
             db.BudgetLines.Remove(entity);
+            await db.SaveChangesAsync();
+}
+        // â”€â”€â”€ Promotion / repeat (Term 3 move-up) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+        private static int NumericSuffix(string name)
+        {
+            var digits = new string((name ?? string.Empty).Where(char.IsDigit).ToArray());
+            return int.TryParse(digits, out var n) ? n : int.MaxValue;
+        }
+
+        /// <summary>
+        /// Returns the next class in the school's sequence (by numeric suffix, P1â†’P2â€¦)
+        /// that is greater than the supplied class, or null when it is the highest class.
+        /// </summary>
+        public async Task<AutoTable.Models.SimpleLookup?> SuggestNextClassAsync(int currentClassId)
+        {
+            using var db = CreateContext();
+            var current = await db.Classes.FindAsync(currentClassId);
+            if (current == null) return null;
+            var currentNum = NumericSuffix(current.Name);
+            var all = await db.Classes.OrderBy(c => NumericSuffix(c.Name)).ToListAsync();
+            var next = all
+                .Where(c => c.Id != current.Id && NumericSuffix(c.Name) > currentNum)
+                .OrderBy(c => NumericSuffix(c.Name))
+                .FirstOrDefault();
+            return next == null
+                ? null
+                : new AutoTable.Models.SimpleLookup { Id = next.Id, Name = next.Name };
+        }
+        /// <summary>
+        /// Computes a student's terminal average across subjects. For each subject the
+        /// highest-weight assessment's mark is taken (the same approach as the report card),
+        /// and those subject marks are averaged.
+        /// </summary>
+        private async Task<double> ComputeStudentAverageAsync(AppDbContext db, int studentId)
+        {
+            var marks = await db.Marks
+                .Where(m => m.StudentId == studentId && m.Mark.HasValue)
+                .Include(m => m.Assessment).ThenInclude(a => a.Subject)
+                .Include(m => m.Assessment).ThenInclude(a => a.Term)
+                .ToListAsync();
+
+            // The terminal term is considered the latest term that has assessments (Term 3 move-up).
+            var latestTerm = marks
+                .Select(m => m.Assessment.Term)
+                .Where(t => t != null)
+                .OrderByDescending(t => t.EndDate ?? t.StartDate)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefault();
+
+            var termMarks = latestTerm == null
+                ? marks
+                : marks.Where(m => m.Assessment.Term != null && m.Assessment.Term.Id == latestTerm.Id).ToList();
+
+            var subjectAvgs = new List<double>();
+            foreach (var grp in termMarks.GroupBy(m => m.Assessment.Subject?.Name ?? "General"))
+            {
+                var best = grp
+                    .OrderByDescending(m => m.Assessment.WeightPercent)
+                    .ThenByDescending(m => m.Assessment.DueDate)
+                    .FirstOrDefault();
+                if (best != null)
+                    subjectAvgs.Add(best.Mark ?? 0);
+            }
+            return subjectAvgs.Count > 0 ? subjectAvgs.Average() : 0;
+        }
+
+        /// <summary>
+        /// Returns the promotion overview (Term 3 move-up) for active students, optionally
+        /// filtered to one class. The suggested outcome is Promote when the student's terminal
+        /// average meets the class's grading-system pass mark, otherwise Repeat.
+        /// </summary>
+        public async Task<IReadOnlyList<AutoTable.Models.PromotionRow>> GetPromotionOverviewAsync(int? classId = null)
+        {
+            using var db = CreateContext();
+            var query = db.Students
+                .Include(s => s.Class).ThenInclude(c => c!.GradingSystem)
+                .Include(s => s.Stream)
+                .Where(s => s.IsActive);
+            if (classId.HasValue)
+                query = query.Where(s => s.ClassId == classId);
+            var students = await query.ToListAsync();
+
+            // Fallback pass mark when the class has no grading system (school default, else 50).
+            double defaultPassMark = 50;
+            var schoolDefault = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault);
+            if (schoolDefault != null) defaultPassMark = schoolDefault.PassMark;
+
+            var rows = new List<AutoTable.Models.PromotionRow>();
+            foreach (var s in students)
+            {
+                var passMark = s.Class?.GradingSystem != null
+                    ? s.Class.GradingSystem.PassMark
+                    : defaultPassMark;
+
+                var avg = await ComputeStudentAverageAsync(db, s.Id);
+                var suggested = avg >= passMark
+                    ? AutoTable.Models.PromotionStatus.Promoted
+                    : AutoTable.Models.PromotionStatus.Repeat;
+
+                int? targetClassId = null;
+                string targetClassName = string.Empty;
+                if (s.ClassId.HasValue)
+                {
+                    var nxt = await SuggestNextClassAsync(s.ClassId.Value);
+                    if (nxt != null)
+                    {
+                        targetClassId = nxt.Id;
+                        targetClassName = nxt.Name;
+                    }
+                }
+
+                rows.Add(new AutoTable.Models.PromotionRow
+                {
+                    StudentId = s.Id,
+                    StudentName = s.FullName,
+                    LIN = s.LIN,
+                    ClassId = s.ClassId ?? 0,
+                    ClassName = s.Class?.Name ?? "-",
+                    Stream = s.Stream?.Name ?? "-",
+                    Average = Math.Round(avg, 1),
+                    PassMark = passMark,
+                    Grade = avg > 0 ? GradeFromAverage(avg) : "-",
+                    Suggested = suggested,
+                    Status = (AutoTable.Models.PromotionStatus)s.PromotionStatus,
+                    TargetClassId = targetClassId,
+                    TargetClassName = targetClassName
+                });
+            }
+
+            return rows
+                .OrderBy(r => r.ClassName)
+                .ThenBy(r => r.StudentName)
+                .ToList();
+        }
+
+        /// <summary>Promote a student for the next academic year, moving them to the suggested (or given) next class.</summary>
+        public async Task PromoteStudentAsync(int studentId, int? targetClassId = null)
+        {
+            using var db = CreateContext();
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) return;
+
+            int? dest = targetClassId;
+            if (!dest.HasValue && s.ClassId.HasValue)
+            {
+                var nxt = await SuggestNextClassAsync(s.ClassId.Value);
+                dest = nxt?.Id;
+            }
+
+            s.PromotionStatus = (int)AutoTable.Models.PromotionStatus.Promoted;
+            s.PromotedToClassId = dest;
+            s.PromotionProcessedAt = DateTime.UtcNow;
+            if (dest.HasValue)
+            {
+                s.ClassId = dest;
+                s.StreamId = null;
+            }
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>Keep a student repeating their current class.</summary>
+        public async Task RepeatStudentAsync(int studentId)
+        {
+            using var db = CreateContext();
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) return;
+            s.PromotionStatus = (int)AutoTable.Models.PromotionStatus.Repeat;
+            s.PromotedToClassId = null;
+            s.PromotionProcessedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>Manually shift a student to another class (skip-ahead / class change).</summary>
+        public async Task ShiftStudentClassAsync(int studentId, int targetClassId)
+        {
+            using var db = CreateContext();
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) return;
+            s.PromotionStatus = (int)AutoTable.Models.PromotionStatus.Shifted;
+            s.PromotedToClassId = targetClassId;
+            s.ClassId = targetClassId;
+            s.StreamId = null;
+            s.PromotionProcessedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>Reset a student's promotion decision back to pending.</summary>
+        public async Task ResetPromotionAsync(int studentId)
+        {
+            using var db = CreateContext();
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) return;
+            s.PromotionStatus = (int)AutoTable.Models.PromotionStatus.Pending;
+            s.PromotedToClassId = null;
+            s.PromotionProcessedAt = null;
             await db.SaveChangesAsync();
         }
     }

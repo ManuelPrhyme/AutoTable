@@ -16,6 +16,8 @@
 
         <TextBox x:Name="SearchBox" PlaceholderText="Search by name or LIN" TextChanged="SearchBox_TextChanged"/>
 
+        <TextBlock Text="{Binding StatusMessage}" Style="{ThemeResource MutedTextStyle}" TextWrapping="Wrap" />
+
         <ListView x:Name="StudentsList" IsItemClickEnabled="True" SelectionMode="Single">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:Student" xmlns:models="using:AutoTable.Models">

@@ -91,9 +91,13 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task SubmitAsync()
         {
-            if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Lin) || string.IsNullOrWhiteSpace(GuardianPhone))
+            var autoLin = string.IsNullOrWhiteSpace(Lin)
+                ? "LIN-" + System.Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant()
+                : Lin.Trim();
+
+            if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(GuardianPhone))
             {
-                StatusMessage = "Please provide the student's full name, LIN, and guardian phone number.";
+                StatusMessage = "Please provide the student's full name and guardian phone number.";
                 return;
             }
 
@@ -104,7 +108,7 @@ namespace AutoTable.ViewModels
                 var data = new EnrollmentFormData
                 {
                     FullName = FullName.Trim(),
-                    LIN = Lin.Trim(),
+                    LIN = autoLin,
                     DateOfBirth = DateOfBirth,
                     Gender = Gender,
                     Nationality = Nationality,

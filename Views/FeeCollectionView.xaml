@@ -28,7 +28,8 @@
                               ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus, Mode=TwoWay}" />
                     <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                         <Button Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}" Command="{Binding RefreshCommand}" />
-                        <Button Content="Record Payment" Style="{ThemeResource PrimaryButtonStyle}" Command="{Binding RecordPaymentCommand}" />
+                        <Button Content="Record Payment" Style="{ThemeResource SecondaryButtonStyle}" Click="RecordPayment_Click" />
+                        <Button Content="Print Slips" Style="{ThemeResource PrimaryButtonStyle}" Click="PrintSlips_Click" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -80,6 +81,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
@@ -89,6 +91,7 @@
                             <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PAID" />
                             <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="BALANCE" />
                             <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="8" Style="{ThemeResource TableHeaderStyle}" Text="SLIP" />
                         </Grid>
                     </Border>
                     <ListView ItemsSource="{Binding FeeRecords}" SelectionMode="None">
@@ -112,6 +115,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
                                                Text="{Binding RowNumber}" VerticalAlignment="Center" />
@@ -131,6 +135,9 @@
                                                Text="{Binding Balance, Converter={StaticResource CurrencyConverter}}" />
                                     <TextBlock Grid.Column="7" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding PaymentStatus}" />
+                                    <Button Grid.Column="8" Content="Print Slip"
+                                            Style="{ThemeResource SecondaryButtonStyle}"
+                                            Padding="8,4" FontSize="12" Click="PrintSlip_Click" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

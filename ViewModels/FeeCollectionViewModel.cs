@@ -42,59 +42,8 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task Refresh() => await Load();
 
-        [RelayCommand]
-        private async Task RecordPaymentAsync()
-        {
-            // Simple dialog to record a payment: ask for student LIN and amount
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
-            {
-                Title = "Record Fee Payment",
-                PrimaryButtonText = "Record",
-                CloseButtonText = "Cancel",
-                XamlRoot = Microsoft.UI.Xaml.Window.Current.Content.XamlRoot
-            };
-
-            var stack = new Microsoft.UI.Xaml.Controls.StackPanel { Spacing = 8 };
-            var linBox = new Microsoft.UI.Xaml.Controls.TextBox { Header = "Student LIN", PlaceholderText = "LIN or admission number" };
-            var amountBox = new Microsoft.UI.Xaml.Controls.TextBox { Header = "Amount", PlaceholderText = "Amount to record" };
-            stack.Children.Add(linBox);
-            stack.Children.Add(amountBox);
-            dialog.Content = stack;
-
-            var res = await dialog.ShowAsync();
-            if (res == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
-            {
-                try
-                {
-                    var lin = linBox.Text?.Trim();
-                    if (string.IsNullOrWhiteSpace(lin)) return;
-                    if (!double.TryParse(amountBox.Text, out var amt)) return;
-
-                    // find student by LIN
-                    var students = await _dataService.GetStudentsAsync();
-                    var student = students.FirstOrDefault(s => string.Equals(s.LIN, lin, StringComparison.OrdinalIgnoreCase) || string.Equals(s.AdmissionNumber, lin, StringComparison.OrdinalIgnoreCase));
-                    if (student == null)
-                    {
-                        StatusMessage = $"No student found with LIN '{lin}'.";
-                        return;
-                    }
-
-                    // resolve the selected term id so the payment is attributed correctly
-                    int? termId = null;
-                    var termLookups = await _dataService.GetTermLookupsAsync();
-                    var selectedTerm = termLookups.FirstOrDefault(t => string.Equals(t.Name, SelectedTerm, StringComparison.OrdinalIgnoreCase));
-                    if (selectedTerm != null) termId = selectedTerm.Id;
-
-                    await _dataService.CreateFeePaymentAsync(student.Id, amt, termId, null, "Recorded via UI");
-                    StatusMessage = $"Recorded payment of {amt:N0} for {student.FullName}.";
-                    await Load();
-                }
-                catch (System.Exception ex)
-                {
-                    StatusMessage = "Failed to record payment: " + ex.Message;
-                }
-            }
-        }
+        // NOTE: payment recording lives in FeeCollectionView.RecordPayment_Click (code-behind)
+        // which opens the searchable Record Payment modal and calls IDataService.CreateFeePaymentAsync.
 
         private async Task InitializeAsync()
         {

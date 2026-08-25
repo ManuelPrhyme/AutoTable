@@ -35,6 +35,7 @@
             <!-- Sidebar / Navigation -->
             <Color x:Key="SidebarColor">#1E1E1E</Color>
             <Color x:Key="SidebarHoverColor">#2A2A2A</Color>
+<Color x:Key="SidebarActiveColor">#383838</Color>
             <Color x:Key="SidebarBorderColor">#2A2A2A</Color>
 
             <!-- Dividers / Lines / Borders -->
@@ -217,6 +218,7 @@
             <SolidColorBrush x:Key="NavySidebarBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyActiveBrush" Color="{StaticResource SidebarHoverColor}" />
+            <SolidColorBrush x:Key="SidebarActiveBrush" Color="{StaticResource SidebarActiveColor}" />
         </ResourceDictionary>
 
         <!-- ── LIGHT THEME ── -->
@@ -245,6 +247,7 @@
             <Color x:Key="SidebarColor">#1E1E1E</Color>
             <Color x:Key="SidebarHoverColor">#2A2A2A</Color>
             <Color x:Key="SidebarBorderColor">#2A2A2A</Color>
+<Color x:Key="SidebarActiveColor">#383838</Color>
 
             <!-- Dividers / Lines / Borders -->
             <Color x:Key="DividerColor">#DDDDDD</Color>
@@ -426,6 +429,7 @@
             <SolidColorBrush x:Key="NavySidebarBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyActiveBrush" Color="{StaticResource SidebarHoverColor}" />
+            <SolidColorBrush x:Key="SidebarActiveBrush" Color="{StaticResource SidebarActiveColor}" />
         </ResourceDictionary>
 
         <!-- ── DARK THEME ── -->
@@ -451,6 +455,7 @@
 
             <!-- Sidebar / Navigation -->
             <Color x:Key="SidebarColor">#121212</Color>
+<Color x:Key="SidebarActiveColor">#2E2E2E</Color>
             <Color x:Key="SidebarHoverColor">#1E1E1E</Color>
             <Color x:Key="SidebarBorderColor">#1E1E1E</Color>
 
@@ -628,6 +633,7 @@
             <SolidColorBrush x:Key="NavySidebarBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource SidebarColor}" />
             <SolidColorBrush x:Key="NavyActiveBrush" Color="{StaticResource SidebarHoverColor}" />
+<SolidColorBrush x:Key="SidebarActiveBrush" Color="{StaticResource SidebarActiveColor}" />
         </ResourceDictionary>
 
     </ResourceDictionary.ThemeDictionaries>

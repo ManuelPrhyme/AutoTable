@@ -30,6 +30,7 @@ namespace AutoTable.Views
             ["Teachers"]           = ("Teachers", "Register and manage teachers."),
             ["Students"]           = ("Students", "Manage student records, LIN identifiers, and termination."),
             ["Classes"]            = ("Classes & Subjects", "Manage classes, subjects, and subject assignments."),
+            ["Promotion"]          = ("Promotion / Repeat", "End-of-year (Term 3) promote or repeat decisions per student."),
             ["AuditLog"]           = ("Termination / Audit Log", "View termination history and anonymization records."),
             ["FinDashboard"]       = ("Financial Dashboard", "Overview of fee collection, budget, and expenditure."),
             ["FeeCollection"]      = ("Fee Collection", "Track and manage student fee payments."),
@@ -50,6 +51,7 @@ namespace AutoTable.Views
             ["Teachers"]           = typeof(TeachersView),
             ["Students"]           = typeof(StudentsView),
             ["Classes"]            = typeof(ClassesView),
+            ["Promotion"]          = typeof(PromotionView),
             ["AuditLog"]           = typeof(AuditLogView),
             ["TermManagement"]     = typeof(TermManagementView),
             ["FinDashboard"]       = typeof(FinancialsDashboardView),
@@ -79,7 +81,49 @@ namespace AutoTable.Views
                 ? Visibility.Visible : Visibility.Collapsed;
 
             NavigationService.Instance.InitializeShell(ContentFrame);
+
+            // Keep header/sidebar in sync when other pages navigate the shell frame
+            // (e.g. Dashboard Quick Actions, top-search suggestions).
+            NavigationService.Instance.ShellNavigated -= OnExternalShellNavigated;
+            NavigationService.Instance.ShellNavigated += OnExternalShellNavigated;
+            Unloaded += (_, _) => NavigationService.Instance.ShellNavigated -= OnExternalShellNavigated;
+
             NavigateTo("Dashboard", NavDashboard);
+        }
+
+        /// <summary>
+        /// Syncs the page header and the highlighted sidebar button when a page
+        /// navigates via NavigationService.NavigateToShellPage (outside of a
+        /// sidebar button click), so the shell chrome always reflects the current page.
+        /// </summary>
+        private void OnExternalShellNavigated(string tag)
+        {
+            if (!Routes.ContainsKey(tag)) return;
+
+            if (PageMeta.TryGetValue(tag, out var meta))
+            {
+                PageTitleText.Text = meta.Title;
+                PageSubtitleText.Text = meta.Subtitle;
+            }
+
+            var btn = FindNavButtonByTag(tag);
+            if (btn != null) SetActiveButton(btn);
+        }
+
+        private Button? FindNavButtonByTag(string tag) =>
+            FindVisual<Button>(this, b => b.Tag is string t && t == tag);
+
+        private static T? FindVisual<T>(DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
+        {
+            int count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed && predicate(typed)) return typed;
+                var found = FindVisual(child, predicate);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private void NavItem_Click(object sender, RoutedEventArgs e)
@@ -154,8 +198,8 @@ namespace AutoTable.Views
                 _activeNavButton.Foreground = GetThemeBrush("TextOnDarkBrush");
             }
 
-            // Set new active
-            active.Background = GetThemeBrush("NavyActiveBrush");
+            // Set new active: slightly gray background highlight to mark the current tab
+            active.Background = GetThemeBrush("SidebarActiveBrush");
             active.Foreground = GetThemeBrush("TextOnDarkBrush");
             _activeNavButton = active;
         }
@@ -209,6 +253,10 @@ namespace AutoTable.Views
                     var classes = await ds.GetClassesAsync();
                     foreach (var c in classes.Where(c => c.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
                         results.Add(new SearchResult { Title = c.Name, Type = "Class", Payload = c });
+
+                    var teachers = await ds.GetTeachersAsync();
+                    foreach (var t in teachers.Where(t => t.FullName.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
+                        results.Add(new SearchResult { Title = t.FullName, Type = "Teacher", Payload = t });
                 }
 
                 sender.ItemsSource = results;
@@ -237,10 +285,16 @@ namespace AutoTable.Views
                 var res = await dlg.ShowAsync();
                 if (res == ContentDialogResult.Primary)
                 {
-                    if (r.Type == "Student")
-                        NavigationService.Instance.Navigate(typeof(Views.StudentsView));
-                    else if (r.Type == "Class")
-                        NavigationService.Instance.Navigate(typeof(Views.ClassesView));
+                    // Navigate inside the shell content frame so the sidebar persists
+                    var tag = r.Type switch
+                    {
+                        "Student" => "Students",
+                        "Class"   => "Classes",
+                        "Teacher" => "Teachers",
+                        _         => string.Empty
+                    };
+                    if (!string.IsNullOrEmpty(tag))
+                        NavigationService.Instance.NavigateToShellPage(tag);
                 }
             }
             catch { }

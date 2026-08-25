@@ -1,3 +1,5 @@
+using AutoTable.Services;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -10,10 +12,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Velopack;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
-using AutoTable.Services;
-using Microsoft.UI.Windowing;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -27,6 +28,7 @@ namespace AutoTable
     {
         public MainWindow()
         {
+            VelopackApp.Build().Run();
             InitializeComponent();
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);

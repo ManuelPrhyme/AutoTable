@@ -28,7 +28,19 @@ namespace AutoTable.Services
             ["FinDashboard"]       = typeof(Views.FinancialsDashboardView),
             ["FeeCollection"]      = typeof(Views.FeeCollectionView),
             ["Budget"]             = typeof(Views.BudgetView),
+            // Administration
+            ["Students"]           = typeof(Views.StudentsView),
+            ["Teachers"]           = typeof(Views.TeachersView),
+            ["TermManagement"]     = typeof(Views.TermManagementView),
+            ["Classes"]            = typeof(Views.ClassesView),
+            ["AuditLog"]           = typeof(Views.AuditLogView),
         };
+
+        /// <summary>
+        /// Raised after a shell-frame navigation made through NavigateToShellPage.
+        /// ShellView listens to this to keep the page header and sidebar highlight in sync.
+        /// </summary>
+        public event Action<string>? ShellNavigated;
 
         public void Initialize(Frame rootFrame) => _rootFrame = rootFrame;
         public void InitializeShell(Frame shellFrame) => _shellFrame = shellFrame;
@@ -40,6 +52,7 @@ namespace AutoTable.Services
         {
             if (_shellFrame == null || !ShellRoutes.TryGetValue(tag, out var pageType)) return;
             _shellFrame.Navigate(pageType);
+            ShellNavigated?.Invoke(tag);
         }
 
         public void NavigateToShell(Type viewType) => _shellFrame?.Navigate(viewType);

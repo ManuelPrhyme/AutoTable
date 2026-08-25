@@ -17,6 +17,9 @@ namespace AutoTable.ViewModels
         [ObservableProperty]
         private string filter = string.Empty;
 
+        [ObservableProperty]
+        private string statusMessage = string.Empty;
+
         public StudentsViewModel()
         {
             _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
@@ -24,9 +27,19 @@ namespace AutoTable.ViewModels
 
         public async Task LoadAsync()
         {
-            var list = await _dataService.GetStudentsAsync();
-            Students.Clear();
-            foreach (var s in list) Students.Add(s);
+            try
+            {
+                var list = await _dataService.GetStudentsAsync();
+                Students.Clear();
+                foreach (var s in list) Students.Add(s);
+                StatusMessage = Students.Count == 0
+                    ? "No students yet — use \"Add Student\" (or enroll via the Enrollment page) to create the first record."
+                    : $"Showing {Students.Count} student(s) from the database.";
+            }
+            catch (System.Exception ex)
+            {
+                StatusMessage = "Failed to load students: " + ex.Message;
+            }
         }
 
         public async Task AddStudentAsync()
