@@ -38,6 +38,9 @@ into a fully reworked Class Management page where class creation happens in one 
 | Mock cleanup | ✅ DONE | Moved to `Demo/` folder, namespace `AutoTable.Demo` |
 | **A4 report-card sheet + native Windows printing** | ✅ DONE (24 Aug) | `Views/Controls/ReportCardSheetView.xaml`, `ReportCardsView.xaml.cs` PrintManager pipeline |
 | **Grading systems (entities, service CRUD, schema patches)** | ✅ DONE (24 Aug) | `AutoTable/Models/GradingSystemModels.cs`, `IDataService.cs`, `DatabaseDataService.cs`, `App.xaml.cs` startup patches |
+| **Grade resolution via grading systems (P5.3)** | ✅ Code complete (26 Aug, uncommitted) | `DatabaseDataService.cs` — `GradeFromBands` replacing `GradeFromAverage` in Gradebook, StudentPerformanceDetail, ReportCards |
+| **Assessment promotion role (P5.1)** | ✅ DONE (26 Aug) | `Models/AssessmentItem.cs` enum + `AssessmentEntity.PromotionRole` column + creation dialog + report card classification |
+| **Report-card grading system integration** | ✅ Code complete (26 Aug, uncommitted) | `GetReportCardSheetAsync` resolves class → school default → fallback; `GradingSystemName` + `PassMark` on model |
 | **Class creation single-modal rework** (name + any teacher incl. student teachers + grading system pick-or-create + streams/subjects assign-or-create) | ✅ DONE (24 Aug) | `Views/ClassesView.xaml(.cs)`, `AutoTable/ViewModels/ClassesViewModel.cs`; select-class detail card removed |
 
 **Remaining gap:** EF migrations verification (startup uses EnsureCreated + ALTER TABLE patches; acceptable for now).
@@ -259,9 +262,9 @@ grading systems") and the Prototype roadmap, not yet implemented:
 
 ## Suggested execution order (atomic commits)
 
-1. Promotion-role column + migration + creation-dialog checkboxes (P5.1) — unlocks explicit report-card classification.
-2. Grade-band lookup replacing `GradeFromAverage` (P5.3) — wires the grading-systems feature built 24 Aug into marks/reporting.
-3. Promotion/repeat flow (P5.2) — completes the student lifecycle.
+1. ~~Promotion-role column + migration + creation-dialog checkboxes (P5.1)~~ — **DONE** (26 Aug). Explicit tri-state on assessment creation; report card uses explicit roles with legacy fallback.
+2. ~~Grade-band lookup replacing `GradeFromAverage` (P5.3)~~ — **Code complete** (26 Aug, in working tree, uncommitted). `GradeFromBands` replaces hard-coded `GradeFromAverage` in Gradebook, StudentPerformanceDetail, and ReportCards. Class-specific grading system resolution: Class → school default → fallback.
+3. Promotion/repeat flow (P5.2) — next priority. Service methods exist in IDataService; needs UI wiring.
 4. Role gates (P5.4), then defaulters analytics (P5.5), then slips (P5.6) and active-term enforcement (P5.7).
 5. Maintenance: EF migrations verification before any production deploy.
 

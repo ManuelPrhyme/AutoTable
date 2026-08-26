@@ -51,6 +51,14 @@ namespace AutoTable.Models
             ? string.Empty
             : $"Class Teacher: {ClassTeacher}";
 
+        // Grading system info
+        public string GradingSystemName { get; set; } = string.Empty;
+        public double PassMark { get; set; } = 50;
+        /// <summary>Header line shown below school name, e.g. "Grading: Uganda PLE  •  Pass mark: 50%".</summary>
+        public string GradingInfoLabel => string.IsNullOrEmpty(GradingSystemName)
+            ? $"Pass mark: {PassMark:0}%"
+            : $"Grading: {GradingSystemName}  \u2022  Pass mark: {PassMark:0}%";
+
         // Results
         public List<ReportCardAssessmentRow> PromotionalAssessments { get; set; } = new();
         public List<ReportCardAssessmentRow> ContributoryAssessments { get; set; } = new();

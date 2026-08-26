@@ -19,6 +19,10 @@ namespace AutoTable.Views
         private async void TermManagementView_Loaded(object sender, RoutedEventArgs e)
         {
             await _vm.LoadAsync();
+
+            // Wire up term selection to update the fee panel context
+            TermsList.SelectionChanged += TermsList_SelectionChanged;
+
             // Write quick diagnostic snapshot of loaded terms to temp for troubleshooting
             try
             {
@@ -31,6 +35,41 @@ namespace AutoTable.Views
                 System.IO.File.WriteAllText(path, $"LoadedTerms:\r\n{list}\r\nFlags: DEMO_MODE={Environment.GetEnvironmentVariable("AUTOTABLE_DEMO_MODE")}, EPHEMERAL={Environment.GetEnvironmentVariable("AUTOTABLE_DEV_EPHEMERAL_DB")}");
             }
             catch { }
+        }
+
+        private async void TermsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (TermsList.SelectedItem is AutoTable.Models.SimpleLookup selectedTerm)
+            {
+                SelectedTermLabel.Text = $"Fees for: {selectedTerm.Name} — enter amounts below, then click Set.";
+
+                // Show KPI cards and refresh school-wide totals for this term
+                KpiHeader.Text = $"School totals for {selectedTerm.Name}";
+                KpiCards.Visibility = Visibility.Visible;
+                await _vm.RefreshSchoolKpisAsync(selectedTerm.Id, selectedTerm.Name);
+
+                // Pre-fill FeeBox values with existing fees for this term
+                foreach (var item in ClassesFeeList.Items)
+                {
+                    if (item is AutoTable.Models.SimpleLookup cls)
+                    {
+                        var container = ClassesFeeList.ContainerFromItem(cls) as ListViewItem;
+                        var root = container?.ContentTemplateRoot as FrameworkElement;
+                        var feeBox = root?.FindName("FeeBox") as TextBox;
+                        if (feeBox != null)
+                        {
+                            var existing = _vm.GetFeeForClassInTerm(cls.Id, selectedTerm.Id);
+                            feeBox.Text = existing > 0 ? existing.ToString("N0") : string.Empty;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SelectedTermLabel.Text = "Select a term from the list to set fees.";
+                KpiHeader.Text = "Select a term to view school-wide totals.";
+                KpiCards.Visibility = Visibility.Collapsed;
+            }
         }
 
         private async void CreateTerm_Click(object sender, RoutedEventArgs e)
@@ -110,30 +149,37 @@ namespace AutoTable.Views
         {
             if ((sender as Button)?.DataContext is AutoTable.Models.SimpleLookup cls)
             {
-                // find FeeBox in visual tree - simple approach: look up ancestor Grid
-                var grid = ((FrameworkElement)sender).Parent as FrameworkElement;
-                // fallback: ask user to select a term first
-                if (TermsList.SelectedItem is not AutoTable.Models.SimpleLookup term) return;
+                // Must select a term first
+                if (TermsList.SelectedItem is not AutoTable.Models.SimpleLookup term)
+                {
+                    _vm.StatusMessage = "Select a term from the list before setting a fee.";
+                    return;
+                }
 
-                // find FeeBox by name within the template
+                // Find FeeBox in the visual tree via the ListView container
                 var container = ClassesFeeList.ContainerFromItem(cls) as ListViewItem;
                 if (container == null) return;
                 var root = container.ContentTemplateRoot as FrameworkElement;
                 var feeBox = root?.FindName("FeeBox") as TextBox;
                 if (feeBox == null) return;
-                if (double.TryParse(feeBox.Text, out var amt))
+                if (double.TryParse(feeBox.Text, out var amt) && amt > 0)
                 {
                     try
                     {
                         await _vm.SetTermFeeAsync(term.Id, cls.Id, amt);
-                        var dlg = new ContentDialog { Title = "Term fee set", Content = $"Fee {amt:C} set for class {cls.Name} in term {term.Name}.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
-                        await dlg.ShowAsync();
+                        _vm.StatusMessage = $"Fee {amt:N0} set for {cls.Name} in {term.Name}.";
+                        // Refresh school-wide KPIs since expected amounts changed
+                        await _vm.RefreshSchoolKpisAsync(term.Id, term.Name);
                     }
                     catch (System.Exception ex)
                     {
                         var dlg = new ContentDialog { Title = "Unable to set fee", Content = ex.Message, CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                         await dlg.ShowAsync();
                     }
+                }
+                else
+                {
+                    _vm.StatusMessage = "Enter a valid fee amount greater than 0.";
                 }
             }
         }

@@ -115,19 +115,81 @@ namespace AutoTable.Views
             return new Border { Background = bg, Child = grid };
         }
 
-        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        // Simple search result model used by the AutoSuggestBox
+        private class SearchResult
         {
-            _vm.SearchText = sender.Text;
+            public string Title { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty; // e.g., "Student", "Class", "Teacher"
+            public object? Payload { get; set; }
         }
 
-        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        private async void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            // Handle suggestion chosen - navigate or filter
-            var selectedItem = args.SelectedItem as string;
-            if (!string.IsNullOrEmpty(selectedItem))
+            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+            var q = sender.Text?.Trim() ?? string.Empty;
+            if (q.Length < 2)
             {
-                // Could navigate to relevant page or show details
+                sender.ItemsSource = null;
+                return;
             }
+
+            try
+            {
+                var ds = AppServices.DataService;
+                var results = new List<SearchResult>();
+                if (ds != null)
+                {
+                    var students = await ds.GetAllStudentsAsync();
+                    foreach (var s in students.Where(s => s.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
+                        results.Add(new SearchResult { Title = s, Type = "Student", Payload = s });
+
+                    var classes = await ds.GetClassesAsync();
+                    foreach (var c in classes.Where(c => c.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
+                        results.Add(new SearchResult { Title = c.Name, Type = "Class", Payload = c });
+
+                    var teachers = await ds.GetTeachersAsync();
+                    foreach (var t in teachers.Where(t => t.FullName.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).Take(8))
+                        results.Add(new SearchResult { Title = t.FullName, Type = "Teacher", Payload = t });
+                }
+
+                sender.ItemsSource = results;
+            }
+            catch
+            {
+                sender.ItemsSource = null;
+            }
+        }
+
+        private async void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            if (args.SelectedItem is not SearchResult r) return;
+
+            try
+            {
+                var dlg = new ContentDialog
+                {
+                    Title = r.Title,
+                    Content = r.Type,
+                    PrimaryButtonText = "Open",
+                    CloseButtonText = "Close",
+                    XamlRoot = this.XamlRoot
+                };
+
+                var res = await dlg.ShowAsync();
+                if (res == ContentDialogResult.Primary)
+                {
+                    var tag = r.Type switch
+                    {
+                        "Student" => "Students",
+                        "Class"   => "Classes",
+                        "Teacher" => "Teachers",
+                        _         => string.Empty
+                    };
+                    if (!string.IsNullOrEmpty(tag))
+                        NavigationService.Instance.NavigateToShellPage(tag);
+                }
+            }
+            catch { }
         }
 
         private void QuickAction_Click(object sender, RoutedEventArgs e)

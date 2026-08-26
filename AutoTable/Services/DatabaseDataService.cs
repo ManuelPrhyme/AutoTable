@@ -264,7 +264,8 @@ namespace AutoTable.Services
                 DueDate = a.DueDate ?? DateTime.MinValue,
                 MarksEnteredPercent = a.MarksEnteredPercent,
                 IsVerified = a.IsVerified,
-                IsPublished = a.IsPublished
+                IsPublished = a.IsPublished,
+                PromotionRole = (AssessmentPromotionRole)a.PromotionRole
             };
         }
 
@@ -355,17 +356,36 @@ namespace AutoTable.Services
                 DueDate = a.DueDate ?? DateTime.MinValue,
                 MarksEnteredPercent = a.MarksEnteredPercent,
                 IsVerified = a.IsVerified,
-                IsPublished = a.IsPublished
+                IsPublished = a.IsPublished,
+                PromotionRole = (AssessmentPromotionRole)a.PromotionRole
             }).ToList();
         }
 
         public async Task<IReadOnlyList<GradebookRow>> GetGradebookAsync(string className, string subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
         {
             using var db = CreateContext();
-            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == className) ?? db.Classes.FirstOrDefault();
+            var cls = await db.Classes.Include(c => c.GradingSystem).FirstOrDefaultAsync(c => c.Name == className) ?? db.Classes.FirstOrDefault();
             var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == subject) ?? db.Subjects.FirstOrDefault();
 
             if (cls == null || subj == null) return new List<GradebookRow>();
+
+            // Resolve grading system for this class.
+            var gradingSystem = cls.GradingSystem;
+            if (gradingSystem == null)
+                gradingSystem = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                    ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            var passMark = gradingSystem?.PassMark ?? 50;
+            var bands = gradingSystem != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == gradingSystem.Id).OrderBy(b => b.MinScore).ToListAsync()
+                : new List<GradeBandEntity>();
+            var bandInfos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id, Label = b.Label,
+                MinScore = b.MinScore, MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
 
             var marksQuery = db.Marks
                 .Include(m => m.Student)
@@ -413,9 +433,8 @@ namespace AutoTable.Services
                         MidTerm = scores.ElementAtOrDefault(2),
                         EndTerm = scores.ElementAtOrDefault(3),
                         Average = avg,
-                        Grade = avg > 0 ? GradeFromAverage(avg) : "-",
-                        // Default passmark: 50% average across all subjects
-                        Status = avg < 50 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
+                        Grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-",
+                        Status = avg < passMark ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
                     };
                 }).OrderByDescending(r => r.Average).ToList();
 
@@ -592,13 +611,19 @@ namespace AutoTable.Services
             return list.Select(s => new SimpleLookup { Id = s.Id, Name = s.Name }).ToList();
         }
 
-        public async Task AssignStreamToClassAsync(int classId, int streamId)
+        public async Task AssignStreamToClassAsync(int classId, int streamId, int? streamTeacherId = null)
         {
             using var db = CreateContext();
             if (!await db.Classes.AnyAsync(c => c.Id == classId)) throw new InvalidOperationException("Class not found.");
             if (!await db.Streams.AnyAsync(s => s.Id == streamId)) throw new InvalidOperationException("Stream not found.");
-            if (await db.ClassStreams.AnyAsync(cs => cs.ClassId == classId && cs.StreamId == streamId)) return;
-            db.ClassStreams.Add(new ClassStreamEntity { ClassId = classId, StreamId = streamId });
+            var existing = await db.ClassStreams.FirstOrDefaultAsync(cs => cs.ClassId == classId && cs.StreamId == streamId);
+            if (existing != null)
+            {
+                existing.StreamTeacherId = streamTeacherId;
+                await db.SaveChangesAsync();
+                return;
+            }
+            db.ClassStreams.Add(new ClassStreamEntity { ClassId = classId, StreamId = streamId, StreamTeacherId = streamTeacherId });
             await db.SaveChangesAsync();
         }
 
@@ -685,6 +710,26 @@ namespace AutoTable.Services
                 Term = term
             };
 
+            // Resolve grading system for the student's class.
+            var gradingSystem = student?.ClassId != null
+                ? (await db.Classes.Include(c => c.GradingSystem).FirstOrDefaultAsync(c => c.Id == student.ClassId))?.GradingSystem
+                : null;
+            if (gradingSystem == null)
+                gradingSystem = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                    ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            var passMark = gradingSystem?.PassMark ?? 50;
+            var bands = gradingSystem != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == gradingSystem.Id).OrderBy(b => b.MinScore).ToListAsync()
+                : new List<GradeBandEntity>();
+            var bandInfos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id, Label = b.Label,
+                MinScore = b.MinScore, MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
+
             var marksQuery = db.Marks.Include(m => m.Assessment).ThenInclude(a => a!.Subject)
                 .Where(m => m.Student!.FullName == studentName);
 
@@ -706,9 +751,8 @@ namespace AutoTable.Services
                     MidTerm = scores.ElementAtOrDefault(2),
                     EndTerm = scores.ElementAtOrDefault(3),
                     Average = avg,
-                    Grade = avg > 0 ? GradeFromAverage(avg) : "-",
-                    // Default passmark: 50% average across all subjects
-                    Status = avg < 50 ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
+                    Grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-",
+                    Status = avg < passMark ? "At Risk" : avg >= 70 ? "Excellent" : "On Track"
                 });
             }
 
@@ -726,9 +770,8 @@ namespace AutoTable.Services
 
             detail.OverallAverage = detail.SubjectPerformances.Count == 0 ? 0
                 : Math.Round(detail.SubjectPerformances.Average(s => s.Average), 1);
-            detail.OverallGrade = detail.OverallAverage > 0 ? GradeFromAverage(detail.OverallAverage) : "-";
-            // Default passmark: a student passes with a 50% average across all subjects
-            detail.Status = detail.OverallAverage < 50 ? "At Risk" : detail.OverallAverage >= 70 ? "Excellent" : detail.OverallAverage > 0 ? "On Track" : "No Data";
+            detail.OverallGrade = detail.OverallAverage > 0 ? GradeFromBands(detail.OverallAverage, bandInfos) : "-";
+            detail.Status = detail.OverallAverage < passMark ? "At Risk" : detail.OverallAverage >= 70 ? "Excellent" : detail.OverallAverage > 0 ? "On Track" : "No Data";
 
             // Rank within class for the requested subject
             var cls = student?.ClassId != null ? await db.Classes.FindAsync(student.ClassId) : null;
@@ -755,9 +798,28 @@ namespace AutoTable.Services
             var clsName = (className ?? string.Empty).Trim().ToLower();
             var cls = await db.Classes
                 .Include(c => c.ClassTeacher)
+                .Include(c => c.GradingSystem)
                 .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == clsName);
             var termEntity = await db.Terms.FirstOrDefaultAsync(t => t.Name == term);
             if (cls == null || termEntity == null) return null;
+
+            // Resolve the grading system: class-specific → school default → hard-coded fallback.
+            var gradingSystem = cls.GradingSystem;
+            if (gradingSystem == null)
+                gradingSystem = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                    ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            var passMark = gradingSystem?.PassMark ?? 50;
+            var bands = gradingSystem != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == gradingSystem.Id).OrderBy(b => b.MinScore).ToListAsync()
+                : new List<GradeBandEntity>();
+            var bandInfos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id, Label = b.Label,
+                MinScore = b.MinScore, MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
 
             var student = await db.Students
                 .Include(s => s.Class)
@@ -776,33 +838,61 @@ namespace AutoTable.Services
                 .Where(m => assessments.Select(a => a.Id).Contains(m.AssessmentId))
                 .ToListAsync();
 
-            // Per-subject, the highest-weighted / last-due assessment is treated as the
-            // promotional (end-of-term) paper; the remaining ones are contributory.
-            // (Once the assessment promotion-role field lands, this classification will
-            //  honour the explicit PromotionRole instead of this heuristic.)
+            // Use the explicit PromotionRole on each assessment to classify:
+            //   PromotionExam → promotional, CountsTowardPromotion → contributory,
+            //   None → contributory (does not count toward promotion).
+            // Fallback: if no assessment has a PromotionRole set (legacy data),
+            // fall back to the old heuristic (highest-weighted = promotional).
             var promotional = new List<ReportCardAssessmentRow>();
             var contributory = new List<ReportCardAssessmentRow>();
+            bool hasAnyRoleSet = assessments.Any(a => a.PromotionRole != 0);
 
             foreach (var subjectGroup in assessments.GroupBy(a => a.Subject?.Name ?? "General").OrderBy(g => g.Key))
             {
-                var ordered = subjectGroup.OrderByDescending(a => a.WeightPercent).ThenByDescending(a => a.DueDate).ToList();
-                for (int i = 0; i < ordered.Count; i++)
+                if (hasAnyRoleSet)
                 {
-                    var a = ordered[i];
-                    var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
-                    var avg = mark ?? 0;
-                    var grade = avg > 0 ? GradeFromAverage(avg) : "-";
-                    var row = new ReportCardAssessmentRow
+                    // Explicit classification based on PromotionRole
+                    foreach (var a in subjectGroup)
                     {
-                        Subject = subjectGroup.Key,
-                        AssessmentName = a.Name,
-                        Mark = Math.Round(avg, 1),
-                        Grade = grade,
-                        WeightPercent = a.WeightPercent,
-                        IsPromotional = i == 0,
-                        IsPass = avg >= 50
-                    };
-                    if (i == 0) promotional.Add(row); else contributory.Add(row);
+                        var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
+                        var avg = mark ?? 0;
+                        var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
+                        var isPromo = a.PromotionRole == (int)AssessmentPromotionRole.PromotionExam;
+                        var row = new ReportCardAssessmentRow
+                        {
+                            Subject = subjectGroup.Key,
+                            AssessmentName = a.Name,
+                            Mark = Math.Round(avg, 1),
+                            Grade = grade,
+                            WeightPercent = a.WeightPercent,
+                            IsPromotional = isPromo,
+                            IsPass = CheckPromotionalPass(avg, passMark, bandInfos)
+                        };
+                        if (isPromo) promotional.Add(row); else contributory.Add(row);
+                    }
+                }
+                else
+                {
+                    // Legacy fallback: highest-weighted / last-due = promotional
+                    var ordered = subjectGroup.OrderByDescending(a => a.WeightPercent).ThenByDescending(a => a.DueDate).ToList();
+                    for (int i = 0; i < ordered.Count; i++)
+                    {
+                        var a = ordered[i];
+                        var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
+                        var avg = mark ?? 0;
+                        var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
+                        var row = new ReportCardAssessmentRow
+                        {
+                            Subject = subjectGroup.Key,
+                            AssessmentName = a.Name,
+                            Mark = Math.Round(avg, 1),
+                            Grade = grade,
+                            WeightPercent = a.WeightPercent,
+                            IsPromotional = i == 0,
+                            IsPass = CheckPromotionalPass(avg, passMark, bandInfos)
+                        };
+                        if (i == 0) promotional.Add(row); else contributory.Add(row);
+                    }
                 }
             }
 
@@ -810,9 +900,8 @@ namespace AutoTable.Services
             var overallAverage = allRows.Count > 0
                 ? Math.Round(allRows.Average(r => r.Mark), 1)
                 : 0;
-            var overallGrade = overallAverage > 0 ? GradeFromAverage(overallAverage) : "-";
-            // Default passmark: a student passes with a 50% average across all subjects
-            var status = overallAverage < 50 ? "At Risk" : overallAverage >= 70 ? "Excellent" : overallAverage > 0 ? "On Track" : "No Data";
+            var overallGrade = overallAverage > 0 ? GradeFromBands(overallAverage, bandInfos) : "-";
+            var status = overallAverage < passMark ? "At Risk" : overallAverage >= 70 ? "Excellent" : overallAverage > 0 ? "On Track" : "No Data";
 
 // Rank within class using overall averages of all students in the class.
             var classStudents = await db.Students.Where(s => s.ClassId == cls.Id && s.IsActive).Select(s => s.Id).ToListAsync();
@@ -845,6 +934,8 @@ namespace AutoTable.Services
                 GuardianName = student.GuardianName ?? string.Empty,
                 GuardianPhone = student.GuardianPhone ?? string.Empty,
                 ClassTeacher = cls.ClassTeacher?.FullName ?? string.Empty,
+                GradingSystemName = gradingSystem?.Name ?? string.Empty,
+                PassMark = passMark,
                 PromotionalAssessments = promotional,
                 ContributoryAssessments = contributory,
                 OverallAverage = overallAverage,
@@ -1136,6 +1227,12 @@ namespace AutoTable.Services
         public async Task SaveEnrollmentAsync(EnrollmentFormData enrollment)
         {
             using var db = CreateContext();
+            // Block duplicate LIN at the staging level too — prevents orphaned enrollment rows
+            if (!string.IsNullOrWhiteSpace(enrollment.LIN) &&
+                await db.Students.AnyAsync(s => s.LIN == enrollment.LIN && s.IsActive))
+            {
+                throw new InvalidOperationException($"LIN '{enrollment.LIN}' is already assigned to another student.");
+            }
             db.Enrollments.Add(new EnrollmentEntity
             {
                 FullName = enrollment.FullName,
@@ -1207,6 +1304,13 @@ namespace AutoTable.Services
                 SubmittedAt = e.SubmittedAt,
                 Status = e.Status
             }).ToList();
+        }
+
+        public async Task<bool> IsLinTakenAsync(string lin)
+        {
+            if (string.IsNullOrWhiteSpace(lin)) return false;
+            using var db = CreateContext();
+            return await db.Students.AnyAsync(s => s.LIN == lin && s.IsActive);
         }
 
         // --- Class & Subject management ---
@@ -1377,6 +1481,69 @@ namespace AutoTable.Services
             await db.SaveChangesAsync();
         }
 
+        public async Task<AutoTable.Models.GradingSystemInfo?> GetClassGradingSystemAsync(int classId)
+        {
+            using var db = CreateContext();
+            var cls = await db.Classes.FindAsync(classId);
+            if (cls == null) return null;
+
+            // Try the class-specific system first; fall back to school default.
+            GradingSystemEntity? gs = null;
+            if (cls.GradingSystemId != null)
+                gs = await db.GradingSystems.FindAsync(cls.GradingSystemId);
+            gs ??= await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                   ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            if (gs == null) return null;
+
+            var bands = await db.GradeBands
+                .Where(b => b.GradingSystemId == gs.Id)
+                .OrderBy(b => b.MinScore)
+                .ToListAsync();
+
+            var info = new AutoTable.Models.GradingSystemInfo
+            {
+                Id = gs.Id, Name = gs.Name, IsDefault = gs.IsDefault, PassMark = gs.PassMark
+            };
+            foreach (var b in bands)
+            {
+                info.Bands.Add(new AutoTable.Models.GradeBandInfo
+                {
+                    Id = b.Id, Label = b.Label,
+                    MinScore = b.MinScore, MaxScore = b.MaxScore,
+                    IsPromotionalPass = b.IsPromotionalPass,
+                    IsRepeater = b.IsRepeater,
+                    IsPromotionalFail = b.IsPromotionalFail
+                });
+            }
+            return info;
+        }
+
+        /// <summary>
+        /// Resolve a percentage mark to a grade label using the class's grading system bands.
+        /// Falls back to the hard-coded GradeFromAverage when no bands are defined.
+        /// </summary>
+        private static string GradeFromBands(double mark, IReadOnlyList<AutoTable.Models.GradeBandInfo> bands)
+        {
+            if (bands.Count == 0) return GradeFromAverage(mark);
+            // Bands are ordered by MinScore ascending; find the first one that covers this mark.
+            var band = bands.FirstOrDefault(b => mark >= b.MinScore && mark <= b.MaxScore);
+            return band?.Label ?? GradeFromAverage(mark);
+        }
+        /// <summary>
+        /// Determine pass/repeat/fail for a promotional mark using the class's grading system bands.
+        /// Returns true when the mark falls in a band flagged IsPromotionalPass.
+        /// Falls back to mark >= passMark when no bands are defined.
+        /// </summary>
+        private static bool CheckPromotionalPass(double mark, double passMark, IReadOnlyList<AutoTable.Models.GradeBandInfo> bands)
+        {
+            if (bands.Count > 0)
+            {
+                var band = bands.FirstOrDefault(b => mark >= b.MinScore && mark <= b.MaxScore);
+                if (band != null) return band.IsPromotionalPass;
+            }
+            return mark >= passMark;
+        }
+
         public async Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetSubjectsAsync()
         {
             using var db = CreateContext();
@@ -1483,7 +1650,8 @@ namespace AutoTable.Services
                 IsClassWide = item.IsClassWide,
                 IsVerified = false,
                 IsPublished = false,
-                MarksEnteredPercent = 0
+                MarksEnteredPercent = 0,
+                PromotionRole = (int)item.PromotionRole
             };
             db.Assessments.Add(entity);
             await db.SaveChangesAsync();
@@ -1498,7 +1666,8 @@ namespace AutoTable.Services
                 DueDate = entity.DueDate ?? DateTime.MinValue,
                 MarksEnteredPercent = entity.MarksEnteredPercent,
                 IsVerified = entity.IsVerified,
-                IsPublished = entity.IsPublished
+                IsPublished = entity.IsPublished,
+                PromotionRole = (AssessmentPromotionRole)entity.PromotionRole
             };
         }
 
@@ -1642,20 +1811,65 @@ namespace AutoTable.Services
                 query = query.Where(s => s.ClassId == classId);
             var students = await query.ToListAsync();
 
-            // Fallback pass mark when the class has no grading system (school default, else 50).
-            double defaultPassMark = 50;
-            var schoolDefault = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault);
-            if (schoolDefault != null) defaultPassMark = schoolDefault.PassMark;
+            // Resolve grading systems per class: class-specific → school default → empty.
+            var schoolDefault = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            double defaultPassMark = schoolDefault?.PassMark ?? 50;
+            var defaultBands = schoolDefault != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == schoolDefault.Id).OrderBy(b => b.MinScore).ToListAsync()
+                : new List<GradeBandEntity>();
+            var defaultBandInfos = defaultBands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id, Label = b.Label,
+                MinScore = b.MinScore, MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
+
+            // Cache grading system bands per class to avoid redundant queries.
+            var classBandCache = new Dictionary<int, (double PassMark, IReadOnlyList<AutoTable.Models.GradeBandInfo> Bands)>();
 
             var rows = new List<AutoTable.Models.PromotionRow>();
             foreach (var s in students)
             {
-                var passMark = s.Class?.GradingSystem != null
-                    ? s.Class.GradingSystem.PassMark
-                    : defaultPassMark;
+                // Resolve grading system for this student's class.
+                double passMark;
+                IReadOnlyList<AutoTable.Models.GradeBandInfo> bandInfos;
+                if (s.ClassId.HasValue)
+                {
+                    if (!classBandCache.TryGetValue(s.ClassId.Value, out var cached))
+                    {
+                        var gs = s.Class?.GradingSystem;
+                        if (gs == null)
+                            gs = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                                ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+                        var pMark = gs?.PassMark ?? defaultPassMark;
+                        var bands = gs != null
+                            ? await db.GradeBands.Where(b => b.GradingSystemId == gs.Id).OrderBy(b => b.MinScore).ToListAsync()
+                            : defaultBands;
+                        var infos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+                        {
+                            Id = b.Id, Label = b.Label,
+                            MinScore = b.MinScore, MaxScore = b.MaxScore,
+                            IsPromotionalPass = b.IsPromotionalPass,
+                            IsRepeater = b.IsRepeater,
+                            IsPromotionalFail = b.IsPromotionalFail
+                        }).ToList();
+                        cached = (pMark, infos);
+                        classBandCache[s.ClassId.Value] = cached;
+                    }
+                    passMark = cached.PassMark;
+                    bandInfos = cached.Bands;
+                }
+                else
+                {
+                    passMark = defaultPassMark;
+                    bandInfos = defaultBandInfos;
+                }
 
                 var avg = await ComputeStudentAverageAsync(db, s.Id);
-                var suggested = avg >= passMark
+                var suggested = CheckPromotionalPass(avg, passMark, bandInfos)
                     ? AutoTable.Models.PromotionStatus.Promoted
                     : AutoTable.Models.PromotionStatus.Repeat;
 
@@ -1681,7 +1895,7 @@ namespace AutoTable.Services
                     Stream = s.Stream?.Name ?? "-",
                     Average = Math.Round(avg, 1),
                     PassMark = passMark,
-                    Grade = avg > 0 ? GradeFromAverage(avg) : "-",
+                    Grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-",
                     Suggested = suggested,
                     Status = (AutoTable.Models.PromotionStatus)s.PromotionStatus,
                     TargetClassId = targetClassId,
@@ -1756,6 +1970,25 @@ namespace AutoTable.Services
             s.PromotedToClassId = null;
             s.PromotionProcessedAt = null;
             await db.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Batch-process all pending students: promote those whose average meets the pass mark,
+        /// repeat those who don't. Returns the number of students processed.
+        /// </summary>
+        public async Task<int> ProcessAllPromotionsAsync(int? classId = null)
+        {
+            var overview = await GetPromotionOverviewAsync(classId);
+            int processed = 0;
+            foreach (var row in overview.Where(r => r.Status == AutoTable.Models.PromotionStatus.Pending))
+            {
+                if (row.Suggested == AutoTable.Models.PromotionStatus.Promoted)
+                    await PromoteStudentAsync(row.StudentId, row.TargetClassId);
+                else
+                    await RepeatStudentAsync(row.StudentId);
+                processed++;
+            }
+            return processed;
         }
     }
 }

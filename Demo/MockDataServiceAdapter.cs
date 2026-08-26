@@ -153,6 +153,9 @@ namespace AutoTable.Demo
         public Task<IReadOnlyList<EnrollmentFormData>> GetEnrollmentsAsync()
             => Task.FromResult<IReadOnlyList<EnrollmentFormData>>(Array.Empty<EnrollmentFormData>());
 
+        public Task<bool> IsLinTakenAsync(string lin)
+            => Task.FromResult(false);
+
         public Task<IReadOnlyList<SimpleLookup>> GetClassesAsync()
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Classes.Select((c, i) => new SimpleLookup { Id = i + 1, Name = c }).ToList());
 
@@ -177,6 +180,9 @@ namespace AutoTable.Demo
         public Task CreateGradeBandAsync(int gradingSystemId, string label, double minScore, double maxScore,
             bool isPromotionalPass, bool isRepeater, bool isPromotionalFail)
             => Task.CompletedTask;
+
+        public Task<AutoTable.Models.GradingSystemInfo?> GetClassGradingSystemAsync(int classId)
+            => Task.FromResult<AutoTable.Models.GradingSystemInfo?>(null);
 
         public Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync()
             => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());
@@ -209,7 +215,7 @@ namespace AutoTable.Demo
         public Task<IReadOnlyList<SimpleLookup>> GetAllStreamsAsync()
             => Task.FromResult<IReadOnlyList<SimpleLookup>>(_mock.Streams.Select((s, i) => new SimpleLookup { Id = i + 1, Name = s }).ToList());
 
-        public Task AssignStreamToClassAsync(int classId, int streamId)
+        public Task AssignStreamToClassAsync(int classId, int streamId, int? streamTeacherId = null)
         {
             // Mock: no-op
             return Task.CompletedTask;
@@ -309,6 +315,9 @@ namespace AutoTable.Demo
 
         public Task ResetPromotionAsync(int studentId)
             => Task.CompletedTask;
+
+        public Task<int> ProcessAllPromotionsAsync(int? classId = null)
+            => Task.FromResult(0);
 
     }
 }

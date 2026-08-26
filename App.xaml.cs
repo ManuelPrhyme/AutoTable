@@ -152,6 +152,24 @@ namespace AutoTable
                                 cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN IsClassWide INTEGER DEFAULT 1;";
                                 try { cmd.ExecuteNonQuery(); } catch { }
                             }
+                            // Add PromotionRole column (0=None, 1=CountsTowardPromotion, 2=PromotionExam)
+                            var hasPromotionRole = false;
+                            using (var rPromo = cmd.ExecuteReader())
+                            {
+                                while (rPromo.Read())
+                                {
+                                    if (string.Equals(rPromo.GetString(1), "PromotionRole", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasPromotionRole = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!hasPromotionRole)
+                            {
+                                cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN PromotionRole INTEGER DEFAULT 0;";
+                                try { cmd.ExecuteNonQuery(); } catch { }
+                            }
                         }
                         catch { }
 
@@ -166,6 +184,31 @@ namespace AutoTable
                                                 PRIMARY KEY (ClassId, StreamId)
                                             );";
                             cmd.ExecuteNonQuery();
+
+                            // Add StreamTeacherId column to ClassStreams for legacy DBs.
+                            try
+                            {
+                                using var checkCmd = sqliteConnection.CreateCommand();
+                                checkCmd.CommandText = @"PRAGMA table_info('ClassStreams');";
+                                var hasStreamTeacher = false;
+                                using (var r = checkCmd.ExecuteReader())
+                                {
+                                    while (r.Read())
+                                    {
+                                        if (string.Equals(r.GetString(1), "StreamTeacherId", System.StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            hasStreamTeacher = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!hasStreamTeacher)
+                                {
+                                    checkCmd.CommandText = "ALTER TABLE ClassStreams ADD COLUMN StreamTeacherId INTEGER;";
+                                    try { checkCmd.ExecuteNonQuery(); } catch { /* best-effort */ }
+                                }
+                            }
+                            catch { /* best-effort */ }
 
                         // Add StreamId and IsActive columns to Students if missing
                         cmd.CommandText = @"PRAGMA table_info('Students');";
@@ -243,6 +286,28 @@ namespace AutoTable
                         AddStudentColumn("AuthorizedPickupPerson", "ALTER TABLE Students ADD COLUMN AuthorizedPickupPerson TEXT;");
                         }
                         catch { }
+
+                        // Ensure TermFees table exists for older DBs (created before TermFeeEntity was added)
+                        try
+                        {
+                            using var cmdTF = sqliteConnection.CreateCommand();
+                            cmdTF.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='TermFees';";
+                            if (cmdTF.ExecuteScalar() == null)
+                            {
+                                cmdTF.CommandText = @"CREATE TABLE TermFees (
+                                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    TermId INTEGER NOT NULL,
+                                    ClassId INTEGER NOT NULL,
+                                    Amount REAL NOT NULL DEFAULT 0,
+                                    FOREIGN KEY(TermId) REFERENCES Terms(Id) ON DELETE RESTRICT,
+                                    FOREIGN KEY(ClassId) REFERENCES Classes(Id) ON DELETE CASCADE
+                                );";
+                                cmdTF.ExecuteNonQuery();
+                                cmdTF.CommandText = "CREATE UNIQUE INDEX IX_TermFees_TermId_ClassId ON TermFees(TermId, ClassId);";
+                                try { cmdTF.ExecuteNonQuery(); } catch { /* index may already exist */ }
+                            }
+                        }
+                        catch { /* best-effort */ }
 
                         // Ensure compatibility with older DBs: add extended teacher profile columns to Users if absent.
                         try

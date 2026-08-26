@@ -156,6 +156,8 @@ namespace AutoTable.Data.Entities
         public bool IsVerified { get; set; }
         public bool IsPublished { get; set; }
         public int MarksEnteredPercent { get; set; }
+        /// <summary>0=None, 1=CountsTowardPromotion, 2=PromotionExam — maps to AssessmentPromotionRole enum.</summary>
+        public int PromotionRole { get; set; }
 
         public ICollection<MarkEntity> Marks { get; set; } = new List<MarkEntity>();
     }
@@ -261,6 +263,10 @@ namespace AutoTable.Data.Entities
 
         public int StreamId { get; set; }
         public StreamEntity? Stream { get; set; }
+
+        // Optional stream-level teacher — falls back to the class teacher when null.
+        public int? StreamTeacherId { get; set; }
+        public UserEntity? StreamTeacher { get; set; }
     }
 
     // Term fee entity: amount to be charged for a given Class during a Term

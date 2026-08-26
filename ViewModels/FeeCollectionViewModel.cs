@@ -63,58 +63,81 @@ namespace AutoTable.ViewModels
         private async Task Load()
         {
             FeeRecords.Clear();
+            var errors = new System.Collections.Generic.List<string>();
 
+            // Resolve class and term independently — a failure in one must not block the other.
+            AutoTable.Models.SimpleLookup? cls = null;
             try
             {
-                // Resolve the selected class / term ids
                 var classes = await _dataService.GetClassesAsync();
-                var termLookups = await _dataService.GetTermLookupsAsync();
-                var cls = classes.FirstOrDefault(c => string.Equals(c.Name, SelectedClass, StringComparison.OrdinalIgnoreCase));
-                var term = termLookups.FirstOrDefault(t => string.Equals(t.Name, SelectedTerm, StringComparison.OrdinalIgnoreCase));
+                cls = classes.FirstOrDefault(c => string.Equals(c.Name, SelectedClass, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (System.Exception ex) { errors.Add("classes: " + ex.Message); }
 
-                // Expected amount for this class+term from the fee configuration
+            AutoTable.Models.SimpleLookup? term = null;
+            try
+            {
+                var termLookups = await _dataService.GetTermLookupsAsync();
+                term = termLookups.FirstOrDefault(t => string.Equals(t.Name, SelectedTerm, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (System.Exception ex) { errors.Add("terms: " + ex.Message); }
+
+            // Expected fee
+            double expected = 0;
+            try
+            {
                 var termFees = await _dataService.GetTermFeesAsync();
-                double expected = (cls != null && term != null)
+                expected = (cls != null && term != null)
                     ? termFees.FirstOrDefault(tf => tf.ClassId == cls.Id && tf.TermId == term.Id)?.Amount ?? 0
                     : 0;
-
-                // Actual payments recorded for this class (+term when known)
-                var payments = await _dataService.GetFeePaymentsAsync(cls?.Id, term?.Id);
-
-                // Roster of active students in the class
-                var students = await _dataService.GetStudentsAsync();
-                var roster = students
-                    .Where(s => s.IsActive && (cls == null || s.ClassId == cls.Id))
-                    .OrderBy(s => s.FullName)
-                    .ToList();
-
-                int i = 1;
-                foreach (var s in roster)
-                {
-                    var studentPayments = payments.Where(p => p.StudentId == s.Id).ToList();
-                    var paid = studentPayments.Sum(p => p.Amount);
-
-                    FeeRecords.Add(new FeeRecord
-                    {
-                        RowNumber = i++,
-                        StudentName = s.FullName,
-                        AdmissionNumber = s.LIN ?? string.Empty,
-                        ClassName = s.ClassName ?? SelectedClass,
-                        ExpectedAmount = (decimal)expected,
-                        PaidAmount = (decimal)paid,
-                        Term = SelectedTerm,
-                        PaymentDate = studentPayments.Count > 0
-                            ? studentPayments.Max(p => p.PaymentDate).ToString("dd MMM yyyy")
-                            : "-"
-                    });
-                }
-
-                StatusMessage = $"Loaded {roster.Count} student(s); {payments.Count} payment(s) on record.";
             }
-            catch (System.Exception ex)
+            catch (System.Exception ex) { errors.Add("term fees: " + ex.Message); }
+
+            // Payments
+            System.Collections.Generic.IReadOnlyList<AutoTable.Models.FeePaymentSummary> payments = Array.Empty<AutoTable.Models.FeePaymentSummary>();
+            try
             {
-                StatusMessage = "Failed to load fee records: " + ex.Message;
+                payments = await _dataService.GetFeePaymentsAsync(cls?.Id, term?.Id);
             }
+            catch (System.Exception ex) { errors.Add("payments: " + ex.Message); }
+
+            // Students — the critical query; must not be blocked by other failures.
+            System.Collections.Generic.IReadOnlyList<AutoTable.Models.Student> students = Array.Empty<AutoTable.Models.Student>();
+            try
+            {
+                students = await _dataService.GetStudentsAsync();
+            }
+            catch (System.Exception ex) { errors.Add("students: " + ex.Message); }
+
+            var roster = students
+                .Where(s => s.IsActive && (cls == null || s.ClassId == cls.Id))
+                .OrderBy(s => s.FullName)
+                .ToList();
+
+            int i = 1;
+            foreach (var s in roster)
+            {
+                var studentPayments = payments.Where(p => p.StudentId == s.Id).ToList();
+                var paid = studentPayments.Sum(p => p.Amount);
+
+                FeeRecords.Add(new FeeRecord
+                {
+                    RowNumber = i++,
+                    StudentName = s.FullName,
+                    AdmissionNumber = s.LIN ?? string.Empty,
+                    ClassName = s.ClassName ?? SelectedClass,
+                    ExpectedAmount = (decimal)expected,
+                    PaidAmount = (decimal)paid,
+                    Term = SelectedTerm,
+                    PaymentDate = studentPayments.Count > 0
+                        ? studentPayments.Max(p => p.PaymentDate).ToString("dd MMM yyyy")
+                        : "-"
+                });
+            }
+
+            StatusMessage = errors.Count > 0
+                ? $"Loaded {roster.Count} student(s). Errors: {string.Join("; ", errors)}"
+                : $"Loaded {roster.Count} student(s); {payments.Count} payment(s) on record.";
 
             OnPropertyChanged(nameof(TotalExpected));
             OnPropertyChanged(nameof(TotalCollected));

@@ -1,8 +1,10 @@
 using AutoTable.Models;
 using AutoTable.Services;
 using AutoTable.ViewModels;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -96,8 +98,11 @@ namespace AutoTable.Views
             // Streams & subjects: assign existing or type names for new ones
             var pendingStreams = new ObservableCollection<SimpleLookup>();
             var pendingSubjects = new ObservableCollection<SimpleLookup>();
-            var streamsSection = BuildAssignSection("Streams (optional)", _vm.AllStreams, "Name", pendingStreams);
-            var subjectsSection = BuildAssignSection("Subjects (optional)", allSubjects, "Name", pendingSubjects);
+            var pendingStreamTeachers = new List<int?>(); // tracks teacher Id per stream
+            var classTeacherId = teacherPicker.SelectedItem is AutoTable.Models.Teacher ct ? ct.Id : (int?)null;
+            var streamsSection = BuildStreamsSection("Streams (optional)", _vm.AllStreams,
+                pendingStreams, pendingStreamTeachers, teachers, classTeacherId);
+            var subjectsSection = BuildSubjectsSection("Subjects (optional)", allSubjects, pendingSubjects);
 
             var content = new StackPanel { Spacing = 12 };
             content.Children.Add(nameBox);
@@ -139,10 +144,17 @@ namespace AutoTable.Views
                 var createdClass = await _vm.CreateClassAsync(name, teacherId, gradingSystemId);
 
                 // Attach pending streams/subjects to the freshly created class.
-                foreach (var item in pendingStreams)
+                for (int i = 0; i < pendingStreams.Count; i++)
                 {
-                    if (item.Id < 0) await _vm.CreateStreamAsync(item.Name, createdClass.Id);   // new → create & assign
-                    else await _vm.AssignStreamToClassAsync(createdClass.Id, item.Id);
+                    var item = pendingStreams[i];
+                    var streamTeacherId = i < pendingStreamTeachers.Count ? pendingStreamTeachers[i] : null;
+                    if (streamTeacherId == null) streamTeacherId = classTeacherId; // default to class teacher
+                    if (item.Id < 0)
+                    {
+                        var newStream = await _vm.CreateStreamAsync(item.Name, createdClass.Id);
+                        await _vm.AssignStreamToClassAsync(createdClass.Id, newStream.Id, streamTeacherId);
+                    }
+                    else await _vm.AssignStreamToClassAsync(createdClass.Id, item.Id, streamTeacherId);
                 }
                 foreach (var item in pendingSubjects)
                 {
@@ -335,24 +347,26 @@ namespace AutoTable.Views
         /// Create Class dialog. The "Add →" button moves the picked item —
         /// or a newly typed name (negative Id) — into the pending list.
         /// </summary>
-        private static StackPanel BuildAssignSection(string title, System.Collections.Generic.IEnumerable<SimpleLookup> source,
-            string displayPath, ObservableCollection<SimpleLookup> pending)
+        private static StackPanel BuildSubjectsSection(string title, System.Collections.Generic.IEnumerable<SimpleLookup> source,
+            ObservableCollection<SimpleLookup> pending)
         {
+            var sourceList = new List<SimpleLookup>(source);
             var picker = new ComboBox
             {
                 Width = 220,
-                ItemsSource = source,
-                DisplayMemberPath = displayPath,
+                ItemsSource = sourceList,
+                DisplayMemberPath = nameof(SimpleLookup.Name),
                 PlaceholderText = "Existing…"
             };
             var newBox = new TextBox { PlaceholderText = "or new name…", Width = 220 };
 
-            var pendingList = new ListView
+            var subjectsDisplay = new TextBlock
             {
-                ItemsSource = pending,
-                DisplayMemberPath = displayPath,
-                SelectionMode = ListViewSelectionMode.None,
-                MaxHeight = 110
+                FontSize = 13,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x33, 0x33, 0x33)),
+                Margin = new Thickness(0, 4, 0, 0),
+                Text = "No subjects added yet."
             };
 
             void AddClick(object sender, RoutedEventArgs e)
@@ -360,16 +374,20 @@ namespace AutoTable.Views
                 if (picker.SelectedItem is SimpleLookup existing)
                 {
                     pending.Add(existing);
-                    picker.Items.Remove(existing);
-                    picker.SelectedIndex = -1;
+                    sourceList.Remove(existing);
+                    picker.SelectedItem = null;
                 }
                 else if (!string.IsNullOrWhiteSpace(newBox.Text))
                 {
                     var nm = newBox.Text.Trim();
                     if (!pending.Any(p => string.Equals(p.Name, nm, StringComparison.OrdinalIgnoreCase)))
-                        pending.Add(new SimpleLookup { Id = -1, Name = nm });   // negative id → create on submit
+                        pending.Add(new SimpleLookup { Id = -1, Name = nm });
                     newBox.Text = string.Empty;
                 }
+                subjectsDisplay.Text = pending.Count > 0
+                    ? string.Join(", ", pending.Select(p => p.Name))
+                    : "No subjects added yet.";
+                subjectsDisplay.Opacity = pending.Count > 0 ? 1.0 : 0.5;
             }
 
             var addBtn = new Button { Content = "Add →" };
@@ -382,7 +400,7 @@ namespace AutoTable.Views
             var newRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             newRow.Children.Add(newBox);
 
-            var panel = new StackPanel { Spacing = 8 };
+            var panel = new StackPanel { Spacing = 4 };
             panel.Children.Add(new TextBlock
             {
                 Text = title,
@@ -391,7 +409,150 @@ namespace AutoTable.Views
             });
             panel.Children.Add(assignRow);
             panel.Children.Add(newRow);
-            panel.Children.Add(pendingList);
+            panel.Children.Add(subjectsDisplay);
+            return panel;
+        }
+
+        // ── Streams section: each stream has a stream-teacher ComboBox beside it ──
+        // pendingTeachers tracks the chosen teacher Id per pending stream index.
+        private static StackPanel BuildStreamsSection(string title, System.Collections.Generic.IEnumerable<SimpleLookup> source,
+            ObservableCollection<SimpleLookup> pending, List<int?> pendingTeachers,
+            IReadOnlyList<AutoTable.Models.Teacher> allTeachers, int? classTeacherId)
+        {
+            var picker = new ComboBox
+            {
+                Width = 180,
+                ItemsSource = source,
+                DisplayMemberPath = nameof(SimpleLookup.Name),
+                PlaceholderText = "Existing…"
+            };
+            var newBox = new TextBox { PlaceholderText = "or new name…", Width = 180 };
+
+            // Container for stream rows (each row = stream name + teacher ComboBox)
+            var streamsContainer = new StackPanel { Spacing = 4, MaxHeight = 180 };
+
+            void RebuildStreamRows()
+            {
+                streamsContainer.Children.Clear();
+                for (int i = 0; i < pending.Count; i++)
+                {
+                    var idx = i; // capture for closure
+                    var streamName = pending[idx].Name;
+
+                    var row = new Grid { ColumnSpacing = 8 };
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    var nameBlock = new TextBlock
+                    {
+                        Text = streamName,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        FontSize = 13
+                    };
+                    Grid.SetColumn(nameBlock, 0);
+
+                    // Stream teacher picker — defaults to class teacher
+                    var teacherPicker = new ComboBox
+                    {
+                        Width = 180,
+                        Header = "Stream teacher",
+                        PlaceholderText = "(uses class teacher)",
+                        ItemsSource = allTeachers,
+                        DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
+                        Tag = idx
+                    };
+                    // Pre-select class teacher as default
+                    if (classTeacherId.HasValue)
+                    {
+                        var classTeacher = allTeachers.FirstOrDefault(t => t.Id == classTeacherId.Value);
+                        if (classTeacher != null) teacherPicker.SelectedItem = classTeacher;
+                    }
+                    // Track selection changes
+                    teacherPicker.SelectionChanged += (_, args) =>
+                    {
+                        var i2 = (int)teacherPicker.Tag;
+                        if (i2 < pendingTeachers.Count)
+                        {
+                            pendingTeachers[i2] = teacherPicker.SelectedItem is AutoTable.Models.Teacher t
+                                ? t.Id : null;
+                        }
+                    };
+                    Grid.SetColumn(teacherPicker, 1);
+
+                    row.Children.Add(nameBlock);
+                    row.Children.Add(teacherPicker);
+
+                    // Remove button
+                    var removeBtn = new Button
+                    {
+                        Content = "✕",
+                        Padding = new Thickness(4, 0, 4, 0),
+                        FontSize = 11,
+                        Tag = idx
+                    };
+                    removeBtn.Click += (_, _) =>
+                    {
+                        var ri = (int)removeBtn.Tag;
+                        var removed = pending[ri];
+                        pending.RemoveAt(ri);
+                        if (ri < pendingTeachers.Count) pendingTeachers.RemoveAt(ri);
+                        // Return removed stream to the picker if it was an existing one
+                        if (removed.Id > 0) picker.Items.Add(removed);
+                        RebuildStreamRows();
+                    };
+                    // Stack the remove button below the row
+                    var wrapper = new StackPanel { Spacing = 2 };
+                    wrapper.Children.Add(row);
+                    wrapper.Children.Add(removeBtn);
+
+                    streamsContainer.Children.Add(wrapper);
+                }
+            }
+            RebuildStreamRows();
+
+            void AddClick(object sender, RoutedEventArgs e)
+            {
+                if (picker.SelectedItem is SimpleLookup existing)
+                {
+                    pending.Add(existing);
+                    pendingTeachers.Add(null); // default to class teacher
+                    picker.Items.Remove(existing);
+                    picker.SelectedIndex = -1;
+                }
+                else if (!string.IsNullOrWhiteSpace(newBox.Text))
+                {
+                    var nm = newBox.Text.Trim();
+                    if (!pending.Any(p => string.Equals(p.Name, nm, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        pending.Add(new SimpleLookup { Id = -1, Name = nm });
+                        pendingTeachers.Add(null);
+                    }
+                    newBox.Text = string.Empty;
+                }
+                RebuildStreamRows();
+            }
+
+            var addBtn = new Button { Content = "Add →" };
+            addBtn.Click += AddClick;
+
+            var assignRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            assignRow.Children.Add(picker);
+            assignRow.Children.Add(addBtn);
+
+            var newRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            newRow.Children.Add(newBox);
+
+            var panel = new StackPanel { Spacing = 4 };
+            panel.Children.Add(new TextBlock
+            {
+                Text = title,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Margin = new Thickness(0, 8, 0, 0)
+            });
+            panel.Children.Add(assignRow);
+            panel.Children.Add(newRow);
+            panel.Children.Add(streamsContainer);
             return panel;
         }
 

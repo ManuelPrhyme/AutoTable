@@ -13,7 +13,7 @@
                 <StackPanel Spacing="12">
                     <TextBlock Text="Student Information" FontWeight="SemiBold" />
                     <TextBox Header="Full name" Text="{Binding FullName}" />
-                    <TextBox Header="LIN (leave blank to auto-generate)" Text="{Binding Lin}" />
+                    <TextBox Header="LIN" Text="{Binding Lin}" />
                     <DatePicker Header="Date of birth" Date="{Binding DateOfBirth, Mode=TwoWay}" />
                     <ComboBox Header="Gender" SelectedItem="{Binding Gender, Mode=TwoWay}">
                         <ComboBoxItem Content="Male" />

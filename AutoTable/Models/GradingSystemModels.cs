@@ -25,6 +25,9 @@ namespace AutoTable.Models
         public string BandsSummary => Bands.Count == 0
             ? "(no grade bands defined yet)"
             : string.Join(", ", Bands.Select(b => $"{b.Label} {b.MinScore:0}-{b.MaxScore:0}{(b.IsPromotionalPass ? " ✓" : b.IsRepeater ? " ↻" : b.IsPromotionalFail ? " ✗" : "")}"));
+
+        public override string ToString() =>
+            IsDefault ? $"{Name} (default)" : Name;
     }
 
     /// <summary>

@@ -23,6 +23,7 @@
             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="1">
                 <TextBlock Text="{Binding SchoolName}" FontSize="22" FontWeight="Bold" Foreground="#1F3864" />
                 <TextBlock Text="{Binding TermLabel}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding GradingInfoLabel}" FontSize="10" Foreground="#555555" HorizontalAlignment="Center" />
             </StackPanel>
 
             <!-- Title bar -->

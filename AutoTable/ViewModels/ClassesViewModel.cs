@@ -101,9 +101,9 @@ namespace AutoTable.ViewModels
             await _dataService.CreateSubjectAsync(name);
         }
 
-        public async Task CreateStreamAsync(string name, int? classId = null)
+        public async Task<AutoTable.Models.SimpleLookup> CreateStreamAsync(string name, int? classId = null)
         {
-            await _dataService.CreateStreamAsync(name, classId);
+            return await _dataService.CreateStreamAsync(name, classId);
         }
 
         public async Task LoadSubjectsForClassAsync(int classId)
@@ -123,9 +123,9 @@ namespace AutoTable.ViewModels
             foreach (var s in list) AllStreams.Add(new SimpleLookup { Id = s.Id, Name = s.Name });
         }
 
-        public async Task AssignStreamToClassAsync(int classId, int streamId)
+        public async Task AssignStreamToClassAsync(int classId, int streamId, int? streamTeacherId = null)
         {
-            await _dataService.AssignStreamToClassAsync(classId, streamId);
+            await _dataService.AssignStreamToClassAsync(classId, streamId, streamTeacherId);
         }
 
         public async Task RemoveStreamFromClassAsync(int classId, int streamId)

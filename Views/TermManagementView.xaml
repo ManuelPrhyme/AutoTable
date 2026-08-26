@@ -26,6 +26,46 @@
                 </StackPanel>
             </Border>
 
+            <!-- School-wide KPI summary for the selected term -->
+            <TextBlock x:Name="KpiHeader" Style="{ThemeResource MutedTextStyle}" Text="Select a term to view school-wide totals." />
+            <StackPanel x:Name="KpiCards" Orientation="Horizontal" Spacing="12" Visibility="Collapsed">
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Expected" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
+                                   Text="{Binding SchoolExpected, Converter={StaticResource CurrencyConverter}}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Collected" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource SuccessGreenBrush}"
+                                   Text="{Binding SchoolCollected, Converter={StaticResource CurrencyConverter}}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Outstanding" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource DangerRedBrush}"
+                                   Text="{Binding SchoolOutstanding, Converter={StaticResource CurrencyConverter}}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Collection Rate" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource PrimaryBlueBrush}"
+                                   Text="{Binding SchoolCollectionRate, Converter={StaticResource PercentConverter}}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Active Students" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
+                                   Text="{Binding SchoolStudentCount}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*" />
@@ -51,20 +91,22 @@
 
                 <Border Grid.Column="1" Style="{ThemeResource CardBorderStyle}">
                     <StackPanel Spacing="8">
-                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Per-Class Fees" />
+                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Per-Class Term Fees" />
+                        <TextBlock x:Name="SelectedTermLabel" Style="{ThemeResource MutedTextStyle}" Text="Select a term from the list to set fees." />
                         <ListView x:Name="ClassesFeeList" ItemsSource="{Binding Classes}">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="models:SimpleLookup">
                                     <Grid ColumnDefinitions="2*,Auto" Padding="8" ColumnSpacing="8">
                                         <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" />
                                         <StackPanel Orientation="Horizontal" Grid.Column="1" Spacing="6">
-                                            <TextBox Width="120" x:Name="FeeBox" Header="Amount" />
+                                            <TextBox Width="140" x:Name="FeeBox" Header="Fee Amount" />
                                             <Button Content="Set" Click="SetFee_Click" />
                                         </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
+                        <TextBlock Text="{Binding StatusMessage}" Style="{ThemeResource MutedTextStyle}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </Grid>

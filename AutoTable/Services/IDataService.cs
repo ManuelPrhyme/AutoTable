@@ -28,7 +28,7 @@ namespace AutoTable.Services
         // Assign a student's stream (update enrollment)
         Task AssignStudentToStreamAsync(int studentId, int streamId);
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetAllStreamsAsync();
-        Task AssignStreamToClassAsync(int classId, int streamId);
+        Task AssignStreamToClassAsync(int classId, int streamId, int? streamTeacherId = null);
         Task RemoveStreamFromClassAsync(int classId, int streamId);
 
         // Term fee management
@@ -56,6 +56,8 @@ namespace AutoTable.Services
         Task<IReadOnlyList<TerminationLogItem>> GetTerminationLogAsync();
         Task SaveEnrollmentAsync(EnrollmentFormData enrollment);
         Task<IReadOnlyList<EnrollmentFormData>> GetEnrollmentsAsync();
+        /// <summary>Returns true if the given LIN is already assigned to an active student.</summary>
+        Task<bool> IsLinTakenAsync(string lin);
 
         // Class & Subject management
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetClassesAsync();
@@ -73,6 +75,9 @@ namespace AutoTable.Services
         Task<IReadOnlyList<AutoTable.Models.GradeBandInfo>> GetGradeBandsAsync(int gradingSystemId);
         Task CreateGradeBandAsync(int gradingSystemId, string label, double minScore, double maxScore,
             bool isPromotionalPass, bool isRepeater, bool isPromotionalFail);
+        /// <summary>Resolve the grading system (with bands + passmark) for a class.
+        /// Falls back to the school default when the class has no explicit system.</summary>
+        Task<AutoTable.Models.GradingSystemInfo?> GetClassGradingSystemAsync(int classId);
 
         // Promotion / repeat (Term 3 move-up)
         Task<IReadOnlyList<AutoTable.Models.PromotionRow>> GetPromotionOverviewAsync(int? classId = null);
@@ -81,6 +86,8 @@ namespace AutoTable.Services
         Task RepeatStudentAsync(int studentId);
         Task ShiftStudentClassAsync(int studentId, int targetClassId);
         Task ResetPromotionAsync(int studentId);
+        /// <summary>Batch-process all pending students: promote those who pass, repeat those who fail.</summary>
+        Task<int> ProcessAllPromotionsAsync(int? classId = null);
 
         Task<IReadOnlyList<AutoTable.Models.SimpleLookup>> GetSubjectsAsync();
         Task<AutoTable.Models.SimpleLookup> CreateSubjectAsync(string name);

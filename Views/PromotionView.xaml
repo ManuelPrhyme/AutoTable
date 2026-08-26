@@ -28,6 +28,8 @@
                           SelectedItem="{Binding SelectedClass, Mode=TwoWay}"
                           DisplayMemberPath="Name" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                    <Button Content="Process All" Command="{Binding ProcessAllCommand}"
+                            Style="{ThemeResource PrimaryButtonStyle}" />
                     <Button Content="Refresh" Command="{Binding ReloadCommand}"
                             Style="{ThemeResource SecondaryButtonStyle}" />
                 </StackPanel>

@@ -101,6 +101,13 @@ namespace AutoTable.ViewModels
                 return;
             }
 
+            // Pre-validate LIN uniqueness before saving anything
+            if (await _dataService.IsLinTakenAsync(autoLin))
+            {
+                StatusMessage = $"LIN '{autoLin}' is already assigned to another student. Please use a different LIN or leave the field blank to auto-generate one.";
+                return;
+            }
+
             IsSubmitting = true;
             StatusMessage = "Submitting enrollment...";
             try

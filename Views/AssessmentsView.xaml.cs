@@ -42,6 +42,26 @@ namespace AutoTable.Views
             var weightBox = new TextBox { Header = "Weight (%)", Width = 120, Text = "20" };
             var duePicker = new DatePicker { Header = "Due date", Date = DateTime.Today };
 
+            // ── Promotion role selector ──
+            var promoRoleBox = new ComboBox
+            {
+                Header = "Promotion role",
+                Width = 300,
+                ItemsSource = new[]
+                {
+                    "Just an assessment",
+                    "Counts toward promotion",
+                    "Promotion exam (Term 3 / end-of-year)"
+                },
+                SelectedIndex = 0
+            };
+            var promoRoleHint = new TextBlock
+            {
+                FontSize = 11,
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextSecondaryBrush"],
+                Text = "Select 'Counts toward promotion' for papers that contribute to the promotion average, or 'Promotion exam' for the end-of-term paper that decides promotion."
+            };
+
             // ── Subject pickers (shown/hidden based on scope) ──
             var singleSubjectPicker = new ComboBox { Header = "Subject", Width = 240, DisplayMemberPath = "Name", SelectedIndex = -1 };
             var multiSubjectPanel = new StackPanel { Spacing = 4, Visibility = Visibility.Collapsed };
@@ -148,6 +168,8 @@ namespace AutoTable.Views
             panel.Children.Add(singleSubjectPicker);
             panel.Children.Add(multiSubjectPanel);
             panel.Children.Add(scopeHint);
+            panel.Children.Add(promoRoleBox);
+            panel.Children.Add(promoRoleHint);
             panel.Children.Add(weightBox);
             panel.Children.Add(duePicker);
 
@@ -179,6 +201,9 @@ namespace AutoTable.Views
                         return;
                     }
 
+                    // ── Resolve promotion role ──
+                    var promoRole = (AutoTable.Models.AssessmentPromotionRole)promoRoleBox.SelectedIndex;
+
                     // ── Resolve subjects to create assessments for ──
                     var createdItems = new List<AutoTable.Models.AssessmentItem>();
 
@@ -197,7 +222,7 @@ namespace AutoTable.Views
                             await err.ShowAsync();
                             return;
                         }
-                        var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null);
+                        var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
                         var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                         if (created != null) createdItems.Add(created);
                     }
@@ -219,7 +244,7 @@ namespace AutoTable.Views
                         }
                         foreach (var subjName in subjects)
                         {
-                            var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null);
+                            var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
                             var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                             if (created != null) createdItems.Add(created);
                         }
@@ -246,7 +271,7 @@ namespace AutoTable.Views
                         }
                         foreach (var subjName in selectedSubjects)
                         {
-                            var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null);
+                            var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
                             var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                             if (created != null) createdItems.Add(created);
                         }
@@ -260,7 +285,7 @@ namespace AutoTable.Views
                             var subjects = (await AppServices.DataService!.GetSubjectsForClassAsync(cls.Id)).Select(s => s.Name).ToList();
                             foreach (var subjName in subjects)
                             {
-                                var item = BuildAssessmentItem(assessmentName, cls.Name, subjName, scope, weight, dueDate, null);
+                                var item = BuildAssessmentItem(assessmentName, cls.Name, subjName, scope, weight, dueDate, null, promoRole);
                                 var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                                 if (created != null) createdItems.Add(created);
                             }
@@ -288,7 +313,8 @@ namespace AutoTable.Views
 
         private static AssessmentItem BuildAssessmentItem(
             string name, string className, string subject, AssessmentScope scope,
-            int weight, DateTime dueDate, int? streamId)
+            int weight, DateTime dueDate, int? streamId,
+            AssessmentPromotionRole promoRole = AssessmentPromotionRole.None)
         {
             return new AssessmentItem
             {
@@ -299,7 +325,8 @@ namespace AutoTable.Views
                 WeightPercent = weight,
                 DueDate = dueDate,
                 IsClassWide = true,
-                StreamId = streamId
+                StreamId = streamId,
+                PromotionRole = promoRole
             };
         }
     }

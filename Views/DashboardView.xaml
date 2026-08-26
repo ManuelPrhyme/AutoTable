@@ -31,7 +31,16 @@
                             PlaceholderText="Search students, teachers, classes..."
                             QueryIcon="Find"
                             TextChanged="SearchBox_TextChanged"
-                            SuggestionChosen="SearchBox_SuggestionChosen" />
+                            SuggestionChosen="SearchBox_SuggestionChosen">
+                            <AutoSuggestBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto" Padding="8,4">
+                                        <TextBlock Text="{Binding Title}" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Type}" FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </DataTemplate>
+                            </AutoSuggestBox.ItemTemplate>
+                        </AutoSuggestBox>
                     </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">

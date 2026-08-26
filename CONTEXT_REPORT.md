@@ -76,8 +76,9 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 
 ### NOT DONE vs Operational Plan
 - EF Migrations verification and CI integration (startup uses EnsureCreated + ALTER TABLE patches; latest additions: GradingSystems, GradeBands, Classes.GradingSystemId)
-- Assessment promotion-role checkboxes (none / contributory / promotional) and Term-3 promotional exam designation — documented in OPERATIONAL_PLAN.md, not yet implemented; report-card promotional classification remains heuristic until then
-- Promotion/repeat flow (Term-3 move-up, manual class shift)
+- ~~Assessment promotion-role checkboxes~~ ✅ DONE (26 Aug): tri-state enum + entity column + creation dialog + report-card classification with legacy fallback
+- Grade resolution via grading systems — ✅ Code complete (26 Aug, uncommitted): `GradeFromBands` replaces hard-coded `GradeFromAverage` in Gradebook, StudentPerformanceDetail, and ReportCards
+- Promotion/repeat flow (Term-3 move-up, manual class shift) — service methods exist in IDataService; UI wiring needed
 - Admin role-gating for Term Management / Classes / Budget pages (only Moderation is gated)
 - Defaulters/cohort finance analytics; mid-term slips (3–4 per A4); global active-term enforcement
 
@@ -622,3 +623,32 @@ Next Actions:
 - Delete old autotable.db and let EnsureCreated() recreate with the full schema, OR verify the migration adds all columns to an existing DB.
 Tags: bugfix, database, schema, connection-management, sqlite, ef-core
 
+---
+Iteration ID: iteration-2026-08-26-assessment-promotion-role
+Timestamp: 2026-08-26T12:00:00+03:00
+Author: Buffy (Codebuff agent)
+Success Level: Success
+Operational Plan Reference: OPERATIONAL_PLAN.md ; Step(s): feature-assessment-promotion-role-and-configurable-grading-systems (P5.1)
+Commits:
+- workspace edits (uncommitted) — tri-state promotion role on assessment creation + report card classification
+Files changed:
+- Models/AssessmentItem.cs — NEW `AssessmentPromotionRole` enum (`None`=0, `CountsTowardPromotion`=1, `PromotionExam`=2) + `PromotionRole` property on `AssessmentItem`
+- AutoTable/Data/Entities/StudentEntity.cs — Added `int PromotionRole` column to `AssessmentEntity`
+- App.xaml.cs — Added ALTER TABLE schema patch: `Assessments ADD COLUMN PromotionRole INTEGER DEFAULT 0` (guarded by PRAGMA table_info check inside a scoped `using (var rPromo)` block)
+- AutoTable/Services/DatabaseDataService.cs — (1) `CreateAssessmentAsync` stores `(int)item.PromotionRole` on entity and returns `(AssessmentPromotionRole)entity.PromotionRole` in model. (2) `GetAssessmentsAsync` and `GetAssessmentAsync` map `PromotionRole` from entity to model. (3) `GetReportCardSheetAsync` now uses explicit `PromotionRole` for classification: `PromotionExam` → promotional row, `CountsTowardPromotion`/`None` → contributory. Falls back to old weight-based heuristic when no assessment has a role set (legacy data).
+- Views/AssessmentsView.xaml.cs — Added "Promotion role" ComboBox (3 options: Just an assessment / Counts toward promotion / Promotion exam) with explanatory hint text in the creation dialog. `BuildAssessmentItem` now accepts `AssessmentPromotionRole` parameter; all 4 scope paths (Single/AllInClass/SpecificSubjects/AllInSchool) pass it through.
+Tests:
+- dotnet build AutoTable.csproj -p:Platform=x64 — Passed (0 errors, 2228 warnings all CA1416 platform)
+Aligned changes:
+- feature-assessment-promotion-role-and-configurable-grading-systems items 1–2 (enum + entity column + creation dialog + report card classification) done
+Impact Summary:
+- When creating an assessment, users now choose a promotion role: "Just an assessment" (default, does not count toward promotion), "Counts toward promotion" (contributory paper), or "Promotion exam" (the end-of-term paper that decides promotion). This role is stored in the database and used by the report card to classify assessments as promotional vs contributory instead of the old weight-based heuristic.
+Next Actions:
+- 1. Display the promotion role in the Assessments list grid (currently stored but not shown)
+- 2. Allow editing the promotion role on an existing assessment
+- 3. Wire GradeFromAverage to configurable grading systems (code complete in working tree, uncommitted)
+- 4. Proceed to P5.2: Promotion/repeat flow
+Recommendations:
+- Remove the heuristic fallback in GetReportCardSheetAsync once all assessments have explicit roles
+- Add the promotion role as a filter option in the Assessments page
+Tags: feature, assessments, promotion-role, grading-systems, report-cards, schema

@@ -54,7 +54,17 @@ namespace AutoTable.Views
 
             var stack = new StackPanel { Spacing = 12, Width = 440 };
 
-            var studentBox = new TextBox { Header = "Student", PlaceholderText = "Type a student name to search..." };
+            var studentBox = new TextBox { Header = "Student", PlaceholderText = "Type a student name to search...", Width = 400 };
+            // Shows Class + LIN beside the name field once a student is picked.
+            var studentInfoBlock = new TextBlock
+            {
+                FontSize = 13,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                TextWrapping = TextWrapping.Wrap,
+                Visibility = Visibility.Collapsed,
+                MaxWidth = 180,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x44, 0x44, 0x44))
+            };
             var amountBox = new TextBox { Header = "Amount", PlaceholderText = "Enter amount paid" };
             var hint = new TextBlock { FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap };
 
@@ -239,6 +249,9 @@ namespace AutoTable.Views
                     suppressSearch = false;
                     return;
                 }
+                // Reset the name field width and hide info when user edits again.
+                studentBox.Width = 400;
+                studentInfoBlock.Visibility = Visibility.Collapsed;
                 selectedStudent = null;
                 expected = null;
                 UpdateHint();
@@ -252,9 +265,13 @@ namespace AutoTable.Views
                 studentBox.Text = picked.FullName;
                 studentBox.SelectionStart = studentBox.Text.Length;
 
-                // Override the page's class filter with this student's own class.
-                if (!string.IsNullOrWhiteSpace(picked.ClassName))
-                    ViewModel.SelectedClass = picked.ClassName;
+                // Shrink the name field and show Class + LIN beside it.
+                studentBox.Width = 220;
+                var classStream = string.IsNullOrEmpty(picked.StreamName)
+                    ? (picked.ClassName ?? "-")
+                    : $"{picked.ClassName} - {picked.StreamName}";
+                studentInfoBlock.Text = $"{classStream}\nLIN: {picked.LIN}";
+                studentInfoBlock.Visibility = Visibility.Visible;
 
                 // Expected fee now reflects the STUDENT'S class under the active term.
                 await LoadExpectedForAsync(picked);
@@ -312,7 +329,17 @@ namespace AutoTable.Views
             filterRow.Children.Add(streamFilter);
 
             stack.Children.Add(filterRow);
-            stack.Children.Add(studentBox);
+
+            // Student row: name field + Class/LIN info beside it (infoBlock visible only after pick).
+            var studentRow = new Grid { ColumnSpacing = 8 };
+            studentRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            studentRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(studentBox, 0);
+            Grid.SetColumn(studentInfoBlock, 1);
+            studentRow.Children.Add(studentBox);
+            studentRow.Children.Add(studentInfoBlock);
+            stack.Children.Add(studentRow);
+
             stack.Children.Add(resultsHost);   // non-blocking inline results under the field
             stack.Children.Add(amountBox);
             stack.Children.Add(hint);

@@ -17,6 +17,19 @@ namespace AutoTable.Models
         AllInSchool
     }
 
+    /// <summary>
+    /// Determines how an assessment contributes to the end-of-term promotion decision.
+    /// </summary>
+    public enum AssessmentPromotionRole
+    {
+        /// <summary>Just an assessment — does not count toward promotion (default).</summary>
+        None,
+        /// <summary>Assessment counts toward the promotion average (contributory).</summary>
+        CountsTowardPromotion,
+        /// <summary>The promotion exam — the Term 3 / end-of-year paper that decides promotion.</summary>
+        PromotionExam
+    }
+
     public class AssessmentItem
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N");
@@ -34,6 +47,8 @@ namespace AutoTable.Models
         public int MarksEnteredPercent { get; set; }
         public bool IsVerified { get; set; }
         public bool IsPublished { get; set; }
+        /// <summary>How this assessment contributes to promotion: None, Contributory, or Promotion Exam.</summary>
+        public AssessmentPromotionRole PromotionRole { get; set; } = AssessmentPromotionRole.None;
         public string StatusLabel => IsPublished ? "Published" : IsVerified ? "Verified" : MarksEnteredPercent >= 100 ? "Complete" : "In Progress";
     }
 }

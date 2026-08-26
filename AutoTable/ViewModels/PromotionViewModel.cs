@@ -119,6 +119,21 @@ namespace AutoTable.ViewModels
         }
 
         [RelayCommand]
+        private async Task ProcessAllAsync()
+        {
+            int? classId = SelectedClass != null && SelectedClass.Id != 0 ? SelectedClass.Id : (int?)null;
+            try
+            {
+                var processed = await _dataService.ProcessAllPromotionsAsync(classId);
+                await ReloadAsync();
+                StatusMessage = processed == 0
+                    ? "No pending students to process."
+                    : $"Processed {processed} student(s): promoted those who passed, repeated those who didn't.";
+            }
+            catch (Exception ex) { StatusMessage = $"Error processing promotions: {ex.Message}"; }
+        }
+
+        [RelayCommand]
         private async Task ShiftAsync(PromotionRow row)
         {
             if (row == null) return;

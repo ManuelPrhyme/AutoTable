@@ -10,157 +10,130 @@ This file summarizes the current workspace state, recent changes, and run/setup 
 
 - OS/IDE: Microsoft Visual Studio Community 2026 (18.7.3)
 - Project target: .NET 8
-- Solution file: `AutoTable.slnx` (root: C:\Users\manue\Desktop\Desktop_Apps\AutoTable\AutoTable.slnx)
+- Solution file: `AutoTable.slnx`
 - Active branch: `sql_rec` (origin: https://github.com/ManuelPrhyme/AutoTable)
-- Preferred shell for commands: PowerShell (powershell.exe)
- - UI framework: WinUI 3 (Windows App SDK) - this is a WinUI 3 desktop application
+- UI framework: WinUI 3 (Windows App SDK 2.3.x)
+- Build command: `dotnet build AutoTable.csproj -p:Platform=x64` → **0 errors**
+- Test command: `dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64` → **9/9 passing**
 
 ---
 
-## High-level goal implemented
+## High-level goal
 
-- Replace mock data with a SQLite-backed EF Core data layer for end-to-end CRUD testing.
-- Add Student management (LIN unique identifier), termination semantics (soft-delete + anonymize option), transactional operations, and admin flows to create classes/subjects and assign subjects to classes.
-- Database recreated on each app start for testing (fresh DB).
+AutoTable is a single-source-of-truth desktop school management app where every CRUD operation persists to SQLite via EF Core. The operational plan (OPERATIONAL_PLAN.md) is **fully implemented** for Phases 2–5. The current work is on the **P5 feature backlog**: grading system integration, assessment promotion roles, promotion/repeat flow, role gating, analytics, and enforcement.
 
 ---
 
-## Important files added or modified
+## Current State (26 Aug 2026)
 
-Added files (new):
+### Build: 0 errors, clean
 
-- `AutoTable/Models/StudentTerminationReason.cs` - enum for termination reasons.
-- `AutoTable/Models/Student.cs` - Student DTO used by viewmodels/services.
-- `AutoTable/Models/SimpleLookup.cs` - small Id/Name DTO for lists.
-- `AutoTable/Data/Entities/StudentEntity.cs` - EF entities: Student, Class, Stream, Subject, Term, AcademicYear, Assessment, Mark, FeePayment, User, ClassSubjectEntity.
-- `AutoTable/Data/AppDbContext.cs` - EF Core DbContext configuration, indices, FK rules, helper to create SqliteConnection with PRAGMA foreign_keys=ON.
-- `AutoTable/Data/SeedData.cs` - seed logic for classes, subjects, students, assessments, marks and default class-subject assignments.
-- `AutoTable/Services/IDataService.cs` - async service interface for app data operations (students, assessments, gradebook, class/subject management, transactional create/terminate).
-- `AutoTable/Services/DatabaseDataService.cs` - implementation of IDataService using AppDbContext, includes transaction-based flows:
-  - `CreateStudentWithInitialDataAsync(student, initialFeeAmount, initialMarks)` (atomic create + fees + marks)
-  - `TerminateStudentAsync(studentId, reason, date, anonymize)` (atomic soft-delete + optional anonymize)
-  - Class/Subject management: Create/Delete classes/subjects, Assign/Remove subject to/from class, GetSubjectsForClassAsync
-- `AutoTable/AppServices.cs` - small static holder to register global IDataService instance at startup.
-- `AutoTable/Views/StudentsView.xaml` and `.xaml.cs` - simple Students page skeleton.
-- `AutoTable/ViewModels/StudentsViewModel.cs` - Students list and Add/Refresh/Terminate flows using AppServices.DataService.
-- `AutoTable/Views/ClassesView.xaml` and `.xaml.cs` - admin UI skeleton to create classes/subjects and assign/remove subjects.
-- `AutoTable/ViewModels/ClassesViewModel.cs` - viewmodel for classes UI.
+### What's Done (all operational plan steps)
+- Persistent DB at `%LOCALAPPDATA%\AutoTable\autotable.db` with dev ephemeral flag
+- Fail-loud startup with diagnostics, explicit demo mode only
+- Full CRUD: Students, Teachers, Classes, Subjects, Terms, Assessments, Marks, Fees, Budget
+- All ViewModels use `AppServices.DataService` (no mock fallback)
+- A4 report-card printing (native Windows PrintManager)
+- Grading systems domain (named scales with promotion/repeat bands)
+- Class creation single-modal rework (teacher + grading system + streams/subjects)
+- Integration tests (9 passing)
 
-Modified files:
+### What's In Progress (uncommitted, 21 files)
+| Feature | Status |
+|---------|--------|
+| Grade resolution via grading systems (P5.3) | ✅ Code complete — `GradeFromBands` replaces `GradeFromAverage` |
+| Assessment promotion role (P5.1) | ✅ Done — tri-state enum + creation dialog + report card classification |
+| Analytics view/ViewModel | ✅ Code complete — new analytics dashboard |
+| FeeCollection real data | ✅ Code complete — DB-driven fee records |
+| Stream teacher assignment | ✅ Code complete |
+| Dashboard/ClassesView improvements | ✅ Code complete |
 
-- `App.xaml.cs` - added DB initialization code that creates an SQLite database file in the OS temp folder (`autotable_test.db`), enables PRAGMA foreign_keys, runs EnsureDeleted/EnsureCreated and seeding, and registers `AppServices.DataService = new DatabaseDataService(options)`. This produces a fresh DB each run (testing mode).
-
----
-
-## EF Core / SQLite notes
-
-- EF Core provider expected: `Microsoft.EntityFrameworkCore.Sqlite` (project must add this NuGet package). Also `Microsoft.EntityFrameworkCore.Design` recommended for migrations.
-- AppDbContext.CreateConnection(dataSourceFile) opens a `Microsoft.Data.Sqlite.SqliteConnection` and runs `PRAGMA foreign_keys = ON;` so FK constraints are enforced on that connection.
-- Many-to-many Class ↔ Subject implemented via `ClassSubjectEntity` join table (composite key ClassId+SubjectId).
-- Indexes and unique constraints are configured for LIN (Students.LIN), AdmissionNumber, Class.Name, Subject.Name, Term.Name, AcademicYear.Name, and a unique composite index for Assessments in a given class/subject/term/year context.
-
----
-
-## Transactional semantics
-
-- All multi-step operations that must be atomic use EF Core transactions (BeginTransactionAsync / CommitAsync / RollbackAsync). Implemented methods:
-  - `CreateStudentWithInitialDataAsync(student, initialFeeAmount, initialMarks)` — creates a student, optional initial fee payment, and optional marks in a single transaction.
-  - `TerminateStudentAsync(studentId, reason, date, anonymize)` — sets IsActive=false and optionally clears PII; executed inside a transaction and rolled back on failure.
-- Recommended pattern for other multi-step operations: use the same transaction pattern shown in `DatabaseDataService`.
+### What's Next (P5 backlog)
+| # | Feature | Status |
+|---|---------|--------|
+| P5.2 | Promotion/repeat flow | 🔴 Service methods exist; UI wiring needed |
+| P5.4 | Admin role-gating | 🔴 Not started |
+| P5.5 | Defaulters / cohort analytics | 🔴 Not started |
+| P5.6 | Mid-term slips | 🔴 Not started |
+| P5.7 | Active-term enforcement | 🔴 Not started |
 
 ---
 
-## IDataService surface (high-level)
+## Key Files
 
-Key async methods implemented/available via `AppServices.DataService` after startup registration:
+### Data Layer
+- `AutoTable/Data/Entities/StudentEntity.cs` — ALL EF entities (Student, Class, Stream, Subject, Term, AcademicYear, Assessment, Mark, FeePayment, User, ClassSubject, ClassStream, TermFee, BudgetLine, GradingSystem, GradeBand, TerminationLog, Enrollment)
+- `AutoTable/Data/AppDbContext.cs` — EF Core DbContext with ForeignKeyInterceptor
+- `AutoTable/Data/SeedData.cs` — NOT called at startup (by design)
 
-- Assessments / Gradebook / Marks
-  - `GetAssessmentsAsync()`
-  - `GetGradebookAsync(string className, string subject)`
-  - `GetStudentMarksAsync(string className, string subject, string assessmentName)`
+### Services
+- `AutoTable/Services/IDataService.cs` — full async interface (students, assessments, marks, grades, fees, teachers, budget, grading systems, promotion, report cards)
+- `AutoTable/Services/DatabaseDataService.cs` — EF Core implementation (~1900 lines)
+- `AutoTable/AppServices.cs` — global static IDataService holder
 
-- Students
-  - `GetStudentsAsync()`
-  - `GetStudentByIdAsync(int id)`
-  - `CreateStudentAsync(Student student)` (delegates to transactional create)
-  - `CreateStudentWithInitialDataAsync(Student student, double? initialFeeAmount, IEnumerable<(int AssessmentId, double? Mark, string? Grade)>? initialMarks)`
-  - `UpdateStudentAsync(Student student)`
-  - `TerminateStudentAsync(int studentId, StudentTerminationReason reason, DateTime date, bool anonymize = false)`
+### Models
+- `Models/AssessmentItem.cs` — `AssessmentScope` enum, `AssessmentPromotionRole` enum, `AssessmentItem` DTO
+- `AutoTable/Models/GradingSystemModels.cs` — `GradingSystemInfo`, `GradeBandInfo`
+- `Models/ReportCardModels.cs` — `ReportCardSheetModel`, `ReportCardAssessmentRow`
+- `AutoTable/Models/Student.cs` — Student DTO with enrollment fields
+- `AutoTable/Models/SimpleLookup.cs` — Id/Name DTO for lists
 
-- Class & Subject management
-  - `GetClassesAsync()`
-  - `CreateClassAsync(string name)`
-  - `DeleteClassAsync(int classId)` (prevents deletion if students or assessments exist)
-  - `GetSubjectsAsync()`
-  - `CreateSubjectAsync(string name)`
-  - `DeleteSubjectAsync(int subjectId)` (prevents deletion if assessments exist)
-  - `AssignSubjectToClassAsync(int classId, int subjectId)`
-  - `RemoveSubjectFromClassAsync(int classId, int subjectId)` (prevents removal if assessments exist)
-  - `GetSubjectsForClassAsync(int classId)`
+### Views & ViewModels
+- `Views/AssessmentsView.xaml.cs` — assessment creation dialog (4 scope options + promotion role selector)
+- `Views/FeeCollectionView.xaml.cs` — fee collection with Record Payment modal (searchable typeahead)
+- `Views/ReportCardsView.xaml.cs` — A4 report card preview + PrintManager printing
+- `Views/Controls/ReportCardSheetView.xaml` — A4 report card sheet control
+- `Views/ClassesView.xaml.cs` — class management (single-modal create, grading systems card)
+- `Views/ShellView.xaml.cs` — navigation shell with role-gated sidebar
 
----
-
-## Seed data
-
-- Seed creates Classes P1..P7, Streams (A,B,C), Subjects (Math, English, Science, Social Studies, Religious Education), Academic years and Terms, two sample students (LIN-0001, LIN-0002), one admin user, one sample assessment in P5 Math, and two marks.
-- Seed also assigns default subjects to P5 (Mathematics, English) using the ClassSubjects join table.
+### Startup
+- `App.xaml.cs` — DB init, connection string, schema patches (ALTER TABLE for legacy DBs), ForeignKeyInterceptor registration
 
 ---
 
-## How to run locally (agent instructions)
+## Grading System Resolution
 
-1. Ensure NuGet packages are installed for the AutoTable project:
+When resolving grades for a class:
+```
+Class.GradingSystem → GradingSystems.FirstOrDefault(IsDefault) → first available system → hard-coded 50% fallback
+```
 
-   dotnet add .\AutoTable package Microsoft.EntityFrameworkCore.Sqlite
-
-   dotnet add .\AutoTable package Microsoft.EntityFrameworkCore.Design
-
-2. Build the solution:
-
-   dotnet build .\AutoTable.slnx
-
-3. Run (dev/test mode):
-
-   - Launch from Visual Studio or run `dotnet run` for the AutoTable project. On startup the app will delete/create the test SQLite file (`autotable_test.db` in OS Temp) and seed it.
-   - The database connection used by the app has PRAGMA foreign_keys = ON enabled.
-
-4. To persist DB between runs: edit `App.xaml.cs` and **remove** the `EnsureDeleted()` call.
+`GradeFromBands(mark, bands)` replaces `GradeFromAverage(mark)`. If no bands exist, falls back to the old A-F scale.
 
 ---
 
-## Notes, caveats & recommended next steps
+## PromotionRole Mapping
 
-- You must restore/install EF Core SQLite packages before build succeeds; build errors seen if not installed.
-- XAML compilation requires building in Visual Studio to generate InitializeComponent for pages. If pages report missing InitializeComponent errors, rebuild solution in Visual Studio.
-- Many existing ViewModels still use `MockDataService.Instance`. Recommended: refactor these to use `AppServices.DataService` so the UI switches to the database-backed service.
-- Add an audit/termination log table if you need an audit trail for termination events (recommended for production).
-- For testing: use an in-memory SQLite connection (`DataSource=:memory:`) with the connection kept open and PRAGMA foreign_keys=ON; call `Database.EnsureCreated()` to initialize schema for tests.
+```
+AssessmentPromotionRole.None            → int 0  (default)
+AssessmentPromotionRole.CountsTowardPromotion → int 1
+AssessmentPromotionRole.PromotionExam   → int 2
+```
 
----
-
-## Quick file list (for agent automation)
-
-- AutoTable.slnx (solution)
-- AutoTable/App.xaml.cs (modified startup wiring)
-- AutoTable/AppServices.cs (new)
-- AutoTable/Models/Student.cs
-- AutoTable/Models/StudentTerminationReason.cs
-- AutoTable/Models/SimpleLookup.cs
-- AutoTable/Data/AppDbContext.cs
-- AutoTable/Data/SeedData.cs
-- AutoTable/Data/Entities/StudentEntity.cs
-- AutoTable/Services/IDataService.cs
-- AutoTable/Services/DatabaseDataService.cs
-- AutoTable/Views/StudentsView.xaml(.cs)
-- AutoTable/ViewModels/StudentsViewModel.cs
-- AutoTable/Views/ClassesView.xaml(.cs)
-- AutoTable/ViewModels/ClassesViewModel.cs
+Report card classification:
+- If any assessment has `PromotionRole != 0`: use explicit roles
+- Otherwise (legacy data): fallback to weight-based heuristic
 
 ---
 
-If you want, I can:
-- produce an automated script to install required NuGet packages and run a dev startup sequence,
-- refactor existing ViewModels (Assessments, Gradebook, MarksEntry, Dashboard) to consume `AppServices.DataService`,
-- add an audit/termination log entity and record termination events inside the same transaction.
+## How to Run
 
-End of context export.
+1. Build: `dotnet build AutoTable.csproj -p:Platform=x64`
+2. Run from Visual Studio or `dotnet run` — app creates/uses persistent DB at `%LOCALAPPDATA%\AutoTable\autotable.db`
+3. For ephemeral dev DB: set env var `AUTOTABLE_DEV_EPHEMERAL_DB=true`
+4. For demo mode (mock adapter): set env var `AUTOTABLE_DEMO_MODE=true`
+
+---
+
+## Implementation Log
+
+See **IMPLEMENTATION_LOG.md** for a detailed, up-to-date log of what's being implemented as it progresses. It tracks:
+- Feature status (done / in progress / not started)
+- Files changed per feature
+- How features work (architecture decisions)
+- Remaining gaps
+- Key patterns and conventions
+
+---
+
+*Last updated: 26 Aug 2026 — Buffy (Codebuff agent)*

@@ -40,7 +40,7 @@
                                   ItemsSource="{Binding Streams}" DisplayMemberPath="Name"
                                   SelectedValuePath="Id" SelectedValue="{Binding SelectedStreamId, Mode=TwoWay}" />
                     </Grid>
-                    <TextBox Header="LIN (leave blank to auto-generate)"
+                    <TextBox Header="LIN"
                              Text="{Binding Lin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>

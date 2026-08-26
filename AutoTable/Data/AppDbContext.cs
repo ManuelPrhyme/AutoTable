@@ -105,6 +105,12 @@ namespace AutoTable.Data
                 .HasForeignKey(cs => cs.StreamId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<ClassStreamEntity>()
+                .HasOne(cs => cs.StreamTeacher)
+                .WithMany()
+                .HasForeignKey(cs => cs.StreamTeacherId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<ClassSubjectEntity>()
                 .HasOne(cs => cs.Class)
                 .WithMany(c => c.ClassSubjects)
