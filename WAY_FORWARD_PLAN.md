@@ -219,22 +219,43 @@ warning WMC1509: No LocalAssembly parameter given during MarkupCompilePass2
    Fee payments, Duplicate LIN validation.
 5. **Docs sync** — ✅ DONE. `CONTEXT_REPORT.md` and `WAY_FORWARD_PLAN.md` updated 24 Aug 2026.
 
-### P5 — Next priorities (24 Aug 2026)
+### P5.4 — Admin role-gating for Term/Class/Budget pages (planned — not yet implemented)
+
+**Goal:** Gate destructive or administrative actions (create/edit/delete classes, set term fees,
+manage budget lines, manage terms) behind an admin role check. Currently the app has no
+role-based access control beyond the Moderation page's basic gate.
+
+**Workflow:**
+1. Define an `AdminRoleService` (or extend existing auth) that tracks the current user's role
+   (`Admin`, `Teacher`, `Staff`).
+2. On page load, check role and conditionally show/hide action buttons:
+   - **Class Management:** Hide Edit, Create, Delete buttons for non-admins.
+   - **Term Management:** Hide Create Term, Set Fee buttons for non-admins.
+   - **Budget:** Hide Add Line Item, Delete buttons for non-admins.
+3. Add a visual indicator (lock icon or muted button) when actions are restricted.
+4. Service layer: add role checks in `CreateClassAsync`, `DeleteClassAsync`, `SetTermFeeAsync`,
+   `CreateBudgetLineAsync` etc. as defense-in-depth.
+
+**Files to modify:**
+- New: `Services/AdminRoleService.cs` (or `AuthState.cs`)
+- `Views/ClassesView.xaml(.cs)` — conditional button visibility
+- `Views/TermManagementView.xaml(.cs)` — conditional button visibility
+- `Views/BudgetView.xaml(.cs)` — conditional button visibility
+- `AutoTable/Services/DatabaseDataService.cs` — role checks on write methods
+
+**Status:** Documented. Awaiting user confirmation to implement.
+
+---
+
+### P6 — Next priorities (26 Aug 2026)
 
 Features agreed in `OPERATIONAL_PLAN.md` ("Feature — Assessment promotion role & configurable
-grading systems") and the Prototype roadmap, not yet implemented:
+grading systems") and the Prototype roadmap:
 
-1. **Assessment promotion role** — tri-state on assessment creation (`None` / contributory /
-   promotional exam); store as a column + migration; restrict "promotional exam" designation to
-   Term 3 (`IsPromotionTerm`). Switch `GetReportCardSheetAsync` from its current heuristic
-   classification to these explicit flags.
-2. **Promotion / repeat flow** — promote/repeat decision per student; Term-3 auto-move-up;
-   manual class shift; surface PASS/REPEAT verdicts already present on the report card.
-3. **Grade resolution via grading systems** — replace hard-coded `GradeFromAverage`
-   (`DatabaseDataService.cs`, `>=80→A … else F`) with data-driven band lookup per class's
-   `GradingSystemId` (falls back to school default).
-4. **Admin role-gating** — extend the Moderation gate pattern to Term Management, Classes and
-   Budget pages.
+1. **Assessment promotion role** — ✅ DONE. Explicit tri-state on assessment creation.
+2. **Promotion / repeat flow** — ✅ DONE. ProcessAllPromotionsAsync + Process All button.
+3. **Grade resolution via grading systems** — ✅ Code complete. GradeFromBands replaces GradeFromAverage.
+4. **Admin role-gating** — **Planned (P5.4 above).** Documented workflow, awaiting implementation.
 5. **Defaulters / cohort finance analytics** — top-N defaulters, % paid within window,
    unpaid-above-threshold queries.
 6. **Mid-term slips** — 3–4-per-A4 slip layout alongside full report cards.
@@ -262,11 +283,15 @@ grading systems") and the Prototype roadmap, not yet implemented:
 
 ## Suggested execution order (atomic commits)
 
-1. ~~Promotion-role column + migration + creation-dialog checkboxes (P5.1)~~ — **DONE** (26 Aug). Explicit tri-state on assessment creation; report card uses explicit roles with legacy fallback.
-2. ~~Grade-band lookup replacing `GradeFromAverage` (P5.3)~~ — **Code complete** (26 Aug, in working tree, uncommitted). `GradeFromBands` replaces hard-coded `GradeFromAverage` in Gradebook, StudentPerformanceDetail, and ReportCards. Class-specific grading system resolution: Class → school default → fallback.
-3. Promotion/repeat flow (P5.2) — next priority. Service methods exist in IDataService; needs UI wiring.
-4. Role gates (P5.4), then defaulters analytics (P5.5), then slips (P5.6) and active-term enforcement (P5.7).
-5. Maintenance: EF migrations verification before any production deploy.
+1. ~~Promotion-role column + migration + creation-dialog checkboxes (P5.1)~~ — **DONE** (26 Aug).
+2. ~~Grade-band lookup replacing `GradeFromAverage` (P5.3)~~ — **DONE** (26 Aug).
+3. ~~Promotion/repeat flow (P5.2)~~ — **DONE** (26 Aug). ProcessAllPromotionsAsync + Process All button.
+4. ~~Class edit modal + streams/subjects UI fix~~ — **DONE** (26 Aug). EditClass modal, white chips with ✕ buttons.
+5. ~~Financial Dashboard KPI merge~~ — **DONE** (26 Aug). Term selector + merged KPI cards from Term Management.
+6. ~~Fee Collection per-student amounts~~ — **DONE** (26 Aug). Expected/Paid/Balance computed per student per class per term.
+7. Admin role-gating (P5.4) — **Planned.** Documented in WAY_FORWARD; awaiting user signal.
+8. Defaulters analytics (P5.5), then slips (P5.6), then active-term enforcement (P5.7).
+9. Maintenance: EF migrations verification before any production deploy.
 
 Historical order (all complete): Teachers page → assessment create dialog → marks persistence →
 moderation wiring → AI insights → fee read API + financial rewiring → tests/mock cleanup/docs sync →

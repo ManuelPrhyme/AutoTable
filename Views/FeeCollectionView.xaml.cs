@@ -63,15 +63,15 @@ namespace AutoTable.Views
                 TextWrapping = TextWrapping.Wrap,
                 Visibility = Visibility.Collapsed,
                 MaxWidth = 180,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x44, 0x44, 0x44))
+                Foreground = new SolidColorBrush(Microsoft.UI.Colors.White)
             };
             var amountBox = new TextBox { Header = "Amount", PlaceholderText = "Enter amount paid" };
-            var hint = new TextBlock { FontSize = 12, Opacity = 0.7, TextWrapping = TextWrapping.Wrap };
+            var hint = new TextBlock { FontSize = 12, Opacity = 1.0, TextWrapping = TextWrapping.Wrap, Foreground = new SolidColorBrush(Microsoft.UI.Colors.White) };
 
 
-            // Shared brushes for hint feedback
-            var MutedHintBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x80, 0x80, 0x80));
-            var ErrorHintBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xC4, 0x2B, 0x1C));
+            // Shared brushes for hint feedback — white text on dark dialog
+            var MutedHintBrush = new SolidColorBrush(Microsoft.UI.Colors.White);
+            var ErrorHintBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xFF, 0x6B, 0x6B));
 
             // -- Inline results panel (non-blocking): rendered directly under the search
             //    field so the TextBox keeps keyboard focus and the list re-filters live
@@ -88,11 +88,9 @@ namespace AutoTable.Views
             {
                 Child = resultScroll,
                 CornerRadius = new CornerRadius(6),
-                // Explicit colors (not theme lookups) so rows are ALWAYS legible
-                // regardless of which theme dictionary resolved.
-                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xD0, 0xD0, 0xD0)),
+                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x60, 0x60, 0x60)),
                 BorderThickness = new Thickness(1),
-                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x2A, 0x2A, 0x2A)),
                 Visibility = Visibility.Collapsed
             };
 
@@ -176,8 +174,7 @@ namespace AutoTable.Views
                         FontSize = 14,
                         VerticalAlignment = VerticalAlignment.Center,
                         TextWrapping = TextWrapping.Wrap,
-                        // Deterministic colors: dark text on the explicitly-white host.
-                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x00, 0x00, 0x00))
+                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White)
                     };
                     Grid.SetColumn(nameBlock, 0);
 
@@ -187,14 +184,14 @@ namespace AutoTable.Views
                         Text = $"{(string.IsNullOrEmpty(s.ClassName) ? "-" : s.ClassName)} - {(string.IsNullOrEmpty(s.StreamName) ? "-" : s.StreamName)}",
                         FontSize = 12,
                         HorizontalAlignment = HorizontalAlignment.Right,
-                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x44, 0x44, 0x44))
+                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF))
                     });
                     rightPanel.Children.Add(new TextBlock
                     {
                         Text = $"LIN: {s.LIN}",
                         FontSize = 11,
                         HorizontalAlignment = HorizontalAlignment.Right,
-                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x77, 0x77, 0x77))
+                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF))
                     });
                     Grid.SetColumn(rightPanel, 1);
 

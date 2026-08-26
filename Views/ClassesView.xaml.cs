@@ -95,14 +95,18 @@ namespace AutoTable.Views
                 newGsPanel.Visibility = ReferenceEquals(gsPicker.SelectedItem, NewGradingSystemOption)
                     ? Visibility.Visible : Visibility.Collapsed;
 
-            // Streams & subjects: assign existing or type names for new ones
+            // Streams & subjects: assign existing or type names for new ones.
+            // Pass creation callbacks so new items are persisted to the DB immediately,
+            // appearing in the master list for future use.
             var pendingStreams = new ObservableCollection<SimpleLookup>();
             var pendingSubjects = new ObservableCollection<SimpleLookup>();
             var pendingStreamTeachers = new List<int?>(); // tracks teacher Id per stream
             var classTeacherId = teacherPicker.SelectedItem is AutoTable.Models.Teacher ct ? ct.Id : (int?)null;
             var streamsSection = BuildStreamsSection("Streams (optional)", _vm.AllStreams,
-                pendingStreams, pendingStreamTeachers, teachers, classTeacherId);
-            var subjectsSection = BuildSubjectsSection("Subjects (optional)", allSubjects, pendingSubjects);
+                pendingStreams, pendingStreamTeachers, teachers, classTeacherId,
+                createItemAsync: async name => await AppServices.DataService!.CreateStreamAsync(name));
+            var subjectsSection = BuildSubjectsSection("Subjects (optional)", allSubjects, pendingSubjects,
+                createItemAsync: async name => await AppServices.DataService!.CreateSubjectAsync(name));
 
             var content = new StackPanel { Spacing = 12 };
             content.Children.Add(nameBox);
@@ -149,21 +153,11 @@ namespace AutoTable.Views
                     var item = pendingStreams[i];
                     var streamTeacherId = i < pendingStreamTeachers.Count ? pendingStreamTeachers[i] : null;
                     if (streamTeacherId == null) streamTeacherId = classTeacherId; // default to class teacher
-                    if (item.Id < 0)
-                    {
-                        var newStream = await _vm.CreateStreamAsync(item.Name, createdClass.Id);
-                        await _vm.AssignStreamToClassAsync(createdClass.Id, newStream.Id, streamTeacherId);
-                    }
-                    else await _vm.AssignStreamToClassAsync(createdClass.Id, item.Id, streamTeacherId);
+                    await _vm.AssignStreamToClassAsync(createdClass.Id, item.Id, streamTeacherId);
                 }
                 foreach (var item in pendingSubjects)
                 {
-                    if (item.Id < 0)
-                    {
-                        var subj = await AppServices.DataService.CreateSubjectAsync(item.Name); // new → create & assign
-                        await _vm.AssignSubjectToClassAsync(createdClass.Id, subj.Id);
-                    }
-                    else await _vm.AssignSubjectToClassAsync(createdClass.Id, item.Id);
+                    await _vm.AssignSubjectToClassAsync(createdClass.Id, item.Id);
                 }
 
                 await _vm.LoadAsync();
@@ -174,10 +168,151 @@ namespace AutoTable.Views
             }
         }
 
-        // The old select-class detail card was removed; row click is now a no-op hook.
         private async void ClassesList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            await Task.CompletedTask;
+            if (e.ClickedItem is ClassInfo cls)
+                await OpenEditClassModalAsync(cls);
+        }
+
+        private async void EditClass_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is ClassInfo cls)
+                await OpenEditClassModalAsync(cls);
+        }
+
+        /// <summary>
+        /// Opens a modal to edit the given class: add/remove streams and subjects.
+        /// </summary>
+        private async Task OpenEditClassModalAsync(ClassInfo cls)
+        {
+            var teachers = await AppServices.DataService!.GetTeachersAsync();
+            await _vm.LoadAllStreamsAsync();
+            await _vm.LoadSubjectsForClassAsync(cls.Id);
+            var allSubjects = await AppServices.DataService.GetSubjectsAsync();
+
+            var currentStreams = new ObservableCollection<SimpleLookup>(_vm.StreamsForClass);
+            var currentSubjects = new ObservableCollection<SimpleLookup>(_vm.SubjectsForClass);
+            var pendingStreamTeachers = new List<int?>();
+
+            // Resolve the current class teacher for default stream teacher
+            var classTeacherId = teachers.FirstOrDefault(t =>
+                string.Equals(t.FullName, cls.ClassTeacherName, StringComparison.OrdinalIgnoreCase))?.Id;
+
+            // Build sections for streams and subjects
+            var streamsSection = BuildStreamsSection(
+                $"Streams for {cls.Name}", _vm.AllStreams,
+                currentStreams, pendingStreamTeachers, teachers, classTeacherId,
+                createItemAsync: async name => await AppServices.DataService!.CreateStreamAsync(name));
+            var subjectsSection = BuildSubjectsSection(
+                $"Subjects for {cls.Name}", allSubjects,
+                currentSubjects,
+                createItemAsync: async name => await AppServices.DataService!.CreateSubjectAsync(name));
+
+            var content = new StackPanel { Spacing = 12 };
+            content.Children.Add(new TextBlock
+            {
+                Text = $"Editing streams and subjects for {cls.Name}",
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                FontSize = 15,
+                Margin = new Thickness(0, 0, 0, 4)
+            });
+            foreach (var c in streamsSection.Children.ToList()) { streamsSection.Children.Remove(c); content.Children.Add(c); }
+            content.Children.Add(new Border
+            {
+                Height = 1,
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF)),
+                Margin = new Thickness(0, 4, 0, 4)
+            });
+            foreach (var c in subjectsSection.Children.ToList()) { subjectsSection.Children.Remove(c); content.Children.Add(c); }
+
+            var statusText = new TextBlock
+            {
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
+                Margin = new Thickness(0, 4, 0, 0)
+            };
+            content.Children.Add(statusText);
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Edit Class: {cls.Name}",
+                Content = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    MaxHeight = 540,
+                    Content = content
+                },
+                PrimaryButtonText = "Save Changes",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            try
+            {
+                // --- Reconcile streams ---
+                var originalStreams = (await AppServices.DataService.GetStreamsForClassAsync(cls.Id)).ToList();
+                var finalStreamIds = currentStreams.Select(s => s.Id).ToHashSet();
+                var originalStreamIds = originalStreams.Select(s => s.Id).ToHashSet();
+
+                // Remove streams that were in original but not in final
+                foreach (var orig in originalStreams)
+                {
+                    if (!finalStreamIds.Contains(orig.Id))
+                        await _vm.RemoveStreamFromClassAsync(cls.Id, orig.Id);
+                }
+                // Add streams that are in final but not in original
+                for (int i = 0; i < currentStreams.Count; i++)
+                {
+                    var item = currentStreams[i];
+                    var streamTeacherId = i < pendingStreamTeachers.Count ? pendingStreamTeachers[i] : classTeacherId;
+                    if (!originalStreamIds.Contains(item.Id))
+                    {
+                        if (item.Id < 0)
+                        {
+                            var newStream = await _vm.CreateStreamAsync(item.Name, cls.Id);
+                            await _vm.AssignStreamToClassAsync(cls.Id, newStream.Id, streamTeacherId);
+                        }
+                        else
+                        {
+                            await _vm.AssignStreamToClassAsync(cls.Id, item.Id, streamTeacherId);
+                        }
+                    }
+                }
+
+                // --- Reconcile subjects ---
+                var originalSubjects = (await AppServices.DataService.GetSubjectsForClassAsync(cls.Id)).ToList();
+                var finalSubjectIds = currentSubjects.Select(s => s.Id).ToHashSet();
+                var originalSubjectIds = originalSubjects.Select(s => s.Id).ToHashSet();
+
+                foreach (var orig in originalSubjects)
+                {
+                    if (!finalSubjectIds.Contains(orig.Id))
+                        await _vm.RemoveSubjectFromClassAsync(cls.Id, orig.Id);
+                }
+                foreach (var item in currentSubjects)
+                {
+                    if (!originalSubjectIds.Contains(item.Id))
+                    {
+                        if (item.Id < 0)
+                        {
+                            var newSubj = await AppServices.DataService.CreateSubjectAsync(item.Name);
+                            await _vm.AssignSubjectToClassAsync(cls.Id, newSubj.Id);
+                        }
+                        else
+                        {
+                            await _vm.AssignSubjectToClassAsync(cls.Id, item.Id);
+                        }
+                    }
+                }
+
+                await _vm.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorAsync("Unable to update class.", ex.Message);
+            }
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -344,11 +479,14 @@ namespace AutoTable.Views
 
         /// <summary>
         /// Builds an "assign existing / type a new name" section for the
-        /// Create Class dialog. The "Add →" button moves the picked item —
-        /// or a newly typed name (negative Id) — into the pending list.
+        /// Create / Edit Class dialog. Shows each added subject as a white
+        /// chip with an ✕ remove button. The "Add →" button moves the picked
+        /// item — or a newly typed name (negative Id) — into the pending list.
+        /// When createItemAsync is provided, newly typed names are persisted to
+        /// the DB immediately so they appear in the master list for future use.
         /// </summary>
         private static StackPanel BuildSubjectsSection(string title, System.Collections.Generic.IEnumerable<SimpleLookup> source,
-            ObservableCollection<SimpleLookup> pending)
+            ObservableCollection<SimpleLookup> pending, Func<string, Task<SimpleLookup>>? createItemAsync = null)
         {
             var sourceList = new List<SimpleLookup>(source);
             var picker = new ComboBox
@@ -360,37 +498,109 @@ namespace AutoTable.Views
             };
             var newBox = new TextBox { PlaceholderText = "or new name…", Width = 220 };
 
-            var subjectsDisplay = new TextBlock
-            {
-                FontSize = 13,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x33, 0x33, 0x33)),
-                Margin = new Thickness(0, 4, 0, 0),
-                Text = "No subjects added yet."
-            };
+            // Container for subject chips — rebuilt on every add/remove
+            var chipsHost = new ItemsControl();
 
-            void AddClick(object sender, RoutedEventArgs e)
+            void RebuildChips()
             {
-                if (picker.SelectedItem is SimpleLookup existing)
+                chipsHost.Items.Clear();
+                foreach (var item in pending.ToList())
+                {
+                    var chip = new Grid { Margin = new Thickness(0, 0, 6, 4) };
+                    chip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    chip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    var nameBlock = new TextBlock
+                    {
+                        Text = item.Name,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        FontSize = 13,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                        Padding = new Thickness(8, 4, 4, 4)
+                    };
+                    Grid.SetColumn(nameBlock, 0);
+
+                    var removeBtn = new Button
+                    {
+                        Content = "✕",
+                        Padding = new Thickness(4, 0, 6, 0),
+                        FontSize = 11,
+                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)),
+                        BorderThickness = new Thickness(0),
+                        Tag = item,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    removeBtn.Click += (_, _) =>
+                    {
+                        pending.Remove(item);
+                        if (item.Id > 0 && !sourceList.Any(s => s.Id == item.Id))
+                            sourceList.Add(item);
+                        RebuildChips();
+                    };
+                    Grid.SetColumn(removeBtn, 1);
+
+                    chip.Children.Add(nameBlock);
+                    chip.Children.Add(removeBtn);
+                    chipsHost.Items.Add(new Border
+                    {
+                        Child = chip,
+                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x33, 0x55, 0x77)),
+                        CornerRadius = new CornerRadius(16),
+                        Padding = new Thickness(2, 0, 0, 0)
+                    });
+                }
+                if (pending.Count == 0)
+                {
+                    chipsHost.Items.Add(new TextBlock
+                    {
+                        Text = "No subjects added yet.",
+                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
+                        FontSize = 13,
+                        Margin = new Thickness(0, 4, 0, 0)
+                    });
+                }
+            }
+            RebuildChips();
+
+            async void AddClick(object sender, RoutedEventArgs e)
+            {
+                // Priority: if the user typed a name, always use it (new or existing).
+                // Only fall back to the picker when newBox is empty.
+                if (!string.IsNullOrWhiteSpace(newBox.Text))
+                {
+                    var nm = newBox.Text.Trim();
+                    if (!pending.Any(p => string.Equals(p.Name, nm, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        if (createItemAsync != null)
+                        {
+                            try
+                            {
+                                var created = await createItemAsync(nm);
+                                pending.Add(created);
+                                if (!sourceList.Any(s => s.Id == created.Id))
+                                    sourceList.Add(created);
+                            }
+                            catch { pending.Add(new SimpleLookup { Id = -1, Name = nm }); }
+                        }
+                        else
+                        {
+                            pending.Add(new SimpleLookup { Id = -1, Name = nm });
+                        }
+                    }
+                    newBox.Text = string.Empty;
+                }
+                else if (picker.SelectedItem is SimpleLookup existing)
                 {
                     pending.Add(existing);
                     sourceList.Remove(existing);
                     picker.SelectedItem = null;
                 }
-                else if (!string.IsNullOrWhiteSpace(newBox.Text))
-                {
-                    var nm = newBox.Text.Trim();
-                    if (!pending.Any(p => string.Equals(p.Name, nm, StringComparison.OrdinalIgnoreCase)))
-                        pending.Add(new SimpleLookup { Id = -1, Name = nm });
-                    newBox.Text = string.Empty;
-                }
-                subjectsDisplay.Text = pending.Count > 0
-                    ? string.Join(", ", pending.Select(p => p.Name))
-                    : "No subjects added yet.";
-                subjectsDisplay.Opacity = pending.Count > 0 ? 1.0 : 0.5;
+                RebuildChips();
             }
 
-            var addBtn = new Button { Content = "Add →" };
+            var addBtn = new Button { Content = "Add →", Style = (Style)Application.Current.Resources["SecondaryButtonStyle"] };
             addBtn.Click += AddClick;
 
             var assignRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -405,71 +615,76 @@ namespace AutoTable.Views
             {
                 Text = title,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Margin = new Thickness(0, 8, 0, 0)
+                Margin = new Thickness(0, 8, 0, 0),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xE0, 0xE0, 0xE0))
             });
             panel.Children.Add(assignRow);
             panel.Children.Add(newRow);
-            panel.Children.Add(subjectsDisplay);
+            panel.Children.Add(chipsHost);
             return panel;
         }
 
-        // ── Streams section: each stream has a stream-teacher ComboBox beside it ──
+        // ── Streams section: each stream shows as a white chip with ✕ and an optional teacher picker ──
         // pendingTeachers tracks the chosen teacher Id per pending stream index.
         private static StackPanel BuildStreamsSection(string title, System.Collections.Generic.IEnumerable<SimpleLookup> source,
             ObservableCollection<SimpleLookup> pending, List<int?> pendingTeachers,
-            IReadOnlyList<AutoTable.Models.Teacher> allTeachers, int? classTeacherId)
+            IReadOnlyList<AutoTable.Models.Teacher> allTeachers, int? classTeacherId,
+            Func<string, Task<SimpleLookup>>? createItemAsync = null)
         {
+            var sourceList = new List<SimpleLookup>(source);
             var picker = new ComboBox
             {
                 Width = 180,
-                ItemsSource = source,
+                ItemsSource = sourceList,
                 DisplayMemberPath = nameof(SimpleLookup.Name),
                 PlaceholderText = "Existing…"
             };
             var newBox = new TextBox { PlaceholderText = "or new name…", Width = 180 };
 
-            // Container for stream rows (each row = stream name + teacher ComboBox)
-            var streamsContainer = new StackPanel { Spacing = 4, MaxHeight = 180 };
+            // Container for stream chips — rebuilt on every add/remove
+            var chipsHost = new ItemsControl();
 
-            void RebuildStreamRows()
+            void RebuildStreamChips()
             {
-                streamsContainer.Children.Clear();
+                chipsHost.Items.Clear();
                 for (int i = 0; i < pending.Count; i++)
                 {
                     var idx = i; // capture for closure
-                    var streamName = pending[idx].Name;
+                    var item = pending[idx];
 
-                    var row = new Grid { ColumnSpacing = 8 };
-                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    var chip = new Grid { ColumnSpacing = 6, Margin = new Thickness(0, 0, 6, 4) };
+                    chip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    chip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    chip.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                     var nameBlock = new TextBlock
                     {
-                        Text = streamName,
+                        Text = item.Name,
                         VerticalAlignment = VerticalAlignment.Center,
+                        FontSize = 13,
                         FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                        FontSize = 13
+                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                        Padding = new Thickness(8, 4, 4, 4)
                     };
                     Grid.SetColumn(nameBlock, 0);
 
                     // Stream teacher picker — defaults to class teacher
                     var teacherPicker = new ComboBox
                     {
-                        Width = 180,
-                        Header = "Stream teacher",
-                        PlaceholderText = "(uses class teacher)",
+                        Width = 160,
+                        Header = "",
+                        PlaceholderText = "(class teacher)",
                         ItemsSource = allTeachers,
                         DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
-                        Tag = idx
+                        Tag = idx,
+                        FontSize = 11
                     };
-                    // Pre-select class teacher as default
                     if (classTeacherId.HasValue)
                     {
                         var classTeacher = allTeachers.FirstOrDefault(t => t.Id == classTeacherId.Value);
                         if (classTeacher != null) teacherPicker.SelectedItem = classTeacher;
                     }
-                    // Track selection changes
-                    teacherPicker.SelectionChanged += (_, args) =>
+                    teacherPicker.SelectionChanged += (_, _) =>
                     {
                         var i2 = (int)teacherPicker.Tag;
                         if (i2 < pendingTeachers.Count)
@@ -480,60 +695,91 @@ namespace AutoTable.Views
                     };
                     Grid.SetColumn(teacherPicker, 1);
 
-                    row.Children.Add(nameBlock);
-                    row.Children.Add(teacherPicker);
-
-                    // Remove button
                     var removeBtn = new Button
                     {
                         Content = "✕",
-                        Padding = new Thickness(4, 0, 4, 0),
+                        Padding = new Thickness(4, 0, 6, 0),
                         FontSize = 11,
-                        Tag = idx
+                        Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)),
+                        BorderThickness = new Thickness(0),
+                        VerticalAlignment = VerticalAlignment.Center
                     };
                     removeBtn.Click += (_, _) =>
                     {
-                        var ri = (int)removeBtn.Tag;
-                        var removed = pending[ri];
-                        pending.RemoveAt(ri);
-                        if (ri < pendingTeachers.Count) pendingTeachers.RemoveAt(ri);
-                        // Return removed stream to the picker if it was an existing one
-                        if (removed.Id > 0) picker.Items.Add(removed);
-                        RebuildStreamRows();
+                        var removed = pending[idx];
+                        pending.RemoveAt(idx);
+                        if (idx < pendingTeachers.Count) pendingTeachers.RemoveAt(idx);
+                        if (removed.Id > 0 && !sourceList.Any(s => s.Id == removed.Id))
+                            sourceList.Add(removed);
+                        RebuildStreamChips();
                     };
-                    // Stack the remove button below the row
-                    var wrapper = new StackPanel { Spacing = 2 };
-                    wrapper.Children.Add(row);
-                    wrapper.Children.Add(removeBtn);
+                    Grid.SetColumn(removeBtn, 2);
 
-                    streamsContainer.Children.Add(wrapper);
+                    chip.Children.Add(nameBlock);
+                    chip.Children.Add(teacherPicker);
+                    chip.Children.Add(removeBtn);
+                    chipsHost.Items.Add(new Border
+                    {
+                        Child = chip,
+                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x22, 0x44, 0x66)),
+                        CornerRadius = new CornerRadius(16),
+                        Padding = new Thickness(2, 0, 0, 0)
+                    });
+                }
+                if (pending.Count == 0)
+                {
+                    chipsHost.Items.Add(new TextBlock
+                    {
+                        Text = "No streams added yet.",
+                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
+                        FontSize = 13,
+                        Margin = new Thickness(0, 4, 0, 0)
+                    });
                 }
             }
-            RebuildStreamRows();
+            RebuildStreamChips();
 
-            void AddClick(object sender, RoutedEventArgs e)
+            async void AddClick(object sender, RoutedEventArgs e)
             {
-                if (picker.SelectedItem is SimpleLookup existing)
-                {
-                    pending.Add(existing);
-                    pendingTeachers.Add(null); // default to class teacher
-                    picker.Items.Remove(existing);
-                    picker.SelectedIndex = -1;
-                }
-                else if (!string.IsNullOrWhiteSpace(newBox.Text))
+                // Priority: if the user typed a name, always use it (new or existing).
+                // Only fall back to the picker when newBox is empty.
+                if (!string.IsNullOrWhiteSpace(newBox.Text))
                 {
                     var nm = newBox.Text.Trim();
                     if (!pending.Any(p => string.Equals(p.Name, nm, StringComparison.OrdinalIgnoreCase)))
                     {
-                        pending.Add(new SimpleLookup { Id = -1, Name = nm });
-                        pendingTeachers.Add(null);
+                        if (createItemAsync != null)
+                        {
+                            try
+                            {
+                                var created = await createItemAsync(nm);
+                                pending.Add(created);
+                                pendingTeachers.Add(null);
+                                if (!sourceList.Any(s => s.Id == created.Id))
+                                    sourceList.Add(created);
+                            }
+                            catch { pending.Add(new SimpleLookup { Id = -1, Name = nm }); pendingTeachers.Add(null); }
+                        }
+                        else
+                        {
+                            pending.Add(new SimpleLookup { Id = -1, Name = nm });
+                            pendingTeachers.Add(null);
+                        }
                     }
                     newBox.Text = string.Empty;
                 }
-                RebuildStreamRows();
+                else if (picker.SelectedItem is SimpleLookup existing)
+                {
+                    pending.Add(existing);
+                    pendingTeachers.Add(null);
+                    sourceList.Remove(existing);
+                    picker.SelectedItem = null;
+                }
+                RebuildStreamChips();
             }
 
-            var addBtn = new Button { Content = "Add →" };
+            var addBtn = new Button { Content = "Add →", Style = (Style)Application.Current.Resources["SecondaryButtonStyle"] };
             addBtn.Click += AddClick;
 
             var assignRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -548,11 +794,12 @@ namespace AutoTable.Views
             {
                 Text = title,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Margin = new Thickness(0, 8, 0, 0)
+                Margin = new Thickness(0, 8, 0, 0),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xE0, 0xE0, 0xE0))
             });
             panel.Children.Add(assignRow);
             panel.Children.Add(newRow);
-            panel.Children.Add(streamsContainer);
+            panel.Children.Add(chipsHost);
             return panel;
         }
 

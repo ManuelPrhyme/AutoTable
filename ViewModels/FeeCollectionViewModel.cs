@@ -13,8 +13,8 @@ namespace AutoTable.ViewModels
     {
         private readonly IDataService _dataService;
 
-        [ObservableProperty] private string _selectedClass = "P5";
-        [ObservableProperty] private string _selectedTerm = "Term 2, 2025";
+        [ObservableProperty] private string _selectedClass = "All";
+        [ObservableProperty] private string _selectedTerm = "All";
         [ObservableProperty] private string _selectedStatus = "All";
         [ObservableProperty] private string _statusMessage = string.Empty;
 
@@ -36,8 +36,11 @@ namespace AutoTable.ViewModels
             _ = InitializeAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => _ = Load();
-        partial void OnSelectedTermChanged(string value) => _ = Load();
+        // Suppress auto-load while InitializeAsync populates the lists
+        private bool _suppressLoad;
+
+        partial void OnSelectedClassChanged(string value) { if (!_suppressLoad) _ = Load(); }
+        partial void OnSelectedTermChanged(string value) { if (!_suppressLoad) _ = Load(); }
 
         [RelayCommand]
         private async Task Refresh() => await Load();
@@ -47,12 +50,28 @@ namespace AutoTable.ViewModels
 
         private async Task InitializeAsync()
         {
+            _suppressLoad = true;
+            Classes.Clear();
+            Classes.Add("All");
             var classes = await _dataService.GetClassesAsync();
             foreach (var c in classes) Classes.Add(c.Name);
 
+            Terms.Clear();
+            Terms.Add("All");
             var terms = await _dataService.GetTermsAsync();
             foreach (var t in terms) Terms.Add(t);
 
+            // Default to the active term if one exists
+            var activeTerm = await _dataService.GetActiveTermAsync();
+            if (activeTerm != null && Terms.Contains(activeTerm.Name))
+                SelectedTerm = activeTerm.Name;
+            else if (Terms.Count > 1)
+                SelectedTerm = Terms[1];
+
+            if (Classes.Count > 1)
+                SelectedClass = Classes[1];
+
+            _suppressLoad = false;
             await Load();
         }
 
@@ -65,35 +84,37 @@ namespace AutoTable.ViewModels
             FeeRecords.Clear();
             var errors = new System.Collections.Generic.List<string>();
 
-            // Resolve class and term independently — a failure in one must not block the other.
+            // Resolve class filter ("All" = no filter)
             AutoTable.Models.SimpleLookup? cls = null;
+            bool showAllClasses = string.Equals(SelectedClass, "All", StringComparison.OrdinalIgnoreCase);
             try
             {
                 var classes = await _dataService.GetClassesAsync();
-                cls = classes.FirstOrDefault(c => string.Equals(c.Name, SelectedClass, StringComparison.OrdinalIgnoreCase));
+                if (!showAllClasses)
+                    cls = classes.FirstOrDefault(c => string.Equals(c.Name, SelectedClass, StringComparison.OrdinalIgnoreCase));
             }
             catch (System.Exception ex) { errors.Add("classes: " + ex.Message); }
 
+            // Resolve term filter ("All" = no filter)
             AutoTable.Models.SimpleLookup? term = null;
+            bool showAllTerms = string.Equals(SelectedTerm, "All", StringComparison.OrdinalIgnoreCase);
             try
             {
                 var termLookups = await _dataService.GetTermLookupsAsync();
-                term = termLookups.FirstOrDefault(t => string.Equals(t.Name, SelectedTerm, StringComparison.OrdinalIgnoreCase));
+                if (!showAllTerms)
+                    term = termLookups.FirstOrDefault(t => string.Equals(t.Name, SelectedTerm, StringComparison.OrdinalIgnoreCase));
             }
             catch (System.Exception ex) { errors.Add("terms: " + ex.Message); }
 
-            // Expected fee
-            double expected = 0;
+            // Term fees (all, so we can look up per-student expected amounts)
+            var allTermFees = new System.Collections.Generic.List<AutoTable.Models.TermFee>();
             try
             {
-                var termFees = await _dataService.GetTermFeesAsync();
-                expected = (cls != null && term != null)
-                    ? termFees.FirstOrDefault(tf => tf.ClassId == cls.Id && tf.TermId == term.Id)?.Amount ?? 0
-                    : 0;
+                allTermFees = (await _dataService.GetTermFeesAsync()).ToList();
             }
             catch (System.Exception ex) { errors.Add("term fees: " + ex.Message); }
 
-            // Payments
+            // Payments scoped to selected filters
             System.Collections.Generic.IReadOnlyList<AutoTable.Models.FeePaymentSummary> payments = Array.Empty<AutoTable.Models.FeePaymentSummary>();
             try
             {
@@ -117,6 +138,19 @@ namespace AutoTable.ViewModels
             int i = 1;
             foreach (var s in roster)
             {
+                // Per-student expected amount: look up the TermFee for THIS student's class + selected term
+                double studentExpected = 0;
+                if (s.ClassId != null)
+                {
+                    if (term != null)
+                        studentExpected = allTermFees.FirstOrDefault(tf => tf.ClassId == s.ClassId && tf.TermId == term.Id)?.Amount ?? 0;
+                    else if (showAllTerms)
+                    {
+                        // When showing all terms, sum all term fees for this student's class
+                        studentExpected = allTermFees.Where(tf => tf.ClassId == s.ClassId).Sum(tf => tf.Amount);
+                    }
+                }
+
                 var studentPayments = payments.Where(p => p.StudentId == s.Id).ToList();
                 var paid = studentPayments.Sum(p => p.Amount);
 
@@ -125,10 +159,10 @@ namespace AutoTable.ViewModels
                     RowNumber = i++,
                     StudentName = s.FullName,
                     AdmissionNumber = s.LIN ?? string.Empty,
-                    ClassName = s.ClassName ?? SelectedClass,
-                    ExpectedAmount = (decimal)expected,
+                    ClassName = s.ClassName ?? (cls?.Name ?? "-"),
+                    ExpectedAmount = (decimal)studentExpected,
                     PaidAmount = (decimal)paid,
-                    Term = SelectedTerm,
+                    Term = showAllTerms ? "All Terms" : (term?.Name ?? "-"),
                     PaymentDate = studentPayments.Count > 0
                         ? studentPayments.Max(p => p.PaymentDate).ToString("dd MMM yyyy")
                         : "-"
