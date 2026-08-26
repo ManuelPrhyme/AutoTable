@@ -135,6 +135,9 @@ namespace AutoTable.Services
             };
             db.FeePayments.Add(fee);
             await db.SaveChangesAsync();
+
+            // Process overpayment → create/update credit record
+            await ProcessOverpaymentCreditAsync(db, studentId, termId);
         }
 
         public async Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null)
@@ -233,6 +236,285 @@ namespace AutoTable.Services
                 TermName = fp.Term?.Name ?? string.Empty,
                 Description = fp.Description
             }).ToList();
+        }
+
+        public async Task<IReadOnlyList<AutoTable.Models.DefaulterRecord>> GetDefaultersAsync(int? termId = null, int? classId = null, decimal? minBalance = null)
+        {
+            using var db = CreateContext();
+
+            var studentsQuery = db.Students
+                .Include(s => s.Class)
+                .Where(s => s.IsActive)
+                .AsQueryable();
+
+            if (classId.HasValue)
+                studentsQuery = studentsQuery.Where(s => s.ClassId == classId.Value);
+
+            var students = await studentsQuery.ToListAsync();
+
+            var termFeesQuery = db.TermFees.AsQueryable();
+            if (termId.HasValue)
+                termFeesQuery = termFeesQuery.Where(tf => tf.TermId == termId.Value);
+            var termFees = await termFeesQuery.ToListAsync();
+
+            var paymentsQuery = db.FeePayments.AsQueryable();
+            if (termId.HasValue)
+                paymentsQuery = paymentsQuery.Where(fp => fp.TermId == termId.Value);
+            var payments = await paymentsQuery.ToListAsync();
+
+            var termIds = termFees.Select(tf => tf.TermId).Distinct().ToList();
+            var terms = await db.Terms.Where(t => termIds.Contains(t.Id)).ToListAsync();
+            var termDict = terms.ToDictionary(t => t.Id, t => t.Name);
+
+            var result = new List<AutoTable.Models.DefaulterRecord>();
+            foreach (var s in students)
+            {
+                if (s.ClassId == null) continue;
+
+                var expected = termFees
+                    .Where(tf => tf.ClassId == s.ClassId.Value)
+                    .Sum(tf => tf.Amount);
+
+                var paid = payments
+                    .Where(fp => fp.StudentId == s.Id)
+                    .Sum(fp => fp.Amount);
+
+                var balance = (decimal)(expected - paid);
+
+                if (minBalance.HasValue && balance < minBalance.Value) continue;
+                if (expected == 0) continue;
+
+                var termName = "All Terms";
+                if (termId.HasValue)
+                {
+                    var tfForTerm = termFees.FirstOrDefault(tf => tf.TermId == termId.Value && tf.ClassId == s.ClassId.Value);
+                    if (tfForTerm != null && termDict.TryGetValue(tfForTerm.TermId, out var tn))
+                        termName = tn;
+                }
+
+                result.Add(new AutoTable.Models.DefaulterRecord
+                {
+                    StudentId = s.Id,
+                    StudentName = s.FullName,
+                    AdmissionNumber = s.LIN ?? string.Empty,
+                    ClassId = s.ClassId,
+                    ClassName = s.Class?.Name ?? string.Empty,
+                    ExpectedAmount = (decimal)expected,
+                    PaidAmount = (decimal)paid,
+                    TermName = termName,
+                    DaysSinceEnrollment = (DateTime.UtcNow - s.CreatedAt).Days
+                });
+            }
+
+            return result.OrderByDescending(d => d.Balance).ToList();
+        }        public async Task<IReadOnlyList<AutoTable.Models.StudentCredit>> GetStudentCreditsAsync(int studentId)
+        {
+            using var db = CreateContext();
+            var credits = await db.StudentCredits
+                .Include(c => c.FromTerm)
+                .Include(c => c.AppliedToTerm)
+                .Where(c => c.StudentId == studentId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+            return credits.Select(c => new AutoTable.Models.StudentCredit
+            {
+                Id = c.Id,
+                StudentId = c.StudentId,
+                FromTermId = c.FromTermId,
+                FromTermName = c.FromTerm?.Name ?? string.Empty,
+                AppliedToTermId = c.AppliedToTermId,
+                AppliedToTermName = c.AppliedToTerm?.Name ?? string.Empty,
+                Amount = c.Amount,
+                CreatedAt = c.CreatedAt,
+                AppliedAt = c.AppliedAt,
+                Description = c.Description
+            }).ToList();
+        }
+
+        public async Task<double> GetAvailableCreditAsync(int studentId, int termId)
+        {
+            using var db = CreateContext();
+            // Sum all unapplied credits for this student that were created in terms
+            // BEFORE the given term (carry-forward from earlier terms).
+            var term = await db.Terms.FindAsync(termId);
+            if (term == null) return 0;
+
+            var available = await db.StudentCredits
+                .Where(c => c.StudentId == studentId && !c.AppliedAt.HasValue)
+                .ToListAsync();
+
+            return available.Sum(c => c.Amount);
+        }
+
+        /// <summary>
+        /// Internal helper: after a payment is recorded, check if total paid exceeds
+        /// the expected fee for that term. If so, create a credit record for the excess.
+        /// </summary>
+        private async Task ProcessOverpaymentCreditAsync(AppDbContext db, int studentId, int? termId)
+        {
+            if (!termId.HasValue) return;
+
+            var student = await db.Students.FindAsync(studentId);
+            if (student?.ClassId == null) return;
+
+            // Expected fee for this student's class in this term
+            var expected = await db.TermFees
+                .Where(tf => tf.ClassId == student.ClassId.Value && tf.TermId == termId.Value)
+                .Select(tf => tf.Amount)
+                .FirstOrDefaultAsync();
+
+            if (expected <= 0) return;
+
+            // Total paid for this student in this term
+            var totalPaid = await db.FeePayments
+                .Where(fp => fp.StudentId == studentId && fp.TermId == termId.Value)
+                .SumAsync(fp => fp.Amount);
+
+            // Total existing credits for this student (unapplied)
+            var existingCredits = await db.StudentCredits
+                .Where(c => c.StudentId == studentId && !c.AppliedAt.HasValue)
+                .SumAsync(c => c.Amount);
+
+            // Effective paid = payments + credits already applied
+            var effectivePaid = totalPaid + existingCredits;
+
+            // Overpayment = effective paid - expected
+            var overpayment = effectivePaid - expected;
+
+            // If overpayment > 0 and no existing unapplied credit for this term yet, create one
+            if (overpayment > 0)
+            {
+                var existingCredit = await db.StudentCredits
+                    .FirstOrDefaultAsync(c => c.StudentId == studentId && c.FromTermId == termId.Value && !c.AppliedAt.HasValue);
+
+                if (existingCredit == null)
+                {
+                    db.StudentCredits.Add(new StudentCreditEntity
+                    {
+                        StudentId = studentId,
+                        FromTermId = termId.Value,
+                        Amount = overpayment,
+                        CreatedAt = DateTime.UtcNow,
+                        Description = $"Overpayment carry-forward from Term {termId.Value}"
+                    });
+                    await db.SaveChangesAsync();
+                }
+                else
+                {
+                    // Update existing credit amount if overpayment changed
+                    existingCredit.Amount = overpayment;
+                    await db.SaveChangesAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Internal helper: apply available credits to a term's balance.
+        /// When a student has unapplied credits, mark them as applied to the current term.
+        /// </summary>
+        private async Task ApplyCreditsToTermAsync(AppDbContext db, int studentId, int termId)
+        {
+            var unapplied = await db.StudentCredits
+                .Where(c => c.StudentId == studentId && !c.AppliedAt.HasValue)
+                .ToListAsync();
+
+            foreach (var credit in unapplied)
+            {
+                credit.AppliedToTermId = termId;
+                credit.AppliedAt = DateTime.UtcNow;
+            }
+
+            if (unapplied.Count > 0)
+                await db.SaveChangesAsync();
+        }
+
+        public async Task<IReadOnlyList<AutoTable.Models.CohortSummary>> GetCohortSummariesAsync(int? termId = null)
+        {
+            using var db = CreateContext();
+
+            var students = await db.Students
+                .Include(s => s.Class)
+                .Where(s => s.IsActive)
+                .ToListAsync();
+
+            var termFeesQuery = db.TermFees.AsQueryable();
+            if (termId.HasValue)
+                termFeesQuery = termFeesQuery.Where(tf => tf.TermId == termId.Value);
+            var termFees = await termFeesQuery.ToListAsync();
+
+            var paymentsQuery = db.FeePayments.AsQueryable();
+            if (termId.HasValue)
+                paymentsQuery = paymentsQuery.Where(fp => fp.TermId == termId.Value);
+            var payments = await paymentsQuery.ToListAsync();
+
+            // Group students by class
+            var classGroups = students
+                .Where(s => s.ClassId != null)
+                .GroupBy(s => new { s.ClassId, ClassName = s.Class?.Name ?? "Unknown" })
+                .ToList();
+
+            var summaries = new List<AutoTable.Models.CohortSummary>();
+            decimal schoolExpected = 0, schoolCollected = 0;
+            int schoolPaid = 0, schoolPartial = 0, schoolUnpaid = 0, schoolTotal = 0;
+
+            foreach (var grp in classGroups)
+            {
+                var classIdVal = grp.Key.ClassId!.Value;
+                var className = grp.Key.ClassName;
+                var classStudents = grp.ToList();
+
+                var expected = termFees
+                    .Where(tf => tf.ClassId == classIdVal)
+                    .Sum(tf => tf.Amount);
+
+                int paid = 0, partial = 0, unpaid = 0;
+                decimal collected = 0;
+
+                foreach (var s in classStudents)
+                {
+                    var studentPaid = payments
+                        .Where(fp => fp.StudentId == s.Id)
+                        .Sum(fp => fp.Amount);
+                    collected += (decimal)studentPaid;
+
+                    var balance = (decimal)expected - (decimal)studentPaid;
+                    if (balance <= 0) paid++;
+                    else if (studentPaid > 0) partial++;
+                    else unpaid++;
+                }
+
+                summaries.Add(new AutoTable.Models.CohortSummary
+                {
+                    Label = className,
+                    TotalStudents = classStudents.Count,
+                    PaidCount = paid,
+                    PartialCount = partial,
+                    UnpaidCount = unpaid,
+                    TotalExpected = (decimal)(expected * classStudents.Count),
+                    TotalCollected = collected
+                });
+
+                schoolExpected += (decimal)(expected * classStudents.Count);
+                schoolCollected += collected;
+                schoolPaid += paid;
+                schoolPartial += partial;
+                schoolUnpaid += unpaid;
+                schoolTotal += classStudents.Count;
+            }
+
+            // Add school-wide summary at the top
+            summaries.Insert(0, new AutoTable.Models.CohortSummary
+            {
+                Label = "School-wide",
+                TotalStudents = schoolTotal,
+                PaidCount = schoolPaid,
+                PartialCount = schoolPartial,
+                UnpaidCount = schoolUnpaid,
+                TotalExpected = schoolExpected,
+                TotalCollected = schoolCollected
+            });
+
+            return summaries;
         }
 
         public async Task<AutoTable.Models.AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
@@ -1344,6 +1626,37 @@ namespace AutoTable.Services
             db.Classes.Add(c);
             await db.SaveChangesAsync();
             return new AutoTable.Models.SimpleLookup { Id = c.Id, Name = c.Name };
+        }
+
+        public async Task UpdateClassAsync(int classId, string name, int? classTeacherId, int? gradingSystemId)
+        {
+            using var db = CreateContext();
+            var c = await db.Classes.FindAsync(classId);
+            if (c == null) throw new InvalidOperationException("Class not found.");
+
+            // Validate name uniqueness (excluding this class)
+            if (!string.IsNullOrWhiteSpace(name) && !string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                if (await db.Classes.AnyAsync(x => x.Id != classId && x.Name == name))
+                    throw new InvalidOperationException("Another class with that name already exists.");
+                c.Name = name.Trim();
+            }
+
+            // Validate and set class teacher
+            if (classTeacherId.HasValue)
+            {
+                var teacher = await db.Users.FindAsync(classTeacherId.Value);
+                if (teacher == null || teacher.Role != "Teacher")
+                    throw new InvalidOperationException("Selected class teacher was not found among teachers.");
+            }
+            c.ClassTeacherId = classTeacherId;
+
+            // Validate and set grading system
+            if (gradingSystemId.HasValue && !await db.GradingSystems.AnyAsync(g => g.Id == gradingSystemId.Value))
+                throw new InvalidOperationException("Selected grading system was not found.");
+            c.GradingSystemId = gradingSystemId;
+
+            await db.SaveChangesAsync();
         }
 
         public async Task<IReadOnlyDictionary<int, string>> GetClassGradingSystemNamesAsync()

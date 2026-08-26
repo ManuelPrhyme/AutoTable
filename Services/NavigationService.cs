@@ -27,6 +27,7 @@ namespace AutoTable.Services
             // Financials
             ["FinDashboard"]       = typeof(Views.FinancialsDashboardView),
             ["FeeCollection"]      = typeof(Views.FeeCollectionView),
+            ["Defaulters"]         = typeof(Views.DefaultersAnalyticsView),
             ["Budget"]             = typeof(Views.BudgetView),
             // Administration
             ["Students"]           = typeof(Views.StudentsView),

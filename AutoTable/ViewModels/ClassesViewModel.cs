@@ -38,6 +38,8 @@ namespace AutoTable.ViewModels
             // Build ClassInfos with streams, subjects, student counts, class teacher and grading system
             var teacherNames = await _dataService.GetClassTeacherNamesAsync();
             var gradingNames = await _dataService.GetClassGradingSystemNamesAsync();
+            // Resolve teacher and grading system IDs for each class
+            var allClasses = await _dataService.GetClassesAsync();
             foreach (var c in classes)
             {
                 var streamsForClass = await _dataService.GetStreamsForClassAsync(c.Id);
@@ -55,6 +57,9 @@ namespace AutoTable.ViewModels
                 };
                 ClassInfos.Add(info);
             }
+            // Resolve ClassTeacherId and GradingSystemId from the raw class lookups
+            // (GetClassesAsync returns SimpleLookup with Id+Name only, so we query the DB for the IDs)
+            await ResolveClassMetadataIds(ClassInfos);
 
             var allSubjects = await _dataService.GetSubjectsAsync();
             AllSubjects.Clear();
@@ -94,6 +99,11 @@ namespace AutoTable.ViewModels
         public async Task DeleteClassAsync(int classId)
         {
             await _dataService.DeleteClassAsync(classId);
+        }
+
+        public async Task UpdateClassAsync(int classId, string name, int? classTeacherId, int? gradingSystemId)
+        {
+            await _dataService.UpdateClassAsync(classId, name, classTeacherId, gradingSystemId);
         }
 
         public async Task CreateSubjectAsync(string name)
@@ -141,6 +151,38 @@ namespace AutoTable.ViewModels
         public async Task RemoveSubjectFromClassAsync(int classId, int subjectId)
         {
             await _dataService.RemoveSubjectFromClassAsync(classId, subjectId);
+        }
+
+        /// <summary>
+        /// Resolves ClassTeacherId and GradingSystemId for each ClassInfo by looking
+        /// them up from the raw class SimpleLookup IDs (which are the same as the DB IDs).
+        /// Uses GetClassTeacherNamesAsync and GetClassGradingSystemNamesAsync which
+        /// return dictionaries keyed by class ID, but we need the actual foreign key IDs.
+        /// This queries the underlying DB directly via the data service.
+        /// </summary>
+        private async Task ResolveClassMetadataIds(System.Collections.Generic.IReadOnlyList<AutoTable.Models.ClassInfo> infos)
+        {
+            // We already have teacher/grading names but need the actual IDs.
+            // The data service exposes GetClassGradingSystemAsync which returns the grading
+            // system info including its ID. For teachers we can infer from teacher name matching,
+            // but a cleaner approach is to query once per class.
+            var teachers = await _dataService.GetTeachersAsync();
+            foreach (var info in infos)
+            {
+                // Resolve teacher ID from name
+                if (!string.IsNullOrEmpty(info.ClassTeacherName))
+                {
+                    info.ClassTeacherId = teachers.FirstOrDefault(t =>
+                        string.Equals(t.FullName, info.ClassTeacherName, StringComparison.OrdinalIgnoreCase))?.Id;
+                }
+                // Resolve grading system ID from name
+                if (!string.IsNullOrEmpty(info.GradingSystemName))
+                {
+                    var allSystems = await _dataService.GetGradingSystemsAsync();
+                    info.GradingSystemId = allSystems.FirstOrDefault(g =>
+                        string.Equals(g.Name, info.GradingSystemName, StringComparison.OrdinalIgnoreCase))?.Id;
+                }
+            }
         }
     }
 }

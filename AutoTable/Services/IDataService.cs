@@ -64,6 +64,7 @@ namespace AutoTable.Services
         // Class creation: any teacher (registered or student teacher) may be assigned,
         // and the class is tied to a grading system (falls back to school default when null).
         Task<AutoTable.Models.SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null, int? gradingSystemId = null);
+        Task UpdateClassAsync(int classId, string name, int? classTeacherId, int? gradingSystemId);
         Task<IReadOnlyDictionary<int, string>> GetClassTeacherNamesAsync();
         Task<IReadOnlyDictionary<int, string>> GetClassGradingSystemNamesAsync();
         Task DeleteClassAsync(int classId);
@@ -110,6 +111,14 @@ namespace AutoTable.Services
 
         // Fee payment reads (Phase 5)
         Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null);
+
+        // Defaulters / cohort finance analytics (P5.5)
+        Task<IReadOnlyList<AutoTable.Models.DefaulterRecord>> GetDefaultersAsync(int? termId = null, int? classId = null, decimal? minBalance = null);
+        Task<IReadOnlyList<AutoTable.Models.CohortSummary>> GetCohortSummariesAsync(int? termId = null);
+
+        // Student credits (overpayment carry-forward)
+        Task<IReadOnlyList<AutoTable.Models.StudentCredit>> GetStudentCreditsAsync(int studentId);
+        Task<double> GetAvailableCreditAsync(int studentId, int termId);
 
         // Teacher CRUD (maps to UserEntity with Role="Teacher")
         Task<IReadOnlyList<AutoTable.Models.Teacher>> GetTeachersAsync();

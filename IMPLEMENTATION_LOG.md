@@ -180,6 +180,37 @@ paper that decides promotion). The report card uses the explicit role instead of
 
 ---
 
+### P5.5 — Defaulters & Cohort Finance Analytics ✅ DONE
+
+**Goal:** Track unpaid fees, collection rates, and per-class cohort performance.
+Top-N defaulters sorted by balance, cohort summary with paid/partial/unpaid breakdowns.
+
+#### Files Changed
+
+| File | Change |
+|------|--------|
+| `Models/FinancialModels.cs` | Added `DefaulterRecord` (StudentId, ExpectedAmount, PaidAmount, Balance, PercentPaid, Status, DaysSinceEnrollment + display properties) and `CohortSummary` (TotalStudents, PaidCount, PartialCount, UnpaidCount, TotalExpected, TotalCollected, CollectionRate, PaidPercent + display property) |
+| `AutoTable/Services/IDataService.cs` | Added `GetDefaultersAsync(int? termId, int? classId, decimal? minBalance)` and `GetCohortSummariesAsync(int? termId)` |
+| `AutoTable/Services/DatabaseDataService.cs` | Implemented both methods: GetDefaultersAsync queries active students × term fees × payments, computes per-student balance, filters by min balance, sorts descending. GetCohortSummariesAsync groups students by class, computes paid/partial/unpaid counts and collection rate per class + school-wide aggregate. |
+| `Demo/MockDataServiceAdapter.cs` | Added stubs for both methods |
+| `ViewModels/DefaultersAnalyticsViewModel.cs` | New ViewModel with term/class/min-balance filters, KPI cards (Total Defaulters, Total Owed, Collection Rate, Students/Paid/Partial/Unpaid), Defaulters list, Cohort Summaries collection |
+| `Views/DefaultersAnalyticsView.xaml` | New page: filters row (term/class/min-balance), KPI row 1 (defaulters overview), KPI row 2 (cohort breakdown), two-column layout (defaulters list left, cohort summary right) |
+| `Views/DefaultersAnalyticsView.xaml.cs` | Code-behind with DataContext binding and MinBalanceBox TextChanged handler |
+| `Services/NavigationService.cs` | Added `"Defaulters"` route → `DefaultersAnalyticsView` |
+| `Views/ShellView.xaml` | Added "Defaulters" sidebar button with &#xE7BA; glyph |
+
+#### How It Works
+
+1. **Filters:** Term selector (All Terms / specific term), Class selector (All / specific class), Min Balance filter (type a minimum balance to show only students who owe at least that amount).
+2. **KPI cards:** Total Defaulters (count), Total Owed (sum of balances), Collection Rate (%), Students/Paid/Partial/Unpaid counts — all scoped to selected filters.
+3. **Defaulters list:** Sorted by balance descending (worst defaulters first). Shows student name, LIN, class, expected amount, paid amount, balance.
+4. **Cohort summary:** Per-class breakdown of paid/partial/unpaid counts and collection rate. School-wide aggregate at the top. All scoped to selected term.
+
+#### Verification
+- `dotnet build AutoTable.csproj -p:Platform=x64` → **0 errors**
+
+---
+
 ### Class Management: Immediate Subject/Stream Persistence + Streams Add Button Fix ✅ DONE
 
 **Problem:** Three issues:
@@ -226,7 +257,7 @@ These changes are in the working tree but not yet committed. They cover:
 | P5.2 | Promotion/repeat flow | ✅ **DONE** | Full UI with promote/repeat/shift/reset + batch "Process All"; uses `GradeFromBands` + `CheckPromotionalPass` |
 | P5.3 | Grade resolution via grading systems | ✅ **DONE** | `GradeFromBands` replaces `GradeFromAverage` everywhere |
 | P5.4 | Admin role-gating | 📋 **PLANNED** | Workflow documented in WAY_FORWARD_PLAN.md; awaiting user signal |
-| P5.5 | Defaulters / cohort analytics | 🔴 NOT STARTED | Top-N defaulters, % paid within window |
+| P5.5 | Defaulters / cohort analytics | ✅ **DONE** | Full page with defaulter list, cohort summary, KPI cards, filters |
 | P5.6 | Mid-term slips | 🔴 NOT STARTED | 3–4 per A4 slip layout |
 | P5.7 | Active-term enforcement | 🔴 NOT STARTED | Block writes when no active term |
 | — | Class edit modal + streams/subjects UI | ✅ **DONE** | White chips with ✕ buttons; EditClass modal for add/remove |
@@ -235,8 +266,10 @@ These changes are in the working tree but not yet committed. They cover:
 | — | Record Payment modal white text | ✅ **DONE** | All text and links in white on dark dialog |
 | — | LIN uniqueness gap fix | ✅ **DONE** | 3-layer defense: UI pre-validation, staging guard, service check |
 | — | Immediate subject/stream persistence + streams Add button fix | ✅ **DONE** | Items persisted to DB on Add click; priority logic fixed; styled buttons |
-
----
+| — | Edit Class modal: name, teacher, grading system | ✅ **DONE** | Full class metadata editing (name, teacher, grading system) + streams/subjects |
+| — | Defaulters & Cohort Analytics (P5.5) | ✅ **DONE** | New page with defaulter list, cohort summary, KPI cards, term/class filters |
+| — | Student credit carry-forward | ✅ **DONE** | Overpayment credits auto-created, applied to next term balances |
+| — | Top 10 worst defaulters + CSV export + bar chart | ✅ **DONE** | Highlight card, export button, collection rate chart on Defaulters page |
 
 ## Key Patterns & Conventions
 
@@ -284,11 +317,10 @@ else (legacy):
 
 ## Next Actions (suggested order)
 
-1. **Commit current work** — all uncommitted changes (grading/analytics/fees/P5.1/P5.2/P5.3/TermFees/ClassEdit/FinDashboard/FeeCollection/LIN)
+1. **Commit current work** — all uncommitted changes (grading/analytics/fees/P5.1/P5.2/P5.3/P5.5/TermFees/ClassEdit/FinDashboard/FeeCollection/LIN)
 2. **P5.4: Admin role-gating** — extend Moderation's gate pattern to Term/Classes/Budget (documented in WAY_FORWARD_PLAN.md)
-3. **P5.5: Defaulters / cohort analytics** — top-N defaulters, % paid within window
-4. **P5.6: Mid-term slips** — 3–4 per A4 slip layout
-5. **P5.7: Active-term enforcement** — block writes when no active term
+3. **P5.6: Mid-term slips** — 3–4 per A4 slip layout
+4. **P5.7: Active-term enforcement** — block writes when no active term
 
 ---
 
@@ -302,6 +334,8 @@ else (legacy):
 | 26 Aug | Financial Dashboard merge | Merged Term Management KPIs into Financial Dashboard with term selector |
 | 26 Aug | Fee Collection fix | Per-student expected amounts, active-term defaults, Record Payment modal white text |
 | 26 Aug | LIN uniqueness gap | 3-layer defense against orphaned enrollment records |
+| 26 Aug | P5.5 Defaulters Analytics | Full page with defaulter list, cohort summary, KPI cards, term/class filters |
+| 26 Aug | Credit carry-forward + defaulters enhancements | Overpayment auto-credit, top-10 highlight, CSV export, bar chart |
 
 ---
 

@@ -93,6 +93,18 @@ namespace AutoTable.Demo
         public Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null)
             => Task.FromResult<IReadOnlyList<AutoTable.Models.FeePaymentSummary>>(Array.Empty<AutoTable.Models.FeePaymentSummary>());
 
+        public Task<IReadOnlyList<AutoTable.Models.DefaulterRecord>> GetDefaultersAsync(int? termId = null, int? classId = null, decimal? minBalance = null)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.DefaulterRecord>>(Array.Empty<AutoTable.Models.DefaulterRecord>());
+
+        public Task<IReadOnlyList<AutoTable.Models.CohortSummary>> GetCohortSummariesAsync(int? termId = null)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.CohortSummary>>(Array.Empty<AutoTable.Models.CohortSummary>());
+
+        public Task<IReadOnlyList<AutoTable.Models.StudentCredit>> GetStudentCreditsAsync(int studentId)
+            => Task.FromResult<IReadOnlyList<AutoTable.Models.StudentCredit>>(Array.Empty<AutoTable.Models.StudentCredit>());
+
+        public Task<double> GetAvailableCreditAsync(int studentId, int termId)
+            => Task.FromResult(0.0);
+
         public Task<IReadOnlyList<string>> GetTermsAsync()
             => Task.FromResult<IReadOnlyList<string>>(_mock.Terms);
 
@@ -161,6 +173,9 @@ namespace AutoTable.Demo
 
         public Task<SimpleLookup> CreateClassAsync(string name, int? classTeacherId = null, int? gradingSystemId = null)
             => Task.FromResult(new SimpleLookup { Id = 0, Name = name });
+
+        public Task UpdateClassAsync(int classId, string name, int? classTeacherId, int? gradingSystemId)
+            => Task.CompletedTask;
 
         public Task<IReadOnlyDictionary<int, string>> GetClassGradingSystemNamesAsync()
             => Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string>());

@@ -173,6 +173,27 @@ namespace AutoTable
                         }
                         catch { }
 
+                        // Create StudentCredits table for overpayment carry-forward
+                        try
+                        {
+                            using var cmdCredits = sqliteConnection.CreateCommand();
+                            cmdCredits.CommandText = @"CREATE TABLE IF NOT EXISTS StudentCredits (
+                                                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                        StudentId INTEGER NOT NULL,
+                                                        FromTermId INTEGER NOT NULL,
+                                                        AppliedToTermId INTEGER,
+                                                        Amount REAL NOT NULL,
+                                                        CreatedAt TEXT NOT NULL,
+                                                        AppliedAt TEXT,
+                                                        Description TEXT,
+                                                        FOREIGN KEY (StudentId) REFERENCES Students(Id),
+                                                        FOREIGN KEY (FromTermId) REFERENCES Terms(Id),
+                                                        FOREIGN KEY (AppliedToTermId) REFERENCES Terms(Id)
+                                                    );";
+                            cmdCredits.ExecuteNonQuery();
+                        }
+                        catch { /* best-effort */ }
+
                         // Ensure compatibility with older DBs: add missing Stream/ClassStreams table or Student.StreamId column if absent.
                         try
                         {

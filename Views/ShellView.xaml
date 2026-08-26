@@ -221,6 +221,15 @@
                         </StackPanel>
                     </Button>
 
+                    <Button x:Name="NavDefaulters" Tag="Defaulters" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE7BA;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Defaulters" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
                     <Button x:Name="NavBudget" Tag="Budget" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">

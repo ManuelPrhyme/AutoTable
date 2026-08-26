@@ -58,6 +58,21 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 - **Next of kin display** — Reformatted from bullet-separated to "Name (Relationship)" with phone below. Added NextOfKinDisplay computed property to Teacher model.
 - **Context report updates** — Synced with latest commits and verification.
 
+### Session Enhancements (26 Aug 2026)
+- **P5.1 Assessment promotion role** — Tri-state enum (None/CountsTowardPromotion/PromotionExam) + entity column + creation dialog ComboBox + report card classification with legacy fallback
+- **P5.2 Promotion/repeat flow** — Full UI with promote/repeat/shift/reset buttons + batch ProcessAllPromotionsAsync + Process All button; GetPromotionOverviewAsync updated to use GradeFromBands + CheckPromotionalPass
+- **P5.3 Grade resolution** — GradeFromBands replaces GradeFromAverage in Gradebook, StudentPerformanceDetail, ReportCards, and Promotion Overview
+- **Class edit modal enhancement** — Now supports editing class name, teacher, and grading system (not just streams/subjects); UpdateClassAsync service method validates name uniqueness, teacher, and grading system
+- **Immediate subject/stream persistence** — New items saved to DB on Add click via createItemAsync callback; real IDs returned immediately
+- **Streams Add button fix** — Priority logic corrected (newBox.Text checked first, then picker); button styled with SecondaryButtonStyle
+- **TermFees table migration** — CREATE TABLE IF NOT EXISTS TermFees with unique index on (TermId, ClassId)
+- **School-wide KPI cards** — 5 KPI cards (Expected/Collected/Outstanding/Rate/Students) in Term Management, refresh on term selection and fee changes
+- **Financial Dashboard KPI merge** — Term selector + 9 merged KPI cards from Term Management into Financial Dashboard
+- **Fee Collection per-student amounts** — ExpectedAmount looked up per-student by ClassId + TermId; active-term defaults; All class/term filter options
+- **Record Payment modal white text** — All 7 color changes from dark to white; dropdown background dark (#2A2A2A)
+- **LIN uniqueness gap fix** — IsLinTakenAsync + 3-layer defense (UI pre-validation, staging guard, service check)
+- **Context documents** — IMPLEMENTATION_LOG.md created and maintained; AGENT_CONTEXT.md, WAY_FORWARD_PLAN.md, CONTEXT_REPORT.md updated with all changes
+
 ### Session Enhancements (25 Aug 2026)
 - **Database connection architecture fix** — Root cause of all database integrations being disrupted: a single shared SqliteConnection was passed to UseSqlite(), causing all DbContext instances to compete for the same connection. Switched to connection string so each context gets its own connection from the pool.
 - **ForeignKeyInterceptor** — New DbConnectionInterceptor that runs PRAGMA foreign_keys = ON on every new connection opened by EF Core. Required because the pragma is per-connection and each DbContext now opens its own.
@@ -75,11 +90,11 @@ Key files: App.xaml.cs (startup, DB connection, registration), AutoTable/Data/Ap
 - **Build repairs** — Fixed a literal `\n` corruption at `AppDbContext.cs:24` that had broken compilation; removed an accidental duplicate `GradeBandEntity`; cleared stale generated `.g.cs`. Build verified green (0 errors).
 
 ### NOT DONE vs Operational Plan
-- EF Migrations verification and CI integration (startup uses EnsureCreated + ALTER TABLE patches; latest additions: GradingSystems, GradeBands, Classes.GradingSystemId)
+- EF Migrations verification and CI integration (startup uses EnsureCreated + ALTER TABLE patches; latest additions: GradingSystems, GradeBands, Classes.GradingSystemId, TermFees, Assessments.PromotionRole)
 - ~~Assessment promotion-role checkboxes~~ ✅ DONE (26 Aug): tri-state enum + entity column + creation dialog + report-card classification with legacy fallback
-- Grade resolution via grading systems — ✅ Code complete (26 Aug, uncommitted): `GradeFromBands` replaces hard-coded `GradeFromAverage` in Gradebook, StudentPerformanceDetail, and ReportCards
-- Promotion/repeat flow (Term-3 move-up, manual class shift) — service methods exist in IDataService; UI wiring needed
-- Admin role-gating for Term Management / Classes / Budget pages (only Moderation is gated)
+- ~~Grade resolution via grading systems~~ ✅ DONE (26 Aug): `GradeFromBands` replaces hard-coded `GradeFromAverage` in Gradebook, StudentPerformanceDetail, ReportCards, and Promotion Overview
+- ~~Promotion/repeat flow~~ ✅ DONE (26 Aug): ProcessAllPromotionsAsync + Process All button + GradeFromBands integration
+- Admin role-gating for Term Management / Classes / Budget pages (only Moderation is gated) — **PLANNED as P5.4**
 - Defaulters/cohort finance analytics; mid-term slips (3–4 per A4); global active-term enforcement
 
 ### BY DESIGN (not a gap)
@@ -652,3 +667,61 @@ Recommendations:
 - Remove the heuristic fallback in GetReportCardSheetAsync once all assessments have explicit roles
 - Add the promotion role as a filter option in the Assessments page
 Tags: feature, assessments, promotion-role, grading-systems, report-cards, schema
+
+---
+
+Iteration ID: iteration-2026-08-26-class-management-enhancements
+Timestamp: 2026-08-26T22:00:00+03:00
+Author: Buffy (Codebuff agent)
+Success Level: Success
+Operational Plan Reference: OPERATIONAL_PLAN.md; P5 backlog items
+Commits: (uncommitted)
+Files changed:
+- `Views/ClassesView.xaml.cs` — Immediate subject/stream persistence (createItemAsync callbacks), streams Add button priority fix, Edit Class modal with name/teacher/grading system fields
+- `Views/ClassesView.xaml` — Edit button column in class list
+- `AutoTable/Models/ClassInfo.cs` — Added ClassTeacherId and GradingSystemId properties
+- `AutoTable/Services/IDataService.cs` — Added UpdateClassAsync, ProcessAllPromotionsAsync, IsLinTakenAsync
+- `AutoTable/Services/DatabaseDataService.cs` — Implemented UpdateClassAsync (validates name uniqueness, teacher, grading system), ProcessAllPromotionsAsync, IsLinTakenAsync; GetPromotionOverviewAsync updated to use GradeFromBands + CheckPromotionalPass
+- `Demo/MockDataServiceAdapter.cs` — Stubs for new methods
+- `AutoTable/ViewModels/ClassesViewModel.cs` — Added UpdateClassAsync wrapper, ResolveClassMetadataIds helper
+- `AutoTable/ViewModels/PromotionViewModel.cs` — Added ProcessAllCommand
+- `Views/PromotionView.xaml` — Added Process All button
+- `ViewModels/TermManagementViewModel.cs` — StatusMessage, KPI properties, RefreshSchoolKpisAsync
+- `Views/TermManagementView.xaml` — KPI cards, SelectedTermLabel, fee context display
+- `Views/TermManagementView.xaml.cs` — Term selection wiring, fee pre-fill, KPI refresh
+- `App.xaml.cs` — TermFees CREATE TABLE IF NOT EXISTS migration
+- `ViewModels/FinancialsDashboardViewModel.cs` — Term selector, merged KPI cards
+- `Views/FinancialsDashboardView.xaml` — Term selector ComboBox, two-row KPI cards
+- `ViewModels/FeeCollectionViewModel.cs` — Per-student expected amounts, active-term defaults
+- `Views/FeeCollectionView.xaml.cs` — Record Payment modal white text, dark dropdown
+- `ViewModels/EnrollmentViewModel.cs` — LIN uniqueness pre-validation
+- `IMPLEMENTATION_LOG.md` — Updated with all session changes
+- `AGENT_CONTEXT.md` — Complete rewrite reflecting current state
+- `WAY_FORWARD_PLAN.md` — Marked P5.1/P5.2/P5.3/class-edit/subject-persistence as done
+Tests:
+- dotnet build AutoTable.csproj -p:Platform=x64 — Passed (0 errors)
+Aligned changes:
+- P5.1 assessment promotion role ✅ (done in earlier session)
+- P5.2 promotion/repeat flow ✅ (ProcessAllPromotionsAsync + Process All button)
+- P5.3 grade resolution ✅ (GradeFromBands replaces GradeFromAverage in promotion overview)
+- Class edit modal: name/teacher/grading system ✅
+- Immediate subject/stream persistence ✅
+- Streams Add button fix ✅
+- TermFees table migration ✅
+- Financial Dashboard KPI merge ✅
+- Fee Collection per-student amounts ✅
+- Record Payment modal white text ✅
+- LIN uniqueness gap fix ✅
+Impact Summary:
+- This session completed the entire P5.1/P5.2/P5.3 feature set (assessment promotion roles, promotion/repeat flow with batch processing, grade-from-bands integration). Additionally, class management was significantly enhanced: the edit modal now supports editing class name, teacher, and grading system (not just streams/subjects), subjects and streams are immediately persisted to the DB when added (not deferred), and the streams Add button was fixed with corrected priority logic. The financial dashboard now shows term-scoped KPIs merged from Term Management, and fee collection correctly computes per-student expected amounts based on their class and term.
+Next Actions:
+- 1. Commit all uncommitted changes
+- 2. P5.4: Admin role-gating for Class/Term/Budget pages
+- 3. P5.5: Defaulters/cohort finance analytics
+- 4. P5.6: Mid-term slips
+- 5. P5.7: Active-term enforcement
+Recommendations:
+- The uncommitted working tree now contains ~25+ files with significant feature additions. Committing soon is strongly recommended to avoid losing work.
+- P5.4 (admin role-gating) is the natural next step before P5.5-P5.7.
+- EF migrations should be consolidated before any production deploy.
+Tags: feature, class-management, grading-systems, promotion, fees, dashboard, fixes

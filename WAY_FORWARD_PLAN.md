@@ -38,14 +38,25 @@ into a fully reworked Class Management page where class creation happens in one 
 | Mock cleanup | ✅ DONE | Moved to `Demo/` folder, namespace `AutoTable.Demo` |
 | **A4 report-card sheet + native Windows printing** | ✅ DONE (24 Aug) | `Views/Controls/ReportCardSheetView.xaml`, `ReportCardsView.xaml.cs` PrintManager pipeline |
 | **Grading systems (entities, service CRUD, schema patches)** | ✅ DONE (24 Aug) | `AutoTable/Models/GradingSystemModels.cs`, `IDataService.cs`, `DatabaseDataService.cs`, `App.xaml.cs` startup patches |
-| **Grade resolution via grading systems (P5.3)** | ✅ Code complete (26 Aug, uncommitted) | `DatabaseDataService.cs` — `GradeFromBands` replacing `GradeFromAverage` in Gradebook, StudentPerformanceDetail, ReportCards |
+| **Grade resolution via grading systems (P5.3)** | ✅ DONE (26 Aug) | `DatabaseDataService.cs` — `GradeFromBands` replacing `GradeFromAverage` in Gradebook, StudentPerformanceDetail, ReportCards |
 | **Assessment promotion role (P5.1)** | ✅ DONE (26 Aug) | `Models/AssessmentItem.cs` enum + `AssessmentEntity.PromotionRole` column + creation dialog + report card classification |
-| **Report-card grading system integration** | ✅ Code complete (26 Aug, uncommitted) | `GetReportCardSheetAsync` resolves class → school default → fallback; `GradingSystemName` + `PassMark` on model |
+| **Promotion/repeat flow (P5.2)** | ✅ DONE (26 Aug) | Full UI with promote/repeat/shift/reset + batch "Process All"; uses `GradeFromBands` + `CheckPromotionalPass` |
+| **Report-card grading system integration** | ✅ DONE (26 Aug) | `GetReportCardSheetAsync` resolves class → school default → fallback; `GradingSystemName` + `PassMark` on model |
 | **Class creation single-modal rework** (name + any teacher incl. student teachers + grading system pick-or-create + streams/subjects assign-or-create) | ✅ DONE (24 Aug) | `Views/ClassesView.xaml(.cs)`, `AutoTable/ViewModels/ClassesViewModel.cs`; select-class detail card removed |
+| **Class edit modal** (name, teacher, grading system + streams/subjects) | ✅ DONE (26 Aug) | `OpenEditClassModalAsync` with full metadata editing; `UpdateClassAsync` service method |
+| **Immediate subject/stream persistence** | ✅ DONE (26 Aug) | New items saved to DB on Add click via `createItemAsync` callback |
+| **Streams Add button fix** | ✅ DONE (26 Aug) | Priority logic corrected (newBox first); button styled with SecondaryButtonStyle |
+| **TermFees table migration** | ✅ DONE (26 Aug) | `CREATE TABLE IF NOT EXISTS TermFees` in App.xaml.cs schema patches |
+| **School-wide KPI cards (Term Management)** | ✅ DONE (26 Aug) | 5 KPI cards (Expected/Collected/Outstanding/Rate/Students) per term |
+| **Financial Dashboard KPI merge** | ✅ DONE (26 Aug) | Term selector + merged 9 KPI cards from Term Management |
+| **Fee Collection per-student amounts** | ✅ DONE (26 Aug) | Expected/Paid/Balance computed per student/class/term |
+| **Record Payment modal white text** | ✅ DONE (26 Aug) | All text and links in white on dark dialog |
+| **LIN uniqueness gap fix** | ✅ DONE (26 Aug) | 3-layer defense: UI pre-validation, staging guard, service check |
+| **Defaulters & Cohort Analytics (P5.5)** | ✅ DONE (26 Aug) | Full page: defaulter list, cohort summary, KPI cards, term/class/min-balance filters |
 
 **Remaining gap:** EF migrations verification (startup uses EnsureCreated + ALTER TABLE patches; acceptable for now).
 
-**Next feature backlog** (documented in `OPERATIONAL_PLAN.md`): promotion/repeat flow with Term-3 promotional exams; per-assessment promotion-role checkboxes (none / contributory / promotional); admin role-gating for Term/Class/Budget pages; defaulters/cohort finance analytics; mid-term slips; global active-term enforcement.
+**Next feature backlog** (documented in `OPERATIONAL_PLAN.md`): admin role-gating for Term/Class/Budget pages; mid-term slips; global active-term enforcement.
 
 ---
 
@@ -289,9 +300,12 @@ grading systems") and the Prototype roadmap:
 4. ~~Class edit modal + streams/subjects UI fix~~ — **DONE** (26 Aug). EditClass modal, white chips with ✕ buttons.
 5. ~~Financial Dashboard KPI merge~~ — **DONE** (26 Aug). Term selector + merged KPI cards from Term Management.
 6. ~~Fee Collection per-student amounts~~ — **DONE** (26 Aug). Expected/Paid/Balance computed per student per class per term.
-7. Admin role-gating (P5.4) — **Planned.** Documented in WAY_FORWARD; awaiting user signal.
-8. Defaulters analytics (P5.5), then slips (P5.6), then active-term enforcement (P5.7).
-9. Maintenance: EF migrations verification before any production deploy.
+7. ~~Class edit modal: name, teacher, grading system~~ — **DONE** (26 Aug). Full metadata editing via UpdateClassAsync.
+8. ~~Immediate subject/stream persistence + streams Add button fix~~ — **DONE** (26 Aug). DB persistence on Add click.
+9. Admin role-gating (P5.4) — **Planned.** Documented in WAY_FORWARD; awaiting user signal.
+10. ~~Defaulters analytics (P5.5)~~ — **DONE** (26 Aug). Full page with defaulter list, cohort summary, KPI cards.
+11. Slips (P5.6), then active-term enforcement (P5.7).
+11. Maintenance: EF migrations verification before any production deploy.
 
 Historical order (all complete): Teachers page → assessment create dialog → marks persistence →
 moderation wiring → AI insights → fee read API + financial rewiring → tests/mock cleanup/docs sync →

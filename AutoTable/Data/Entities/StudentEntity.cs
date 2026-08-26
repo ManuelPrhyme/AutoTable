@@ -190,6 +190,29 @@ namespace AutoTable.Data.Entities
         public string? Description { get; set; }
     }
 
+    /// <summary>
+    /// Tracks overpayment credits carried forward from one term to the next.
+    /// When a student pays more than owed in a term, the excess is stored here
+    /// and automatically applied to the next term's balance.
+    /// </summary>
+    public class StudentCreditEntity
+    {
+        public int Id { get; set; }
+        public int StudentId { get; set; }
+        public StudentEntity? Student { get; set; }
+        /// <summary>The term where the overpayment occurred (source of the credit).</summary>
+        public int FromTermId { get; set; }
+        public TermEntity? FromTerm { get; set; }
+        /// <summary>The term this credit was applied to (null = unapplied).</summary>
+        public int? AppliedToTermId { get; set; }
+        public TermEntity? AppliedToTerm { get; set; }
+        public double Amount { get; set; }
+        public DateTime CreatedAt { get; set; }
+        /// <summary>When null, the credit is available; set when applied.</summary>
+        public DateTime? AppliedAt { get; set; }
+        public string? Description { get; set; }
+    }
+
     public class UserEntity
     {
         public int Id { get; set; }

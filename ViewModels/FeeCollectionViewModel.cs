@@ -154,6 +154,17 @@ namespace AutoTable.ViewModels
                 var studentPayments = payments.Where(p => p.StudentId == s.Id).ToList();
                 var paid = studentPayments.Sum(p => p.Amount);
 
+                // Apply available credits (overpayment carry-forward from previous terms)
+                double creditApplied = 0;
+                if (term != null)
+                {
+                    try
+                    {
+                        creditApplied = await _dataService.GetAvailableCreditAsync(s.Id, term.Id);
+                    }
+                    catch { /* credits table may not exist yet */ }
+                }
+
                 FeeRecords.Add(new FeeRecord
                 {
                     RowNumber = i++,
@@ -161,7 +172,7 @@ namespace AutoTable.ViewModels
                     AdmissionNumber = s.LIN ?? string.Empty,
                     ClassName = s.ClassName ?? (cls?.Name ?? "-"),
                     ExpectedAmount = (decimal)studentExpected,
-                    PaidAmount = (decimal)paid,
+                    PaidAmount = (decimal)(paid + creditApplied),
                     Term = showAllTerms ? "All Terms" : (term?.Name ?? "-"),
                     PaymentDate = studentPayments.Count > 0
                         ? studentPayments.Max(p => p.PaymentDate).ToString("dd MMM yyyy")

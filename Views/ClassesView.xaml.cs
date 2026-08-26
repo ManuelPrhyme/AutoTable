@@ -181,24 +181,74 @@ namespace AutoTable.Views
         }
 
         /// <summary>
-        /// Opens a modal to edit the given class: add/remove streams and subjects.
+        /// Opens a modal to edit the given class: name, class teacher, grading system,
+        /// add/remove streams and subjects.
         /// </summary>
         private async Task OpenEditClassModalAsync(ClassInfo cls)
         {
             var teachers = await AppServices.DataService!.GetTeachersAsync();
             await _vm.LoadAllStreamsAsync();
+            await _vm.LoadGradingSystemsAsync();
             await _vm.LoadSubjectsForClassAsync(cls.Id);
             var allSubjects = await AppServices.DataService.GetSubjectsAsync();
 
+            // --- Name field ---
+            var nameBox = new TextBox
+            {
+                Header = "Class name",
+                Text = cls.Name,
+                Width = 300
+            };
+
+            // --- Teacher picker ---
+            var teacherPicker = new ComboBox
+            {
+                Header = "Class teacher (registered or student teacher)",
+                Width = 300,
+                DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
+                ItemsSource = teachers,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+            if (cls.ClassTeacherId.HasValue)
+            {
+                var current = teachers.FirstOrDefault(t => t.Id == cls.ClassTeacherId.Value);
+                if (current != null) teacherPicker.SelectedItem = current;
+            }
+
+            // --- Grading system picker ---
+            var gsItems = new List<object>();
+            foreach (var g in _vm.GradingSystems) gsItems.Add(g);
+            gsItems.Add(NewGradingSystemOption);
+            var gsPicker = new ComboBox
+            {
+                Header = "Grading system",
+                Width = 300,
+                ItemsSource = gsItems,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+            // Pre-select the current grading system
+            if (cls.GradingSystemId.HasValue)
+            {
+                var currentGs = _vm.GradingSystems.FirstOrDefault(g => g.Id == cls.GradingSystemId.Value);
+                if (currentGs != null) gsPicker.SelectedItem = currentGs;
+                else gsPicker.SelectedIndex = 0;
+            }
+            else gsPicker.SelectedIndex = 0;
+
+            var (newGsPanel, gsNameBox, gsDefaultChk, gsPassMarkBox, _) = BuildGradingSystemEditor();
+            newGsPanel.Visibility = Visibility.Collapsed;
+            gsPicker.SelectionChanged += (_, _) =>
+                newGsPanel.Visibility = ReferenceEquals(gsPicker.SelectedItem, NewGradingSystemOption)
+                    ? Visibility.Visible : Visibility.Collapsed;
+
+            // --- Streams & subjects ---
             var currentStreams = new ObservableCollection<SimpleLookup>(_vm.StreamsForClass);
             var currentSubjects = new ObservableCollection<SimpleLookup>(_vm.SubjectsForClass);
             var pendingStreamTeachers = new List<int?>();
 
             // Resolve the current class teacher for default stream teacher
-            var classTeacherId = teachers.FirstOrDefault(t =>
-                string.Equals(t.FullName, cls.ClassTeacherName, StringComparison.OrdinalIgnoreCase))?.Id;
+            var classTeacherId = cls.ClassTeacherId;
 
-            // Build sections for streams and subjects
             var streamsSection = BuildStreamsSection(
                 $"Streams for {cls.Name}", _vm.AllStreams,
                 currentStreams, pendingStreamTeachers, teachers, classTeacherId,
@@ -208,14 +258,12 @@ namespace AutoTable.Views
                 currentSubjects,
                 createItemAsync: async name => await AppServices.DataService!.CreateSubjectAsync(name));
 
+            // --- Build dialog content ---
             var content = new StackPanel { Spacing = 12 };
-            content.Children.Add(new TextBlock
-            {
-                Text = $"Editing streams and subjects for {cls.Name}",
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                FontSize = 15,
-                Margin = new Thickness(0, 0, 0, 4)
-            });
+            content.Children.Add(nameBox);
+            content.Children.Add(teacherPicker);
+            content.Children.Add(gsPicker);
+            content.Children.Add(newGsPanel);
             foreach (var c in streamsSection.Children.ToList()) { streamsSection.Children.Remove(c); content.Children.Add(c); }
             content.Children.Add(new Border
             {
@@ -239,7 +287,7 @@ namespace AutoTable.Views
                 Content = new ScrollViewer
                 {
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    MaxHeight = 540,
+                    MaxHeight = 600,
                     Content = content
                 },
                 PrimaryButtonText = "Save Changes",
@@ -251,6 +299,23 @@ namespace AutoTable.Views
 
             try
             {
+                // --- Update class name, teacher, grading system ---
+                var newName = nameBox.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    await ShowErrorAsync("Class name required.", "Enter a name for the class.");
+                    return;
+                }
+                int? newTeacherId = teacherPicker.SelectedItem is AutoTable.Models.Teacher t ? t.Id : null;
+                int? newGsId = null;
+                if (gsPicker.SelectedItem is GradingSystemInfo existingGs)
+                    newGsId = existingGs.Id;
+                else if (ReferenceEquals(gsPicker.SelectedItem, NewGradingSystemOption))
+                    newGsId = (await CreateGradingSystemFromEditorAsync(gsNameBox.Text?.Trim(), gsDefaultChk.IsChecked == true,
+                        double.TryParse(gsPassMarkBox.Text, out var pm) ? pm : null)).Id;
+
+                await _vm.UpdateClassAsync(cls.Id, newName, newTeacherId, newGsId);
+
                 // --- Reconcile streams ---
                 var originalStreams = (await AppServices.DataService.GetStreamsForClassAsync(cls.Id)).ToList();
                 var finalStreamIds = currentStreams.Select(s => s.Id).ToHashSet();
