@@ -14,59 +14,60 @@
 
             <!-- FILTER BAR -->
             <Border Style="{ThemeResource FilterBarStyle}">
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="200" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <StackPanel Spacing="10">
+                    <!-- Row 1: Filters -->
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                    <!-- Academic Year -->
-                    <ComboBox Grid.Column="0" Header="Academic Year" MinWidth="130" Style="{ThemeResource ComboBoxStyle}"
-                              ItemsSource="{Binding AcademicYears}"
-                              SelectedItem="{Binding SelectedAcademicYear, Mode=TwoWay}" />
+                        <!-- Academic Year -->
+                        <ComboBox Grid.Column="0" Header="Academic Year" MinWidth="130" Style="{ThemeResource ComboBoxStyle}"
+                                  ItemsSource="{Binding AcademicYears}"
+                                  SelectedItem="{Binding SelectedAcademicYear, Mode=TwoWay}" />
 
-                    <!-- Term -->
-                    <ComboBox Grid.Column="1" Header="Term" MinWidth="140" Style="{ThemeResource ComboBoxStyle}"
-                              ItemsSource="{Binding Terms}"
-                              SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" />
+                        <!-- Term -->
+                        <ComboBox Grid.Column="1" Header="Term" MinWidth="140" Style="{ThemeResource ComboBoxStyle}"
+                                  ItemsSource="{Binding Terms}"
+                                  SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" />
 
-                    <!-- Class -->
-                    <ComboBox Grid.Column="2" Header="Class" MinWidth="100" Style="{ThemeResource ComboBoxStyle}"
-                              ItemsSource="{Binding Classes}"
-                              SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
+                        <!-- Class -->
+                        <ComboBox Grid.Column="2" Header="Class" MinWidth="100" Style="{ThemeResource ComboBoxStyle}"
+                                  ItemsSource="{Binding Classes}"
+                                  SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
 
-                    <!-- Stream -->
-                    <ComboBox Grid.Column="3" Header="Stream" MinWidth="120" Style="{ThemeResource ComboBoxStyle}"
-                              ItemsSource="{Binding Streams}"
-                              SelectedItem="{Binding SelectedStream, Mode=TwoWay}" />
+                        <!-- Stream -->
+                        <ComboBox Grid.Column="3" Header="Stream" MinWidth="120" Style="{ThemeResource ComboBoxStyle}"
+                                  ItemsSource="{Binding Streams}"
+                                  SelectedItem="{Binding SelectedStream, Mode=TwoWay}" />
 
-                    <!-- Student -->
-                    <ComboBox Grid.Column="4" Header="Student" MinWidth="160" Style="{ThemeResource ComboBoxStyle}"
-                              ItemsSource="{Binding AllStudents}"
-                              SelectedItem="{Binding SelectedStudent, Mode=TwoWay}" />
+                        <!-- Student -->
+                        <ComboBox Grid.Column="4" Header="Student" MinWidth="160" Style="{ThemeResource ComboBoxStyle}"
+                                  ItemsSource="{Binding AllStudents}"
+                                  SelectedItem="{Binding SelectedStudent, Mode=TwoWay}" />
 
-                    <!-- Subject -->
-                    <ComboBox Grid.Column="5" Header="Subject" MinWidth="160" Style="{ThemeResource ComboBoxStyle}"
-                              ItemsSource="{Binding Subjects}"
-                              SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
+                        <!-- Subject -->
+                        <ComboBox Grid.Column="5" Header="Subject" MinWidth="160" Style="{ThemeResource ComboBoxStyle}"
+                                  ItemsSource="{Binding Subjects}"
+                                  SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
 
-                    <!-- Search Bar -->
-                    <TextBox Grid.Column="6"
-                             Style="{ThemeResource SearchBoxStyle}"
+                        <!-- Load Button -->
+                        <Button Grid.Column="6" VerticalAlignment="Bottom"
+                                Content="Load" Style="{ThemeResource SecondaryButtonStyle}"
+                                Command="{Binding LoadCommand}" />
+                    </Grid>
+
+                    <!-- Row 2: Search Bar -->
+                    <TextBox Style="{ThemeResource SearchBoxStyle}"
                              PlaceholderText="Search by student name..."
                              Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                    <!-- Load Button -->
-                    <Button Grid.Column="7" VerticalAlignment="Bottom"
-                            Content="Load" Style="{ThemeResource SecondaryButtonStyle}"
-                            Command="{Binding LoadCommand}" />
-                </Grid>
+                </StackPanel>
             </Border>
 
             <!-- KPI STRIP -->
