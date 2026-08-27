@@ -1219,9 +1219,13 @@ namespace AutoTable.Services
 
             var teacherComment = BuildTeacherComment(overallAverage, status, promotional);
 
+            // Resolve school settings
+            var schoolSettings = await GetSchoolSettingsAsync();
+
             return new Models.ReportCardSheetModel
             {
-                SchoolName = "AutoTable Academy",
+                SchoolName = schoolSettings.SchoolName,
+                SchoolAddress = schoolSettings.SchoolAddress,
                 StudentName = student.FullName,
                 AdmissionNumber = student.LIN,
                 ClassName = cls.Name,
@@ -1233,8 +1237,8 @@ namespace AutoTable.Services
                 GuardianName = student.GuardianName ?? string.Empty,
                 GuardianPhone = student.GuardianPhone ?? string.Empty,
                 ClassTeacher = cls.ClassTeacher?.FullName ?? string.Empty,
-                HeadTeacher = string.Empty, // TODO: resolve from school settings when available
-                HeadTeacherComment = string.Empty, // TODO: allow editing per student
+                HeadTeacher = schoolSettings.HeadTeacherName,
+                HeadTeacherComment = await GetHeadTeacherCommentAsync(student.Id, termEntity.Id),
                 GradingSystemName = gradingSystem?.Name ?? string.Empty,
                 PassMark = passMark,
                 PromotionalAssessments = promotional,
@@ -2568,6 +2572,85 @@ namespace AutoTable.Services
                 processed++;
             }
             return processed;
+        }
+
+        // ── School Settings ──
+
+        public async Task<AutoTable.Models.SchoolSettings> GetSchoolSettingsAsync()
+        {
+            using var db = CreateContext();
+            var entity = await db.SchoolSettings.FindAsync(1);
+            if (entity == null)
+            {
+                entity = new Data.Entities.SchoolSettingsEntity { Id = 1 };
+                db.SchoolSettings.Add(entity);
+                await db.SaveChangesAsync();
+            }
+            return new AutoTable.Models.SchoolSettings
+            {
+                SchoolName = entity.SchoolName,
+                SchoolAddress = entity.SchoolAddress,
+                SchoolPhone = entity.SchoolPhone,
+                HeadTeacherName = entity.HeadTeacherName,
+                Motto = entity.Motto
+            };
+        }
+
+        public async Task<AutoTable.Models.SchoolSettings> UpdateSchoolSettingsAsync(AutoTable.Models.SchoolSettings settings)
+        {
+            using var db = CreateContext();
+            var entity = await db.SchoolSettings.FindAsync(1);
+            if (entity == null)
+            {
+                entity = new Data.Entities.SchoolSettingsEntity { Id = 1 };
+                db.SchoolSettings.Add(entity);
+            }
+            entity.SchoolName = settings.SchoolName;
+            entity.SchoolAddress = settings.SchoolAddress;
+            entity.SchoolPhone = settings.SchoolPhone;
+            entity.HeadTeacherName = settings.HeadTeacherName;
+            entity.Motto = settings.Motto;
+            await db.SaveChangesAsync();
+            return settings;
+        }
+
+        // ── Head Teacher Comments ──
+
+        public async Task<string> GetHeadTeacherCommentAsync(int studentId, int? termId)
+        {
+            using var db = CreateContext();
+            var entity = await db.HeadTeacherComments
+                .Where(c => c.StudentId == studentId && c.TermId == termId)
+                .OrderByDescending(c => c.CreatedAt)
+                .FirstOrDefaultAsync();
+            return entity?.Comment ?? string.Empty;
+        }
+
+        public async Task SaveHeadTeacherCommentAsync(int studentId, int? termId, string comment, string headTeacherName)
+        {
+            using var db = CreateContext();
+            var existing = await db.HeadTeacherComments
+                .Where(c => c.StudentId == studentId && c.TermId == termId)
+                .OrderByDescending(c => c.CreatedAt)
+                .FirstOrDefaultAsync();
+            if (existing != null)
+            {
+                existing.Comment = comment;
+                existing.HeadTeacherName = headTeacherName;
+                existing.CreatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                db.HeadTeacherComments.Add(new Data.Entities.HeadTeacherCommentEntity
+                {
+                    StudentId = studentId,
+                    TermId = termId,
+                    Comment = comment,
+                    HeadTeacherName = headTeacherName,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await db.SaveChangesAsync();
         }
     }
 }

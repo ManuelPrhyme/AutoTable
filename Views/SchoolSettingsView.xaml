@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AutoTable.Views.SchoolSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource SurfaceGrayBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="24" Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
+
+            <TextBlock Text="School Settings" Style="{ThemeResource PageTitleStyle}" />
+
+            <Border Style="{ThemeResource TableCardStyle}">
+                <StackPanel Spacing="16" Padding="20">
+
+                    <TextBlock Text="SCHOOL INFORMATION" Style="{ThemeResource SectionTitleStyle}" />
+
+                    <TextBox Header="School Name"
+                             Text="{Binding SchoolName, Mode=TwoWay}"
+                             PlaceholderText="e.g. AutoTable Academy" />
+
+                    <TextBox Header="School Address"
+                             Text="{Binding SchoolAddress, Mode=TwoWay}"
+                             PlaceholderText="e.g. Plot 123, Kampala Road" />
+
+                    <TextBox Header="School Phone"
+                             Text="{Binding SchoolPhone, Mode=TwoWay}"
+                             PlaceholderText="e.g. +256 700 123456" />
+
+                    <TextBox Header="School Motto"
+                             Text="{Binding Motto, Mode=TwoWay}"
+                             PlaceholderText="e.g. Knowledge is Power" />
+
+                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+
+                    <TextBlock Text="HEAD TEACHER" Style="{ThemeResource SectionTitleStyle}" />
+
+                    <TextBox Header="Head Teacher Name"
+                             Text="{Binding HeadTeacherName, Mode=TwoWay}"
+                             PlaceholderText="e.g. Mrs. Jane Smith" />
+
+                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SuccessGreenBrush}" FontSize="13" />
+                        <Button Content="Save Settings" Style="{ThemeResource PrimaryButtonStyle}"
+                                Click="Save_Click" MinWidth="140" />
+                    </StackPanel>
+
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

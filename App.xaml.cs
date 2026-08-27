@@ -619,6 +619,45 @@ namespace AutoTable
                         }
                         catch { /* best-effort; a missed integrity check must never block startup */ }
 
+                        // SchoolSettings table (singleton row)
+                        try
+                        {
+                            using var cmdSS = sqliteConnection.CreateCommand();
+                            cmdSS.CommandText = @"
+                                CREATE TABLE IF NOT EXISTS SchoolSettings (
+                                    Id INTEGER PRIMARY KEY DEFAULT 1,
+                                    SchoolName TEXT NOT NULL DEFAULT 'AutoTable Academy',
+                                    SchoolAddress TEXT DEFAULT '',
+                                    SchoolPhone TEXT DEFAULT '',
+                                    HeadTeacherName TEXT DEFAULT '',
+                                    Motto TEXT DEFAULT ''
+                                );";
+                            cmdSS.ExecuteNonQuery();
+                            // Ensure singleton row exists
+                            cmdSS.CommandText = "INSERT OR IGNORE INTO SchoolSettings (Id, SchoolName) VALUES (1, 'AutoTable Academy');";
+                            cmdSS.ExecuteNonQuery();
+                        }
+                        catch { /* best-effort */ }
+
+                        // HeadTeacherComments table
+                        try
+                        {
+                            using var cmdHC = sqliteConnection.CreateCommand();
+                            cmdHC.CommandText = @"
+                                CREATE TABLE IF NOT EXISTS HeadTeacherComments (
+                                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    StudentId INTEGER NOT NULL,
+                                    TermId INTEGER,
+                                    Comment TEXT DEFAULT '',
+                                    HeadTeacherName TEXT DEFAULT '',
+                                    CreatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+                                    FOREIGN KEY (StudentId) REFERENCES Students(Id),
+                                    FOREIGN KEY (TermId) REFERENCES Terms(Id)
+                                );";
+                            cmdHC.ExecuteNonQuery();
+                        }
+                        catch { /* best-effort */ }
+
                         // Register the global data service.
                         AppServices.DataService = new DatabaseDataService(options);
                     }

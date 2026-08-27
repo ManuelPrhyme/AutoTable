@@ -49,6 +49,8 @@ namespace AutoTable.Data
         // Grading system entities
         public DbSet<GradingSystemEntity> GradingSystems => Set<GradingSystemEntity>();
         public DbSet<GradeBandEntity> GradeBands => Set<GradeBandEntity>();
+        public DbSet<SchoolSettingsEntity> SchoolSettings => Set<SchoolSettingsEntity>();
+        public DbSet<HeadTeacherCommentEntity> HeadTeacherComments => Set<HeadTeacherCommentEntity>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

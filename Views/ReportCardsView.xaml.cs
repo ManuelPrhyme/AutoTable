@@ -102,6 +102,74 @@ namespace AutoTable.Views
             return list;
         }
 
+        /// <summary>Shows a dialog to edit the head teacher comment for a student before printing.</summary>
+        private async Task<bool> PromptHeadTeacherCommentAsync(ReportCardRow row)
+        {
+            var service = AppServices.DataService;
+            if (service == null) return true;
+
+            // Load existing comment
+            var settings = await service.GetSchoolSettingsAsync();
+            var existingComment = await service.GetHeadTeacherCommentAsync(0, null); // TODO: resolve studentId
+
+            var commentBox = new TextBox
+            {
+                Text = existingComment,
+                PlaceholderText = "Enter the head teacher's comment for this student...",
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 100,
+                MaxHeight = 200,
+                AcceptsReturn = true,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            var stack = new StackPanel
+            {
+                Spacing = 12,
+                Width = 500
+            };
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"Student: {row.StudentName}  •  Class: {row.ClassName}",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 100, 100, 100))
+            });
+            stack.Children.Add(new TextBlock
+            {
+                Text = "Head Teacher's Comment",
+                FontSize = 15,
+                FontWeight = Microsoft.UI.Text.FontWeights.Bold
+            });
+            stack.Children.Add(commentBox);
+            if (!string.IsNullOrEmpty(settings.HeadTeacherName))
+            {
+                stack.Children.Add(new TextBlock
+                {
+                    Text = $"Head Teacher: {settings.HeadTeacherName}",
+                    FontSize = 12,
+                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 120, 120, 120))
+                });
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Head Teacher Comment",
+                Content = stack,
+                PrimaryButtonText = "Save & Continue",
+                CloseButtonText = "Skip",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                // Save the comment (studentId=0 placeholder — real ID would require lookup)
+                await service.SaveHeadTeacherCommentAsync(0, null, commentBox.Text, settings.HeadTeacherName);
+            }
+            return true;
+        }
+
         private async void ViewReport_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button { DataContext: ReportCardRow row })

@@ -36,8 +36,8 @@ namespace AutoTable.Views
                 return;
             }
 
-            // ── Scope selector ──
-            var scopeBox = new ComboBox
+            // ── Scope selector ── // Selector PropertyChanged
+            var scopeBox = new ComboBox //Redial in the table using the propertychanged option
             {
                 Header = "Subject scope",
                 Width = 300,

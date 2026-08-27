@@ -320,4 +320,28 @@ namespace AutoTable.Data.Entities
         public string FinancialYear { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
+
+    /// <summary>Global school configuration — name, head teacher, address. Singleton row (Id=1).</summary>
+    public class SchoolSettingsEntity
+    {
+        public int Id { get; set; } = 1;
+        public string SchoolName { get; set; } = "AutoTable Academy";
+        public string SchoolAddress { get; set; } = string.Empty;
+        public string SchoolPhone { get; set; } = string.Empty;
+        public string HeadTeacherName { get; set; } = string.Empty;
+        public string Motto { get; set; } = string.Empty;
+    }
+
+    /// <summary>Per-student head teacher comment on the report card.</summary>
+    public class HeadTeacherCommentEntity
+    {
+        public int Id { get; set; }
+        public int StudentId { get; set; }
+        public StudentEntity? Student { get; set; }
+        public int? TermId { get; set; }
+        public TermEntity? Term { get; set; }
+        public string Comment { get; set; } = string.Empty;
+        public string HeadTeacherName { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
 }

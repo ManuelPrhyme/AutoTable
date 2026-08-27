@@ -35,6 +35,7 @@ namespace AutoTable.Services
             ["TermManagement"]     = typeof(Views.TermManagementView),
             ["Classes"]            = typeof(Views.ClassesView),
             ["AuditLog"]           = typeof(Views.AuditLogView),
+            ["SchoolSettings"]     = typeof(Views.SchoolSettingsView),
         };
 
         /// <summary>

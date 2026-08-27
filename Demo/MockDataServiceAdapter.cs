@@ -344,5 +344,17 @@ namespace AutoTable.Demo
         public Task<int> ProcessAllPromotionsAsync(int? classId = null)
             => Task.FromResult(0);
 
+        public Task<SchoolSettings> GetSchoolSettingsAsync()
+            => Task.FromResult(new SchoolSettings());
+
+        public Task<SchoolSettings> UpdateSchoolSettingsAsync(SchoolSettings settings)
+            => Task.FromResult(settings);
+
+        public Task<string> GetHeadTeacherCommentAsync(int studentId, int? termId)
+            => Task.FromResult(string.Empty);
+
+        public Task SaveHeadTeacherCommentAsync(int studentId, int? termId, string comment, string headTeacherName)
+            => Task.CompletedTask;
+
     }
 }

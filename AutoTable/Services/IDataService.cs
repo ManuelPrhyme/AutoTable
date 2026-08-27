@@ -136,5 +136,13 @@ namespace AutoTable.Services
         Task<AutoTable.Models.BudgetLine> CreateBudgetLineAsync(AutoTable.Models.BudgetLine line);
         Task<AutoTable.Models.BudgetLine?> UpdateBudgetLineAsync(AutoTable.Models.BudgetLine line);
         Task DeleteBudgetLineAsync(int budgetLineId);
+
+        // School settings (singleton)
+        Task<AutoTable.Models.SchoolSettings> GetSchoolSettingsAsync();
+        Task<AutoTable.Models.SchoolSettings> UpdateSchoolSettingsAsync(AutoTable.Models.SchoolSettings settings);
+
+        // Head teacher comments per student per term
+        Task<string> GetHeadTeacherCommentAsync(int studentId, int? termId);
+        Task SaveHeadTeacherCommentAsync(int studentId, int? termId, string comment, string headTeacherName);
     }
 }
