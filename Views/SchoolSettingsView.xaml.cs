@@ -3,9 +3,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.ComponentModel;
 using System.IO;
-using System.Threading.Tasks;
-using Windows.Storage;
 using Windows.Storage.Pickers;
 
 namespace AutoTable.Views
@@ -18,12 +17,15 @@ namespace AutoTable.Views
         {
             this.InitializeComponent();
             this.DataContext = ViewModel;
-            this.Loaded += SchoolSettingsView_Loaded;
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
-        private void SchoolSettingsView_Loaded(object sender, RoutedEventArgs e)
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            RefreshLogoPreview();
+            if (e.PropertyName == nameof(SchoolSettingsViewModel.LogoBytes))
+            {
+                RefreshLogoPreview();
+            }
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -40,7 +42,6 @@ namespace AutoTable.Views
             picker.FileTypeFilter.Add(".bmp");
             picker.FileTypeFilter.Add(".gif");
 
-            // WinUI 3: must set HWND for picker
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
             WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
 
@@ -49,14 +50,12 @@ namespace AutoTable.Views
             {
                 var bytes = await File.ReadAllBytesAsync(file.Path);
                 ViewModel.LogoBytes = bytes;
-                RefreshLogoPreview();
             }
         }
 
         private void ClearLogo_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.LogoBytes = null;
-            LogoPreview.Source = null;
         }
 
         private void RefreshLogoPreview()
