@@ -193,15 +193,6 @@
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavSchoolSettings" Tag="SchoolSettings" Style="{ThemeResource IconButtonStyle}"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                            Click="NavItem_Click" Padding="10,9">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
-                            <TextBlock Text="School Settings" Style="{ThemeResource SidebarItemTextStyle}" />
-                        </StackPanel>
-                    </Button>
-
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
                     <!-- MODULE: FINANCIALS -->
@@ -259,6 +250,15 @@
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{ThemeResource AccentPurpleBrush}" />
                             <TextBlock Text="AI Insights" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavSchoolSettings" Tag="SchoolSettings" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="School Settings" Style="{ThemeResource SidebarItemTextStyle}" />
                         </StackPanel>
                     </Button>
 
