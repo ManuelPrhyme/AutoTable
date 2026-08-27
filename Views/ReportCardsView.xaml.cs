@@ -189,7 +189,7 @@ namespace AutoTable.Views
         {
             if (sheets.Count == 0) return;
 
-            // Build the custom print preview layout: left = scaled A4 preview, right = printer config
+            // Left: scaled A4 preview, Right: printer config
             var previewContent = BuildPrintPreviewContent(sheets[0], sheets.Count);
 
             var dialog = new ContentDialog
@@ -217,21 +217,24 @@ namespace AutoTable.Views
         private Grid BuildPrintPreviewContent(ReportCardSheetView sheet, int totalSheets)
         {
             // Left panel: scaled A4 preview
+            // Wrap in a Grid with fixed row height so Viewbox has a constraint to scale against
             var sheetViewbox = new Viewbox
             {
                 Child = sheet,
                 Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Top
             };
-            var previewScroll = new ScrollViewer
+
+            var previewGrid = new Grid
             {
-                Content = sheetViewbox,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 240, 240, 240))
             };
+            previewGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            Grid.SetRow(sheetViewbox, 0);
+            previewGrid.Children.Add(sheetViewbox);
 
             // Right panel: printer configuration
             var printerCombo = new ComboBox
@@ -240,8 +243,6 @@ namespace AutoTable.Views
                 MinWidth = 220,
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
-            // Populate with available printers
-            var printerService = Windows.Graphics.Printing.PrintManager.GetForCurrentView();
             printerCombo.Items.Add("Default Printer");
             printerCombo.SelectedIndex = 0;
 
@@ -257,7 +258,7 @@ namespace AutoTable.Views
 
             var pageRangeText = new TextBlock
             {
-                Text = $"Pages: 1 – {totalSheets}",
+                Text = $"Pages: 1 \u2013 {totalSheets}",
                 FontSize = 12,
                 Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 85, 85, 85)),
                 Margin = new Thickness(0, 0, 0, 4)
@@ -296,23 +297,30 @@ namespace AutoTable.Views
             {
                 Width = 1,
                 Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
-                Margin = new Thickness(0)
+                Margin = new Thickness(4, 0, 4, 0)
             };
+            Grid.SetRowSpan(separator, 1);
 
+            // Main layout: preview left, separator middle, settings right
             var layout = new Grid
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
+                VerticalAlignment = VerticalAlignment.Stretch,
+                RowSpacing = 0
             };
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(280) });
 
-            Grid.SetColumn(previewScroll, 0);
+            Grid.SetRow(previewGrid, 0);
+            Grid.SetColumn(previewGrid, 0);
+            Grid.SetRow(separator, 0);
             Grid.SetColumn(separator, 1);
+            Grid.SetRow(printerPanel, 0);
             Grid.SetColumn(printerPanel, 2);
 
-            layout.Children.Add(previewScroll);
+            layout.Children.Add(previewGrid);
             layout.Children.Add(separator);
             layout.Children.Add(printerPanel);
 

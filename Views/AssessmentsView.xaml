@@ -127,7 +127,7 @@
                                     <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}" Text="{Binding ClassName}" />
                                     <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}" Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
-2                                       <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}" Text="{Binding WeightPercent}" />
+                                    <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}" Text="{Binding WeightPercent}" />
                                     <TextBlock Grid.Column="4" Style="{ThemeResource TableCellStyle}" Text="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" />
                                     <Grid Grid.Column="5" Width="36" Height="36" VerticalAlignment="Center">
                                         <ProgressRing Value="{Binding MarksEnteredPercent}" Maximum="100"
