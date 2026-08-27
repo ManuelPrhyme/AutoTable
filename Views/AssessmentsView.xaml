@@ -78,12 +78,13 @@
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="6" Padding="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1.8*" />
-                                <ColumnDefinition Width="60" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="55" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="50" />
-                                <ColumnDefinition Width="90" />
-                                <ColumnDefinition Width="60" />
+                                <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="ASSESSMENT" />
@@ -93,6 +94,7 @@
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="DUE DATE" />
                             <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="" />
                             <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="AUTHOR" />
                         </Grid>
                     </Border>
 
@@ -113,12 +115,13 @@
                             <DataTemplate>
                                 <Grid ColumnSpacing="6" Padding="12,8">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.8*" />
-                                        <ColumnDefinition Width="60" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="55" />
+                                        <ColumnDefinition Width="0.8*" />
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="80" />
                                         <ColumnDefinition Width="50" />
-                                        <ColumnDefinition Width="90" />
-                                        <ColumnDefinition Width="60" />
+                                        <ColumnDefinition Width="80" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" />
@@ -130,11 +133,12 @@
                                         <ProgressRing Value="{Binding MarksEnteredPercent}" Maximum="100"
                                                       Width="36" Height="36" IsIndeterminate="False"
                                                       Foreground="{ThemeResource PrimaryBlueBrush}" />
-                                        <TextBlock Text="{Binding MarksEnteredPercent}"
+                                        <TextBlock Text="{Binding MarksEnteredPercent, Converter={StaticResource RoundPercentConverter}}"
                                                    FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center"
                                                    VerticalAlignment="Center" Foreground="{ThemeResource TextPrimaryBrush}" />
                                     </Grid>
                                     <TextBlock Grid.Column="6" Style="{ThemeResource TableCellStyle}" Text="{Binding StatusLabel}" />
+                                    <TextBlock Grid.Column="7" Style="{ThemeResource TableCellStyle}" Text="{Binding AuthorName}" FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

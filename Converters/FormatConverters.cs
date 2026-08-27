@@ -104,6 +104,23 @@ namespace AutoTable.Converters
             => throw new NotImplementedException();
     }
 
+    /// <summary>Rounds a numeric value to a whole number (no decimals, no % sign) for compact display in the donut.</summary>
+    public class RoundPercentConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return value switch
+            {
+                double d => ((int)Math.Round(d)).ToString(),
+                float f => ((int)Math.Round(f)).ToString(),
+                int i => i.ToString(),
+                _ => value?.ToString() ?? string.Empty
+            };
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
     public class StatusColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
