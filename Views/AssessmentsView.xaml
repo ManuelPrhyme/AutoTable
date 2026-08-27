@@ -76,14 +76,14 @@
 
                     <!-- Column Headers -->
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
-                        <Grid ColumnSpacing="12" Padding="0">
+                        <Grid ColumnSpacing="6" Padding="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.8*" />
                                 <ColumnDefinition Width="60" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="50" />
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="60" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="ASSESSMENT" />
@@ -91,7 +91,7 @@
                             <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECT" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="WT%" />
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="DUE DATE" />
-                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PROGRESS" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="" />
                             <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
                         </Grid>
                     </Border>
@@ -111,14 +111,14 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnSpacing="12" Padding="16,10">
+                                <Grid ColumnSpacing="6" Padding="12,8">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="80" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1.8*" />
                                         <ColumnDefinition Width="60" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="50" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="60" />
                                         <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" />
@@ -126,13 +126,14 @@
                                     <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}" Text="{Binding Subject}" />
                                     <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}" Text="{Binding WeightPercent}" />
                                     <TextBlock Grid.Column="4" Style="{ThemeResource TableCellStyle}" Text="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" />
-                                    <StackPanel Grid.Column="5" Spacing="3" VerticalAlignment="Center">
-                                        <ProgressBar Value="{Binding MarksEnteredPercent}" Maximum="100"
-                                                     Height="6" CornerRadius="3"
-                                                     Background="{ThemeResource SurfaceGray2Brush}" />
-                                        <TextBlock Text="{Binding MarksEnteredPercent}" FontSize="11"
-                                                   Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    </StackPanel>
+                                    <Grid Grid.Column="5" Width="36" Height="36" VerticalAlignment="Center">
+                                        <ProgressRing Value="{Binding MarksEnteredPercent}" Maximum="100"
+                                                      Width="36" Height="36" IsIndeterminate="False"
+                                                      Foreground="{ThemeResource PrimaryBlueBrush}" />
+                                        <TextBlock Text="{Binding MarksEnteredPercent}"
+                                                   FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    </Grid>
                                     <TextBlock Grid.Column="6" Style="{ThemeResource TableCellStyle}" Text="{Binding StatusLabel}" />
                                 </Grid>
                             </DataTemplate>

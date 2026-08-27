@@ -46,6 +46,11 @@ namespace AutoTable.Demo
             return Task.FromResult<ReportCardSheetModel?>(null);
         }
 
+        public Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string className, string? term, string? stream)
+        {
+            return Task.FromResult<IReadOnlyList<Models.ReportCardRow>>(new List<Models.ReportCardRow>());
+        }
+
         public Task<AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
         {
             var found = _mock.GetAssessments().FirstOrDefault(a => a.Name == name && a.ClassName == className && a.Subject == subject);

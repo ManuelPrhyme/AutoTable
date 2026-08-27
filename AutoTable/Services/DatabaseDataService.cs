@@ -1257,6 +1257,94 @@ namespace AutoTable.Services
             return $"{core}{verdict}. {detail}Recommended next step: {(average >= 50 ? "promote to the next class." : "repeat the class.")}";
         }
 
+        /// <summary>
+        /// Returns ALL active students in a class with their overall average across all subjects
+        /// for a given term. Used by the Report Cards list view.
+        /// </summary>
+        public async Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(
+            string className, string? term, string? stream)
+        {
+            using var db = CreateContext();
+            var clsName = (className ?? string.Empty).Trim().ToLower();
+            var cls = await db.Classes
+                .Include(c => c.GradingSystem)
+                .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == clsName);
+            if (cls == null) return new List<Models.ReportCardRow>();
+
+            // Resolve grading system
+            var gradingSystem = cls.GradingSystem;
+            if (gradingSystem == null)
+                gradingSystem = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                    ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            var passMark = gradingSystem?.PassMark ?? 50;
+            var bands = gradingSystem != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == gradingSystem.Id).OrderBy(b => b.MinScore).ToListAsync()
+                : new List<GradeBandEntity>();
+            var bandInfos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id, Label = b.Label,
+                MinScore = b.MinScore, MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
+
+            // Get all active students in the class
+            var studentsQuery = db.Students
+                .Include(s => s.Stream)
+                .Where(s => s.ClassId == cls.Id && s.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(stream))
+            {
+                var streamLower = stream.Trim().ToLower();
+                studentsQuery = studentsQuery.Where(s => s.Stream != null && s.Stream.Name.ToLower() == streamLower);
+            }
+
+            var students = await studentsQuery.OrderBy(s => s.FullName).ToListAsync();
+
+            // Get all assessments for this class + term
+            var assessmentsQuery = db.Assessments
+                .Where(a => a.ClassId == cls.Id);
+
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                var termEntity = await db.Terms.FirstOrDefaultAsync(t => t.Name == term);
+                if (termEntity != null)
+                    assessmentsQuery = assessmentsQuery.Where(a => a.TermId == termEntity.Id);
+            }
+
+            var assessmentIds = await assessmentsQuery.Select(a => a.Id).ToListAsync();
+
+            // Get all marks for these students + assessments
+            var studentIds = students.Select(s => s.Id).ToList();
+            var marks = await db.Marks
+                .Where(m => studentIds.Contains(m.StudentId) && assessmentIds.Contains(m.AssessmentId))
+                .ToListAsync();
+
+            // Build report card rows
+            var rows = students.Select(s =>
+            {
+                var studentMarks = marks.Where(m => m.StudentId == s.Id).ToList();
+                var scores = studentMarks.Select(x => x.Mark ?? 0).ToList();
+                var avg = scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
+                var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
+                var status = avg == 0 ? "No Data" : avg < passMark ? "At Risk" : avg >= 70 ? "Excellent" : "On Track";
+                return new Models.ReportCardRow
+                {
+                    StudentName = s.FullName,
+                    AdmissionNumber = s.LIN ?? string.Empty,
+                    ClassName = cls.Name,
+                    Average = avg,
+                    Status = status
+                };
+            }).OrderByDescending(r => r.Average).ToList();
+
+            for (int i = 0; i < rows.Count; i++)
+                rows[i].Rank = i + 1;
+
+            return rows;
+        }
+
         public async Task<IReadOnlyList<Student>> GetStudentsAsync()
         {
             using var db = CreateContext();

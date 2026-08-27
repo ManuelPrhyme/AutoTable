@@ -71,10 +71,8 @@ namespace AutoTable.ViewModels
             if (stream == "None" || string.IsNullOrWhiteSpace(stream))
                 stream = null;
 
-            var rows = await _dataService.GetGradebookAsync(
-                SelectedClass, "Mathematics",
-                term: SelectedTerm,
-                stream: stream);
+            var rows = await _dataService.GetReportCardListAsync(
+                SelectedClass, term: SelectedTerm, stream: stream);
 
             foreach (var r in rows)
             {

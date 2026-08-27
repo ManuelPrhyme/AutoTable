@@ -46,6 +46,9 @@ namespace AutoTable.Services
 
         // Report-card assembly
         Task<Models.ReportCardSheetModel?> GetReportCardSheetAsync(string studentName, string className, string term);
+        /// <summary>Returns all active students in a class with overall average across all subjects for a given term.
+        /// Used by the Report Cards list view.</summary>
+        Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string className, string? term, string? stream);
 
         Task<IReadOnlyList<Student>> GetStudentsAsync();
         Task<Student?> GetStudentByIdAsync(int id);
