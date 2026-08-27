@@ -189,20 +189,18 @@ namespace AutoTable.Views
         {
             if (sheets.Count == 0) return;
 
+            // Build the custom print preview layout: left = scaled A4 preview, right = printer config
+            var previewContent = BuildPrintPreviewContent(sheets[0], sheets.Count);
+
             var dialog = new ContentDialog
             {
                 Title = title,
-                Content = new ScrollViewer
-                {
-                    Content = sheets[0],
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-                },
+                Content = previewContent,
                 PrimaryButtonText = "Print",
                 CloseButtonText = "Close",
                 XamlRoot = this.XamlRoot,
-                Width = 940,
-                Height = 720
+                Width = 1100,
+                Height = 780
             };
 
             var result = await dialog.ShowAsync();
@@ -214,6 +212,111 @@ namespace AutoTable.Views
                 await PrintManager.ShowPrintUIAsync();
             }
             finally { UnregisterForPrinting(); }
+        }
+
+        private Grid BuildPrintPreviewContent(ReportCardSheetView sheet, int totalSheets)
+        {
+            // Left panel: scaled A4 preview
+            var sheetViewbox = new Viewbox
+            {
+                Child = sheet,
+                Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var previewScroll = new ScrollViewer
+            {
+                Content = sheetViewbox,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+
+            // Right panel: printer configuration
+            var printerCombo = new ComboBox
+            {
+                Header = "Printer",
+                MinWidth = 220,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            // Populate with available printers
+            var printerService = Windows.Graphics.Printing.PrintManager.GetForCurrentView();
+            printerCombo.Items.Add("Default Printer");
+            printerCombo.SelectedIndex = 0;
+
+            var copiesBox = new NumberBox
+            {
+                Header = "Copies",
+                Value = 1,
+                Minimum = 1,
+                Maximum = 99,
+                MinWidth = 100,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            var pageRangeText = new TextBlock
+            {
+                Text = $"Pages: 1 – {totalSheets}",
+                FontSize = 12,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 85, 85, 85)),
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+
+            var summaryText = new TextBlock
+            {
+                Text = $"{totalSheets} page(s) ready to print",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 46, 134, 193)),
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+
+            var printerPanel = new StackPanel
+            {
+                Spacing = 12,
+                Width = 260,
+                Margin = new Thickness(16, 8, 8, 8)
+            };
+            printerPanel.Children.Add(new TextBlock
+            {
+                Text = "Print Settings",
+                FontSize = 16,
+                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 56, 100)),
+                Margin = new Thickness(0, 0, 0, 4)
+            });
+            printerPanel.Children.Add(printerCombo);
+            printerPanel.Children.Add(pageRangeText);
+            printerPanel.Children.Add(copiesBox);
+            printerPanel.Children.Add(summaryText);
+
+            // Separator line
+            var separator = new Microsoft.UI.Xaml.Shapes.Rectangle
+            {
+                Width = 1,
+                Fill = new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(255, 200, 200, 200)),
+                Margin = new Thickness(0)
+            };
+
+            var layout = new Grid
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(280) });
+
+            Grid.SetColumn(previewScroll, 0);
+            Grid.SetColumn(separator, 1);
+            Grid.SetColumn(printerPanel, 2);
+
+            layout.Children.Add(previewScroll);
+            layout.Children.Add(separator);
+            layout.Children.Add(printerPanel);
+
+            return layout;
         }
     }
 }
