@@ -207,5 +207,21 @@ namespace AutoTable.Views
                 }
             }
         }
+
+        private async void ActivateTerm_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int termId)
+            {
+                await _vm.ActivateTermAsync(termId);
+            }
+        }
+
+        private async void DeactivateTerm_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int termId)
+            {
+                await _vm.DeactivateTermAsync(termId);
+            }
+        }
     }
 }

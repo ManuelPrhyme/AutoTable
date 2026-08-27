@@ -19,6 +19,7 @@ namespace AutoTable.ViewModels
         public ObservableCollection<TermFee> TermFees { get; } = new();
 
         [ObservableProperty] private string _statusMessage = string.Empty;
+        [ObservableProperty] private int? _activeTermId;
 
         // School-wide KPI values for the selected term
         [ObservableProperty] private decimal _schoolExpected;
@@ -39,6 +40,9 @@ namespace AutoTable.ViewModels
             Terms.Clear();
             var terms = await _dataService.GetTermLookupsAsync();
             foreach (var t in terms) Terms.Add(new SimpleLookup { Id = t.Id, Name = t.Name });
+
+            var activeTerm = await _dataService.GetActiveTermAsync();
+            ActiveTermId = activeTerm?.Id;
 
             Classes.Clear();
             var classes = await _dataService.GetClassesAsync();
@@ -127,6 +131,21 @@ namespace AutoTable.ViewModels
         {
             await _dataService.SetTermFeeAsync(termId, classId, amount);
             await LoadAsync();
+        }
+
+        public async Task ActivateTermAsync(int termId)
+        {
+            await _dataService.SetActiveTermAsync(termId);
+            ActiveTermId = termId;
+            StatusMessage = "Term activated successfully.";
+        }
+
+        public async Task DeactivateTermAsync(int termId)
+        {
+            await _dataService.DeactivateTermAsync(termId);
+            if (ActiveTermId == termId)
+                ActiveTermId = null;
+            StatusMessage = "Term deactivated.";
         }
     }
 }

@@ -80,9 +80,35 @@
                         <ListView x:Name="TermsList" ItemsSource="{Binding Terms}" SelectionMode="Single">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="models:SimpleLookup">
-                                    <StackPanel Orientation="Horizontal" Padding="8">
-                                        <TextBlock Text="{x:Bind Name}" />
-                                    </StackPanel>
+                                    <Grid Padding="8" ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Active indicator -->
+                                        <Border Grid.Column="0" Width="8" Height="8" CornerRadius="4"
+                                                VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{ThemeResource TextMutedBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Id, ElementName=TermsList}" Value="{Binding ActiveTermId, ElementName=RootPage}">
+                                                            <Setter Property="Background" Value="{ThemeResource SuccessGreenBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                            <Button Content="Set Active" Padding="8,2" FontSize="11"
+                                                    Click="ActivateTerm_Click" Tag="{x:Bind Id}" />
+                                            <Button Content="Deactivate" Padding="8,2" FontSize="11"
+                                                    Style="{ThemeResource SecondaryButtonStyle}"
+                                                    Click="DeactivateTerm_Click" Tag="{x:Bind Id}" />
+                                        </StackPanel>
+                                    </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>

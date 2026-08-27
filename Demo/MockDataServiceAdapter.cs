@@ -307,6 +307,12 @@ namespace AutoTable.Demo
             return Task.CompletedTask;
         }
 
+        public Task SetActiveTermAsync(int termId)
+            => Task.CompletedTask;
+
+        public Task DeactivateTermAsync(int termId)
+            => Task.CompletedTask;
+
         // Budget line CRUD (mock)
         public Task<IReadOnlyList<AutoTable.Models.BudgetLine>> GetBudgetLinesAsync(string? financialYear = null)
             => Task.FromResult<IReadOnlyList<AutoTable.Models.BudgetLine>>(Array.Empty<AutoTable.Models.BudgetLine>());

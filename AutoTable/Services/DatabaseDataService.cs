@@ -621,6 +621,29 @@ namespace AutoTable.Services
             await db.SaveChangesAsync();
         }
 
+        public async Task SetActiveTermAsync(int termId)
+        {
+            using var db = CreateContext();
+            var term = await db.Terms.FindAsync(termId);
+            if (term == null) return;
+            // Deactivate all terms
+            var allTerms = await db.Terms.ToListAsync();
+            foreach (var t in allTerms)
+            {
+                t.IsActive = (t.Id == termId);
+            }
+            await db.SaveChangesAsync();
+        }
+
+        public async Task DeactivateTermAsync(int termId)
+        {
+            using var db = CreateContext();
+            var term = await db.Terms.FindAsync(termId);
+            if (term == null) return;
+            term.IsActive = false;
+            await db.SaveChangesAsync();
+        }
+
         private AppDbContext CreateContext() => new AppDbContext(_options);
 
         public async Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync()

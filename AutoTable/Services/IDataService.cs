@@ -40,6 +40,10 @@ namespace AutoTable.Services
         Task<AutoTable.Models.SimpleLookup> CreateTermAsync(string name, DateTime? startDate = null, DateTime? endDate = null);
         Task<AutoTable.Models.SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null);
         Task DeleteTermAsync(int termId);
+        /// <summary>Makes the specified term active and deactivates all others.</summary>
+        Task SetActiveTermAsync(int termId);
+        /// <summary>Deactivates the specified term (sets IsActive=false).</summary>
+        Task DeactivateTermAsync(int termId);
 
         // Student performance detail
         Task<Models.StudentPerformanceDetail> GetStudentPerformanceDetailAsync(string studentName, string className, string subject, string academicYear, string term, string stream);
