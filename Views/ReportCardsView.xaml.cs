@@ -120,6 +120,24 @@ namespace AutoTable.Views
             }
         }
 
+        private async void GenerateAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.ReportCards.Count == 0)
+            {
+                await new ContentDialog
+                {
+                    Title = "Generate All",
+                    Content = "No students loaded. Adjust filters and try again.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return;
+            }
+
+            var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
+            await ShowPreviewAndPrintAsync(sheets, $"Report Cards — {sheets.Count} students");
+        }
+
         private async void PrintAll_Click(object sender, RoutedEventArgs e)
         {
             var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
