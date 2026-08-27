@@ -77,15 +77,28 @@ namespace AutoTable.Views
             SidebarAvatar.DisplayName = user?.FullName ?? "U";
             HeaderUserName.Text = user?.FullName ?? "User";
 
+            // ── ROLE-BASED SIDEBAR GATING (dormant during development) ──────
+            // Uncomment the block below and remove the unconditional Visible lines
+            // when you switch from development mode to production role enforcement.
+            //
             // Admin-only pages: hide sidebar items for non-admins
-            NavModeration.Visibility = _vm.IsAdministrator
-                ? Visibility.Visible : Visibility.Collapsed;
+            // NavModeration.Visibility = _vm.IsAdministrator
+            //     ? Visibility.Visible : Visibility.Collapsed;
+            // NavTermManagement.Visibility = _vm.IsAdministrator
+            //     ? Visibility.Visible : Visibility.Collapsed;
+            // NavClasses.Visibility = _vm.IsAdministrator
+            //     ? Visibility.Visible : Visibility.Collapsed;
+            // NavBudget.Visibility = _vm.IsAdministrator
+            //     ? Visibility.Visible : Visibility.Collapsed;
+            // NavPromotion.Visibility = _vm.IsAdministrator
+            //     ? Visibility.Visible : Visibility.Collapsed;
+
+            // DEV MODE: all pages visible to all roles
+            NavModeration.Visibility = Visibility.Visible;
             NavTermManagement.Visibility = Visibility.Visible;
             NavClasses.Visibility = Visibility.Visible;
-            NavBudget.Visibility = _vm.IsAdministrator
-                ? Visibility.Visible : Visibility.Collapsed;
-            NavPromotion.Visibility = _vm.IsAdministrator
-                ? Visibility.Visible : Visibility.Collapsed;
+            NavBudget.Visibility = Visibility.Visible;
+            NavPromotion.Visibility = Visibility.Visible;
 
             NavigationService.Instance.InitializeShell(ContentFrame);
 
@@ -107,9 +120,10 @@ namespace AutoTable.Views
         {
             if (!Routes.ContainsKey(tag)) return;
 
-            // Block admin-only pages from external navigation for non-admins
-            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
-                return;
+            // ── ROLE-BASED ROUTE GUARD (dormant during development) ──────
+            // Uncomment when enforcing admin-only page access:
+            // if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+            //     return;
 
             if (PageMeta.TryGetValue(tag, out var meta))
             {
@@ -152,23 +166,24 @@ namespace AutoTable.Views
         {
             if (!Routes.TryGetValue(tag, out var pageType)) return;
 
-            // Route-level guard: non-admins cannot access admin-only pages
-            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
-            {
-                try
-                {
-                    var dlg = new ContentDialog
-                    {
-                        Title = "Access Restricted",
-                        Content = "This page is restricted to administrators. Please sign in with an admin account to access it.",
-                        CloseButtonText = "OK",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await dlg.ShowAsync();
-                }
-                catch { }
-                return;
-            }
+            // ── ROLE-BASED ROUTE GUARD (dormant during development) ──────
+            // Uncomment when enforcing admin-only page access:
+            // if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+            // {
+            //     try
+            //     {
+            //         var dlg = new ContentDialog
+            //         {
+            //             Title = "Access Restricted",
+            //             Content = "This page is restricted to administrators. Please sign in with an admin account to access it.",
+            //             CloseButtonText = "OK",
+            //             XamlRoot = this.XamlRoot
+            //         };
+            //         await dlg.ShowAsync();
+            //     }
+            //     catch { }
+            //     return;
+            // }
 
             // Update header
             if (PageMeta.TryGetValue(tag, out var meta))

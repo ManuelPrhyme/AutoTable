@@ -45,7 +45,10 @@ namespace AutoTable.ViewModels
             await LoadAsync();
         }
 
-        [RelayCommand(CanExecute = nameof(IsAdministrator))]
+        // ── ROLE-BASED GATING (dormant during development) ──────
+        // Uncomment CanExecute when enforcing admin-only assessment creation:
+        // [RelayCommand(CanExecute = nameof(IsAdministrator))]
+        [RelayCommand]
         private void NewAssessment() => StatusMessage = "New Assessment dialog will open here (Admin).";
 
         private async Task LoadAsync()

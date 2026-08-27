@@ -66,11 +66,13 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task AddLineItemAsync()
         {
-            if (!SessionService.Instance.IsAdministrator)
-            {
-                StatusMessage = "Only administrators can add budget line items.";
-                return;
-            }
+            // ── ROLE-BASED GATING (dormant during development) ──────
+            // Uncomment when enforcing admin-only budget editing:
+            // if (!SessionService.Instance.IsAdministrator)
+            // {
+            //     StatusMessage = "Only administrators can add budget line items.";
+            //     return;
+            // }
 
             var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
             {
