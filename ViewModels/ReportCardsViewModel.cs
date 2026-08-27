@@ -15,8 +15,8 @@ namespace AutoTable.ViewModels
         private readonly IDataService _dataService;
 
         // --- Filter properties ---
-        [ObservableProperty] private string _selectedClass = "P5";
-        [ObservableProperty] private string _selectedTerm = "Term 2, 2025";
+        [ObservableProperty] private string _selectedClass = "All";
+        [ObservableProperty] private string _selectedTerm = "All";
         [ObservableProperty] private string _selectedStream = null;
         [ObservableProperty] private string _searchText = "";
 
@@ -50,12 +50,15 @@ namespace AutoTable.ViewModels
 
         private async Task InitializeAsync()
         {
+            Classes.Add("All");
             var classes = await _dataService.GetClassesAsync();
             foreach (var c in classes) Classes.Add(c.Name);
 
+            Terms.Add("All");
             var terms = await _dataService.GetTermsAsync();
             foreach (var t in terms) Terms.Add(t);
 
+            Streams.Add("All");
             var streams = await _dataService.GetStreamsAsync();
             foreach (var s in streams) Streams.Add(s);
 
@@ -67,12 +70,15 @@ namespace AutoTable.ViewModels
             ReportCards.Clear();
             _loadedRows.Clear();
 
+            // Pass null for "All" selections so the service queries comprehensively
+            var className = SelectedClass == "All" ? null : SelectedClass;
+            var term = SelectedTerm == "All" ? null : SelectedTerm;
             var stream = SelectedStream;
-            if (stream == "None" || string.IsNullOrWhiteSpace(stream))
+            if (stream == "All" || stream == "None" || string.IsNullOrWhiteSpace(stream))
                 stream = null;
 
             var rows = await _dataService.GetReportCardListAsync(
-                SelectedClass, term: SelectedTerm, stream: stream);
+                className, term: term, stream: stream);
 
             foreach (var r in rows)
             {

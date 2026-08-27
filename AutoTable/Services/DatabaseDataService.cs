@@ -1265,22 +1265,15 @@ namespace AutoTable.Services
             string className, string? term, string? stream)
         {
             using var db = CreateContext();
-            var clsName = (className ?? string.Empty).Trim().ToLower();
-            var cls = await db.Classes
-                .Include(c => c.GradingSystem)
-                .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == clsName);
-            if (cls == null) return new List<Models.ReportCardRow>();
 
-            // Resolve grading system
-            var gradingSystem = cls.GradingSystem;
-            if (gradingSystem == null)
-                gradingSystem = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
-                    ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
-            var passMark = gradingSystem?.PassMark ?? 50;
-            var bands = gradingSystem != null
-                ? await db.GradeBands.Where(b => b.GradingSystemId == gradingSystem.Id).OrderBy(b => b.MinScore).ToListAsync()
+            // Resolve the school default grading system
+            var schoolDefault = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            double defaultPassMark = schoolDefault?.PassMark ?? 50;
+            var defaultBands = schoolDefault != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == schoolDefault.Id).OrderBy(b => b.MinScore).ToListAsync()
                 : new List<GradeBandEntity>();
-            var bandInfos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+            var defaultBandInfos = defaultBands.Select(b => new AutoTable.Models.GradeBandInfo
             {
                 Id = b.Id, Label = b.Label,
                 MinScore = b.MinScore, MaxScore = b.MaxScore,
@@ -1289,10 +1282,24 @@ namespace AutoTable.Services
                 IsPromotionalFail = b.IsPromotionalFail
             }).ToList();
 
-            // Get all active students in the class
+            // If a specific class is selected, resolve it; otherwise query all
+            bool allClasses = string.IsNullOrWhiteSpace(className);
+            ClassEntity? cls = null;
+            if (!allClasses)
+            {
+                var clsName = className!.Trim().ToLower();
+                cls = await db.Classes
+                    .Include(c => c.GradingSystem)
+                    .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == clsName);
+            }
+
+            // Get active students — filtered by class or all
             var studentsQuery = db.Students
+                .Include(s => s.Class).ThenInclude(c => c!.GradingSystem)
                 .Include(s => s.Stream)
-                .Where(s => s.ClassId == cls.Id && s.IsActive);
+                .Where(s => s.IsActive);
+            if (!allClasses && cls != null)
+                studentsQuery = studentsQuery.Where(s => s.ClassId == cls.Id);
 
             if (!string.IsNullOrWhiteSpace(stream))
             {
@@ -1300,11 +1307,12 @@ namespace AutoTable.Services
                 studentsQuery = studentsQuery.Where(s => s.Stream != null && s.Stream.Name.ToLower() == streamLower);
             }
 
-            var students = await studentsQuery.OrderBy(s => s.FullName).ToListAsync();
+            var students = await studentsQuery.OrderBy(s => s.Class!.Name).ThenBy(s => s.FullName).ToListAsync();
 
-            // Get all assessments for this class + term
-            var assessmentsQuery = db.Assessments
-                .Where(a => a.ClassId == cls.Id);
+            // Get assessments — filtered by class or all
+            var assessmentsQuery = db.Assessments.AsQueryable();
+            if (!allClasses && cls != null)
+                assessmentsQuery = assessmentsQuery.Where(a => a.ClassId == cls.Id);
 
             if (!string.IsNullOrWhiteSpace(term))
             {
@@ -1313,7 +1321,8 @@ namespace AutoTable.Services
                     assessmentsQuery = assessmentsQuery.Where(a => a.TermId == termEntity.Id);
             }
 
-            var assessmentIds = await assessmentsQuery.Select(a => a.Id).ToListAsync();
+            var assessmentEntities = await assessmentsQuery.Select(a => new { a.Id, a.ClassId }).ToListAsync();
+            var assessmentIds = assessmentEntities.Select(a => a.Id).ToList();
 
             // Get all marks for these students + assessments
             var studentIds = students.Select(s => s.Id).ToList();
@@ -1324,7 +1333,25 @@ namespace AutoTable.Services
             // Build report card rows
             var rows = students.Select(s =>
             {
-                var studentMarks = marks.Where(m => m.StudentId == s.Id).ToList();
+                // Resolve grading system per student's class
+                double passMark;
+                IReadOnlyList<AutoTable.Models.GradeBandInfo> bandInfos;
+                var studentClass = s.Class;
+                if (studentClass?.GradingSystem != null)
+                {
+                    passMark = studentClass.GradingSystem.PassMark;
+                    bandInfos = defaultBandInfos;
+                }
+                else
+                {
+                    passMark = defaultPassMark;
+                    bandInfos = defaultBandInfos;
+                }
+
+                var classAssessmentIds = assessmentEntities
+                    .Where(a => a.ClassId == s.ClassId).Select(a => a.Id).ToHashSet();
+                var studentMarks = marks
+                    .Where(m => m.StudentId == s.Id && classAssessmentIds.Contains(m.AssessmentId)).ToList();
                 var scores = studentMarks.Select(x => x.Mark ?? 0).ToList();
                 var avg = scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
                 var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
@@ -1333,11 +1360,11 @@ namespace AutoTable.Services
                 {
                     StudentName = s.FullName,
                     AdmissionNumber = s.LIN ?? string.Empty,
-                    ClassName = cls.Name,
+                    ClassName = s.Class?.Name ?? "-",
                     Average = avg,
                     Status = status
                 };
-            }).OrderByDescending(r => r.Average).ToList();
+            }).OrderBy(r => r.ClassName).ThenByDescending(r => r.Average).ToList();
 
             for (int i = 0; i < rows.Count; i++)
                 rows[i].Rank = i + 1;
