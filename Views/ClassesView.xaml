@@ -49,7 +49,7 @@
                                 <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="All Classes" VerticalAlignment="Center" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
                                     <Button Content="Export" Style="{ThemeResource SecondaryButtonStyle}" />
-                                    <Button Content="+ Create Class" Style="{ThemeResource PrimaryButtonStyle}" Click="CreateClass_Click" />
+                                    <Button x:Name="CreateClassButton" Content="+ Create Class" Style="{ThemeResource PrimaryButtonStyle}" Click="CreateClass_Click" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -114,7 +114,7 @@
                     <StackPanel Spacing="12">
                         <Grid>
                             <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Grading Systems" VerticalAlignment="Center" />
-                            <Button Content="+ New Grading System" HorizontalAlignment="Right"
+                            <Button x:Name="CreateGradingSystemButton" Content="+ New Grading System" HorizontalAlignment="Right"
                                     Style="{ThemeResource SecondaryButtonStyle}" Click="CreateGradingSystem_Click" />
                         </Grid>
                         <TextBlock Style="{ThemeResource MutedTextStyle}"

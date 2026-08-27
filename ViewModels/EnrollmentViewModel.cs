@@ -91,6 +91,15 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task SubmitAsync()
         {
+            // Active-term enforcement: block enrollment if no term is active
+            var activeTerm = await _dataService.GetActiveTermAsync();
+            if (activeTerm == null)
+            {
+                StatusMessage = "No academic term is currently active. Please create and activate a term under Term Management before enrolling students.";
+                ErrorOccurred?.Invoke(StatusMessage);
+                return;
+            }
+
             var autoLin = string.IsNullOrWhiteSpace(Lin)
                 ? "LIN-" + System.Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant()
                 : Lin.Trim();

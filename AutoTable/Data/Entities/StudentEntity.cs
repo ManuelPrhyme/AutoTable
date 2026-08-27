@@ -158,6 +158,11 @@ namespace AutoTable.Data.Entities
         public int MarksEnteredPercent { get; set; }
         /// <summary>0=None, 1=CountsTowardPromotion, 2=PromotionExam — maps to AssessmentPromotionRole enum.</summary>
         public int PromotionRole { get; set; }
+        /// <summary>Optional: the teacher who authored/created this assessment.</summary>
+        public int? AuthorUserId { get; set; }
+        public UserEntity? AuthorUser { get; set; }
+        /// <summary>Display name of the author (stored for when the user record may not exist in DB).</summary>
+        public string? AuthorName { get; set; }
 
         public ICollection<MarkEntity> Marks { get; set; } = new List<MarkEntity>();
     }

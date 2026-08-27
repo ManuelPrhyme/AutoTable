@@ -21,6 +21,21 @@ namespace AutoTable.Views
 
         private async void NewAssessment_Click(object sender, RoutedEventArgs e)
         {
+            // ── Active-term enforcement: block if no term is active ──
+            var activeTerm = await AppServices.DataService!.GetActiveTermAsync();
+            if (activeTerm == null)
+            {
+                var err = new ContentDialog
+                {
+                    Title = "No Active Term",
+                    Content = "No academic term is currently active. Please create and activate a term under Term Management before creating assessments.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await err.ShowAsync();
+                return;
+            }
+
             // ── Scope selector ──
             var scopeBox = new ComboBox
             {
@@ -63,7 +78,7 @@ namespace AutoTable.Views
             };
 
             // ── Subject pickers (shown/hidden based on scope) ──
-            var singleSubjectPicker = new ComboBox { Header = "Subject", Width = 240, DisplayMemberPath = "Name", SelectedIndex = -1 };
+            var singleSubjectPicker = new ComboBox { Header = "Subject", Width = 240, SelectedIndex = -1 };
             var multiSubjectPanel = new StackPanel { Spacing = 4, Visibility = Visibility.Collapsed };
             var multiSubjectHeader = new TextBlock { Text = "Select subjects", FontSize = 12, Margin = new Thickness(0, 0, 0, 2) };
             var multiSubjectScroll = new ScrollViewer { MaxHeight = 160, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -87,9 +102,9 @@ namespace AutoTable.Views
             // ── Load classes ──
             var classes = await AppServices.DataService!.GetClassesAsync();
             classPicker.ItemsSource = classes;
-            if (classes.Count > 0) classPicker.SelectedIndex = 0;
 
             // ── When class changes, reload streams + subjects ──
+            // (must be attached BEFORE setting SelectedIndex so the initial load fires)
             classPicker.SelectionChanged += async (s, ev) =>
             {
                 singleSubjectPicker.ItemsSource = null;
@@ -120,6 +135,8 @@ namespace AutoTable.Views
                     singleSubjectPicker.ItemsSource = null;
                 }
             };
+
+            if (classes.Count > 0) classPicker.SelectedIndex = 0;
 
             // Preload all school subjects
             allSchoolSubjects.AddRange(allClassSubjects.Select(s => s.Name));
@@ -316,6 +333,22 @@ namespace AutoTable.Views
             int weight, DateTime dueDate, int? streamId,
             AssessmentPromotionRole promoRole = AssessmentPromotionRole.None)
         {
+            // Set the author to the current logged-in user
+            var currentUser = Services.SessionService.Instance.CurrentUser;
+            int? authorId = null;
+            string? authorName = null;
+            if (currentUser != null)
+            {
+                // Try to resolve the user's DB ID from the users table
+                try
+                {
+                    var users = AppServices.DataService?.GetTeachersAsync().Result;
+                    // For now, use the session user info; DB ID resolution happens server-side
+                    authorName = currentUser.FullName;
+                }
+                catch { }
+            }
+
             return new AssessmentItem
             {
                 Name = name,
@@ -326,7 +359,8 @@ namespace AutoTable.Views
                 DueDate = dueDate,
                 IsClassWide = true,
                 StreamId = streamId,
-                PromotionRole = promoRole
+                PromotionRole = promoRole,
+                AuthorName = authorName
             };
         }
     }

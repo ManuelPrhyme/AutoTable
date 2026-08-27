@@ -77,7 +77,16 @@ namespace AutoTable.Views
             SidebarAvatar.DisplayName = user?.FullName ?? "U";
             HeaderUserName.Text = user?.FullName ?? "User";
 
+            // Admin-only pages: hide sidebar items for non-admins
             NavModeration.Visibility = _vm.IsAdministrator
+                ? Visibility.Visible : Visibility.Collapsed;
+            NavTermManagement.Visibility = _vm.IsAdministrator
+                ? Visibility.Visible : Visibility.Collapsed;
+            NavClasses.Visibility = _vm.IsAdministrator
+                ? Visibility.Visible : Visibility.Collapsed;
+            NavBudget.Visibility = _vm.IsAdministrator
+                ? Visibility.Visible : Visibility.Collapsed;
+            NavPromotion.Visibility = _vm.IsAdministrator
                 ? Visibility.Visible : Visibility.Collapsed;
 
             NavigationService.Instance.InitializeShell(ContentFrame);
@@ -99,6 +108,10 @@ namespace AutoTable.Views
         private void OnExternalShellNavigated(string tag)
         {
             if (!Routes.ContainsKey(tag)) return;
+
+            // Block admin-only pages from external navigation for non-admins
+            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+                return;
 
             if (PageMeta.TryGetValue(tag, out var meta))
             {
@@ -132,9 +145,32 @@ namespace AutoTable.Views
             NavigateTo(tag, btn);
         }
 
+        private static readonly HashSet<string> AdminOnlyRoutes = new()
+        {
+            "TermManagement", "Classes", "Budget", "Promotion"
+        };
+
         private async void NavigateTo(string tag, Button btn)
         {
             if (!Routes.TryGetValue(tag, out var pageType)) return;
+
+            // Route-level guard: non-admins cannot access admin-only pages
+            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+            {
+                try
+                {
+                    var dlg = new ContentDialog
+                    {
+                        Title = "Access Restricted",
+                        Content = "This page is restricted to administrators. Please sign in with an admin account to access it.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dlg.ShowAsync();
+                }
+                catch { }
+                return;
+            }
 
             // Update header
             if (PageMeta.TryGetValue(tag, out var meta))

@@ -1,4 +1,5 @@
 using AutoTable.ViewModels;
+using AutoTable.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -8,16 +9,24 @@ namespace AutoTable.Views
     public sealed partial class TermManagementView : Page
     {
         private readonly TermManagementViewModel _vm;
+        private readonly bool _isAdmin;
         public TermManagementView()
         {
             InitializeComponent();
             _vm = new TermManagementViewModel();
             DataContext = _vm;
+            _isAdmin = SessionService.Instance.IsAdministrator;
             Loaded += TermManagementView_Loaded;
         }
 
         private async void TermManagementView_Loaded(object sender, RoutedEventArgs e)
         {
+            // Admin-only: hide Create Term section for non-admins
+            if (!_isAdmin)
+            {
+                CreateTermCard.Visibility = Visibility.Collapsed;
+            }
+
             await _vm.LoadAsync();
 
             // Wire up term selection to update the fee panel context
@@ -74,6 +83,13 @@ namespace AutoTable.Views
 
         private async void CreateTerm_Click(object sender, RoutedEventArgs e)
         {
+            if (!_isAdmin)
+            {
+                var err = new ContentDialog { Title = "Access Restricted", Content = "Only administrators can create terms.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                await err.ShowAsync();
+                return;
+            }
+
             var name = NewTermName.Text?.Trim();
             var start = TermStart.Date;
             var end = TermEnd.Date;
@@ -147,6 +163,13 @@ namespace AutoTable.Views
 
         private async void SetFee_Click(object sender, RoutedEventArgs e)
         {
+            if (!_isAdmin)
+            {
+                var err = new ContentDialog { Title = "Access Restricted", Content = "Only administrators can set term fees.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                await err.ShowAsync();
+                return;
+            }
+
             if ((sender as Button)?.DataContext is AutoTable.Models.SimpleLookup cls)
             {
                 // Must select a term first

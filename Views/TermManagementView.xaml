@@ -14,7 +14,7 @@
             <TextBlock Style="{ThemeResource PageTitleStyle}" Text="Term Management" />
             <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Create and manage academic terms and per-class fees." />
 
-            <Border Style="{ThemeResource CardBorderStyle}">
+            <Border x:Name="CreateTermCard" Style="{ThemeResource CardBorderStyle}">
                 <StackPanel Spacing="8" Padding="12">
                     <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Create Term" />
                     <StackPanel Orientation="Horizontal" Spacing="8">

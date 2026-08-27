@@ -170,6 +170,46 @@ namespace AutoTable
                                 cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN PromotionRole INTEGER DEFAULT 0;";
                                 try { cmd.ExecuteNonQuery(); } catch { }
                             }
+
+                            // Add AuthorUserId column (optional: teacher who authored the assessment)
+                            var hasAuthorUserId = false;
+                            cmd.CommandText = "PRAGMA table_info(Assessments);";
+                            using (var rAuthor = cmd.ExecuteReader())
+                            {
+                                while (rAuthor.Read())
+                                {
+                                    if (string.Equals(rAuthor.GetString(1), "AuthorUserId", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasAuthorUserId = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!hasAuthorUserId)
+                            {
+                                cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN AuthorUserId INTEGER;";
+                                try { cmd.ExecuteNonQuery(); } catch { }
+                            }
+
+                            // Add AuthorName column (display name of the author)
+                            var hasAuthorName = false;
+                            cmd.CommandText = "PRAGMA table_info(Assessments);";
+                            using (var rAuthorName = cmd.ExecuteReader())
+                            {
+                                while (rAuthorName.Read())
+                                {
+                                    if (string.Equals(rAuthorName.GetString(1), "AuthorName", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasAuthorName = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!hasAuthorName)
+                            {
+                                cmd.CommandText = "ALTER TABLE Assessments ADD COLUMN AuthorName TEXT;";
+                                try { cmd.ExecuteNonQuery(); } catch { }
+                            }
                         }
                         catch { }
 

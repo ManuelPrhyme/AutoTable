@@ -49,6 +49,10 @@ namespace AutoTable.Models
         public bool IsPublished { get; set; }
         /// <summary>How this assessment contributes to promotion: None, Contributory, or Promotion Exam.</summary>
         public AssessmentPromotionRole PromotionRole { get; set; } = AssessmentPromotionRole.None;
+        /// <summary>The teacher who authored this assessment (display name).</summary>
+        public string? AuthorName { get; set; }
+        /// <summary>The ID of the teacher who authored this assessment.</summary>
+        public int? AuthorId { get; set; }
         public string StatusLabel => IsPublished ? "Published" : IsVerified ? "Verified" : MarksEnteredPercent >= 100 ? "Complete" : "In Progress";
     }
 }

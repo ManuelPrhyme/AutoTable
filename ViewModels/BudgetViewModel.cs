@@ -66,6 +66,12 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task AddLineItemAsync()
         {
+            if (!SessionService.Instance.IsAdministrator)
+            {
+                StatusMessage = "Only administrators can add budget line items.";
+                return;
+            }
+
             var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
             {
                 Title = "Add Budget Line Item",

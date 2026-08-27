@@ -370,7 +370,7 @@ namespace AutoTable.Services
                 .Where(fp => fp.StudentId == studentId && fp.TermId == termId.Value)
                 .SumAsync(fp => fp.Amount);
 
-            // Total existing credits for this student (unapplied)
+            // Total existing credits for this student (unapplied)
             var existingCredits = await db.StudentCredits
                 .Where(c => c.StudentId == studentId && !c.AppliedAt.HasValue)
                 .SumAsync(c => c.Amount);
@@ -530,7 +530,9 @@ namespace AutoTable.Services
 
             // Case-insensitive / trim-tolerant match so a name typed or stored with
             // different casing still resolves instead of failing with "not found".
-            var a = await db.Assessments.FirstOrDefaultAsync(x =>
+            var a = await db.Assessments
+                .Include(x => x.AuthorUser)
+                .FirstOrDefaultAsync(x =>
                 x.ClassId == cls.Id && x.SubjectId == subj.Id &&
                 x.Name.Trim().ToLower() == assName.ToLower());
 
@@ -547,7 +549,9 @@ namespace AutoTable.Services
                 MarksEnteredPercent = a.MarksEnteredPercent,
                 IsVerified = a.IsVerified,
                 IsPublished = a.IsPublished,
-                PromotionRole = (AssessmentPromotionRole)a.PromotionRole
+                PromotionRole = (AssessmentPromotionRole)a.PromotionRole,
+                AuthorId = a.AuthorUserId,
+                AuthorName = a.AuthorName ?? a.AuthorUser?.FullName
             };
         }
 
@@ -625,6 +629,7 @@ namespace AutoTable.Services
             var list = await db.Assessments
                 .Include(a => a.Class)
                 .Include(a => a.Subject)
+                .Include(a => a.AuthorUser)
                 .OrderBy(a => a.DueDate)
                 .ToListAsync();
 
@@ -639,7 +644,9 @@ namespace AutoTable.Services
                 MarksEnteredPercent = a.MarksEnteredPercent,
                 IsVerified = a.IsVerified,
                 IsPublished = a.IsPublished,
-                PromotionRole = (AssessmentPromotionRole)a.PromotionRole
+                PromotionRole = (AssessmentPromotionRole)a.PromotionRole,
+                AuthorId = a.AuthorUserId,
+                AuthorName = a.AuthorName ?? a.AuthorUser?.FullName
             }).ToList();
         }
 
@@ -1964,7 +1971,9 @@ namespace AutoTable.Services
                 IsVerified = false,
                 IsPublished = false,
                 MarksEnteredPercent = 0,
-                PromotionRole = (int)item.PromotionRole
+                PromotionRole = (int)item.PromotionRole,
+                AuthorUserId = item.AuthorId,
+                AuthorName = item.AuthorName
             };
             db.Assessments.Add(entity);
             await db.SaveChangesAsync();
@@ -1980,7 +1989,9 @@ namespace AutoTable.Services
                 MarksEnteredPercent = entity.MarksEnteredPercent,
                 IsVerified = entity.IsVerified,
                 IsPublished = entity.IsPublished,
-                PromotionRole = (AssessmentPromotionRole)entity.PromotionRole
+                PromotionRole = (AssessmentPromotionRole)entity.PromotionRole,
+                AuthorId = entity.AuthorUserId,
+                AuthorName = entity.AuthorName
             };
         }
 

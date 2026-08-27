@@ -26,9 +26,21 @@ namespace AutoTable.Views
 
         private async void RecordPayment_Click(object sender, RoutedEventArgs e)
         {
-            // ALWAYS default to the active term (IsActive) rather than the filter bar's term
+            // Active-term enforcement: block if no term is active
             SimpleLookup? activeTerm = null;
             try { activeTerm = await AppServices.DataService!.GetActiveTermAsync(); } catch { }
+            if (activeTerm == null)
+            {
+                var err = new ContentDialog
+                {
+                    Title = "No Active Term",
+                    Content = "No academic term is currently active. Please create and activate a term under Term Management before recording payments.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await err.ShowAsync();
+                return;
+            }
             int? termId = activeTerm?.Id;
             var termLabel = activeTerm?.Name ?? "(no active term)";
 

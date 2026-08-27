@@ -82,6 +82,11 @@ namespace AutoTable.ViewModels
         private async Task PromoteAsync(PromotionRow row)
         {
             if (row == null) return;
+            if (!SessionService.Instance.IsAdministrator)
+            {
+                StatusMessage = "Only administrators can process promotions.";
+                return;
+            }
             try
             {
                 await _dataService.PromoteStudentAsync(row.StudentId, row.TargetClassId);
@@ -96,6 +101,11 @@ namespace AutoTable.ViewModels
         private async Task RepeatAsync(PromotionRow row)
         {
             if (row == null) return;
+            if (!SessionService.Instance.IsAdministrator)
+            {
+                StatusMessage = "Only administrators can process promotions.";
+                return;
+            }
             try
             {
                 await _dataService.RepeatStudentAsync(row.StudentId);
@@ -121,6 +131,11 @@ namespace AutoTable.ViewModels
         [RelayCommand]
         private async Task ProcessAllAsync()
         {
+            if (!SessionService.Instance.IsAdministrator)
+            {
+                StatusMessage = "Only administrators can process promotions.";
+                return;
+            }
             int? classId = SelectedClass != null && SelectedClass.Id != 0 ? SelectedClass.Id : (int?)null;
             try
             {
@@ -137,6 +152,11 @@ namespace AutoTable.ViewModels
         private async Task ShiftAsync(PromotionRow row)
         {
             if (row == null) return;
+            if (!SessionService.Instance.IsAdministrator)
+            {
+                StatusMessage = "Only administrators can shift students.";
+                return;
+            }
             try
             {
                 var classes = await _dataService.GetClassesAsync();
