@@ -650,13 +650,21 @@ namespace AutoTable.Services
             }).ToList();
         }
 
-        public async Task<IReadOnlyList<GradebookRow>> GetGradebookAsync(string className, string subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
+        public async Task<IReadOnlyList<GradebookRow>> GetGradebookAsync(string? className, string? subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
         {
             using var db = CreateContext();
-            var cls = await db.Classes.Include(c => c.GradingSystem).FirstOrDefaultAsync(c => c.Name == className) ?? db.Classes.FirstOrDefault();
-            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == subject) ?? db.Subjects.FirstOrDefault();
 
-            if (cls == null || subj == null) return new List<GradebookRow>();
+            ClassEntity? cls = null;
+            if (!string.IsNullOrWhiteSpace(className))
+                cls = await db.Classes.Include(c => c.GradingSystem).FirstOrDefaultAsync(c => c.Name == className);
+            if (cls == null)
+                cls = await db.Classes.Include(c => c.GradingSystem).FirstOrDefaultAsync();
+
+            SubjectEntity? subj = null;
+            if (!string.IsNullOrWhiteSpace(subject))
+                subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == subject);
+
+            if (cls == null) return new List<GradebookRow>();
 
             // Resolve grading system for this class.
             var gradingSystem = cls.GradingSystem;
@@ -679,7 +687,9 @@ namespace AutoTable.Services
             var marksQuery = db.Marks
                 .Include(m => m.Student)
                 .Include(m => m.Assessment)
-                .Where(m => m.Assessment!.ClassId == cls.Id && m.Assessment.SubjectId == subj.Id);
+                .Where(m => m.Assessment!.ClassId == cls.Id);
+            if (subj != null)
+                marksQuery = marksQuery.Where(m => m.Assessment.SubjectId == subj.Id);
 
             if (!string.IsNullOrWhiteSpace(academicYear))
             {
@@ -714,7 +724,7 @@ namespace AutoTable.Services
                     AdmissionNumber = g.Key.LIN ?? string.Empty,
                         ClassName = cls.Name,
                         Stream = g.Key.Stream?.Name ?? string.Empty,
-                        Subject = subj.Name,
+                        Subject = subj?.Name ?? "All",
                         AcademicYear = academicYear ?? string.Empty,
                         Term = term ?? string.Empty,
                         Cat1 = scores.ElementAtOrDefault(0),

@@ -62,7 +62,7 @@ namespace AutoTable.Demo
             return Task.FromResult<AssessmentItem?>(found);
         }
 
-        public Task<IReadOnlyList<Models.GradebookRow>> GetGradebookAsync(string className, string subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
+        public Task<IReadOnlyList<Models.GradebookRow>> GetGradebookAsync(string? className, string? subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null)
         {
             var rows = _mock.GetGradebook(className, subject, academicYear, term, stream, studentName);
             return Task.FromResult<IReadOnlyList<Models.GradebookRow>>(rows);

@@ -8,7 +8,7 @@ namespace AutoTable.Services
     public interface IDataService
     {
         Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync();
-        Task<IReadOnlyList<Models.GradebookRow>> GetGradebookAsync(string className, string subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null);
+        Task<IReadOnlyList<Models.GradebookRow>> GetGradebookAsync(string? className, string? subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null);
         Task<IReadOnlyList<Models.StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName);
 
         // Lookup lists for filters

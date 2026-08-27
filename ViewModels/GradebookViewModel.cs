@@ -12,8 +12,8 @@ namespace AutoTable.ViewModels
     {
         private readonly IDataService _dataService;
 
-        [ObservableProperty] private string _selectedClass = "P5";
-        [ObservableProperty] private string _selectedSubject = "Mathematics";
+        [ObservableProperty] private string _selectedClass = "All";
+        [ObservableProperty] private string _selectedSubject = "All";
         [ObservableProperty] private string _statusMessage = string.Empty;
 
         public ObservableCollection<string> Classes { get; }
@@ -46,17 +46,22 @@ namespace AutoTable.ViewModels
         {
             if (Classes.Count == 0)
             {
+                Classes.Add("All");
                 var classes = await _dataService.GetClassesAsync();
                 foreach (var c in classes) Classes.Add(c.Name);
             }
 
             if (Subjects.Count == 0)
             {
+                Subjects.Add("All");
                 var subjects = await _dataService.GetSubjectsAsync();
                 foreach (var s in subjects) Subjects.Add(s.Name);
             }
 
-            var rows = await _dataService.GetGradebookAsync(SelectedClass, SelectedSubject);
+            var className = SelectedClass == "All" ? null : SelectedClass;
+            var subject = SelectedSubject == "All" ? null : SelectedSubject;
+
+            var rows = await _dataService.GetGradebookAsync(className, subject);
             GradebookRows.Clear();
             foreach (var row in rows)
                 GradebookRows.Add(row);
