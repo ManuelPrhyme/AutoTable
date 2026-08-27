@@ -32,6 +32,8 @@ namespace AutoTable
     public partial class App : Application
     {
         private Window? _window;
+        /// <summary>Public accessor for the main window (used by file pickers).</summary>
+        public static Window? MainWindow => ((App)Current)._window;
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -630,12 +632,36 @@ namespace AutoTable
                                     SchoolAddress TEXT DEFAULT '',
                                     SchoolPhone TEXT DEFAULT '',
                                     HeadTeacherName TEXT DEFAULT '',
-                                    Motto TEXT DEFAULT ''
+                                    Motto TEXT DEFAULT '',
+                                    LogoBytes BLOB
                                 );";
                             cmdSS.ExecuteNonQuery();
                             // Ensure singleton row exists
                             cmdSS.CommandText = "INSERT OR IGNORE INTO SchoolSettings (Id, SchoolName) VALUES (1, 'AutoTable Academy');";
                             cmdSS.ExecuteNonQuery();
+                            // Add LogoBytes column for existing databases
+                            try
+                            {
+                                using var cmdLogo = sqliteConnection.CreateCommand();
+                                cmdLogo.CommandText = "PRAGMA table_info('SchoolSettings');";
+                                var hasLogo = false;
+                                using (var rLogo = cmdLogo.ExecuteReader())
+                                {
+                                    while (rLogo.Read())
+                                    {
+                                        if (string.Equals(rLogo.GetString(1), "LogoBytes", System.StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            hasLogo = true; break;
+                                        }
+                                    }
+                                }
+                                if (!hasLogo)
+                                {
+                                    cmdLogo.CommandText = "ALTER TABLE SchoolSettings ADD COLUMN LogoBytes BLOB;";
+                                    try { cmdLogo.ExecuteNonQuery(); } catch { }
+                                }
+                            }
+                            catch { /* best-effort */ }
                         }
                         catch { /* best-effort */ }
 

@@ -36,6 +36,33 @@
 
                     <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
 
+                    <TextBlock Text="SCHOOL LOGO" Style="{ThemeResource SectionTitleStyle}" />
+
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <!-- Logo preview -->
+                        <Border Grid.Column="0" Width="120" Height="120"
+                                BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
+                                CornerRadius="8" Background="#F8F8F8"
+                                HorizontalAlignment="Left">
+                            <Image x:Name="LogoPreview" Stretch="Uniform" Margin="8" />
+                        </Border>
+                        <!-- Logo controls -->
+                        <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="Upload your school logo (PNG, JPG)"
+                                       FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" />
+                            <Button x:Name="PickLogoButton" Content="Choose Logo"
+                                    Click="PickLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
+                            <Button x:Name="ClearLogoButton" Content="Remove Logo"
+                                    Click="ClearLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+
                     <TextBlock Text="HEAD TEACHER" Style="{ThemeResource SectionTitleStyle}" />
 
                     <TextBox Header="Head Teacher Name"

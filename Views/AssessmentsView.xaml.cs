@@ -36,7 +36,7 @@ namespace AutoTable.Views
                 return;
             }
 
-            // ── Scope selector ── // Selector PropertyChanged
+            // ── Scope selector ── // Selector
             var scopeBox = new ComboBox //Redial in the table using the propertychanged option
             {
                 Header = "Subject scope",
@@ -264,6 +264,7 @@ namespace AutoTable.Views
                             var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
                             var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                             if (created != null) createdItems.Add(created);
+                            
                         }
                     }
                     else if (scope == AutoTable.Models.AssessmentScope.SpecificSubjects)

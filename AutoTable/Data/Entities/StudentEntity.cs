@@ -321,7 +321,7 @@ namespace AutoTable.Data.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    /// <summary>Global school configuration — name, head teacher, address. Singleton row (Id=1).</summary>
+    /// <summary>Global school configuration — name, head teacher, address, logo. Singleton row (Id=1).</summary>
     public class SchoolSettingsEntity
     {
         public int Id { get; set; } = 1;
@@ -330,6 +330,8 @@ namespace AutoTable.Data.Entities
         public string SchoolPhone { get; set; } = string.Empty;
         public string HeadTeacherName { get; set; } = string.Empty;
         public string Motto { get; set; } = string.Empty;
+        /// <summary>Raw image bytes for the school logo (stored as BLOB in SQLite).</summary>
+        public byte[]? LogoBytes { get; set; }
     }
 
     /// <summary>Per-student head teacher comment on the report card.</summary>

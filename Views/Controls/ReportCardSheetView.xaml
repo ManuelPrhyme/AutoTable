@@ -21,11 +21,21 @@
             </Grid.RowDefinitions>
 
             <!-- School header -->
-            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="1">
-                <TextBlock Text="{Binding SchoolName}" FontSize="22" FontWeight="Bold" Foreground="#1F3864" />
-                <TextBlock Text="{Binding TermLabel}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding GradingInfoLabel}" FontSize="10" Foreground="#555555" HorizontalAlignment="Center" />
-            </StackPanel>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Image x:Name="SchoolLogo" Grid.Column="0" Width="60" Height="60"
+                       Margin="0,0,12,0" VerticalAlignment="Center" Stretch="Uniform" />
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center" Spacing="1">
+                    <TextBlock Text="{Binding SchoolName}" FontSize="22" FontWeight="Bold" Foreground="#1F3864" />
+                    <TextBlock Text="{Binding TermLabel}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding GradingInfoLabel}" FontSize="10" Foreground="#555555" HorizontalAlignment="Center" />
+                </StackPanel>
+                <Grid Grid.Column="2" Width="60" /> <!-- Spacer to balance logo -->
+            </Grid>
 
             <!-- Title bar -->
             <Border Grid.Row="1" Background="#1F3864" CornerRadius="3" Padding="12,5">

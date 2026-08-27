@@ -58,6 +58,7 @@ namespace AutoTable.Models
     public class MidTermSlipModel
     {
         public string SchoolName { get; set; } = "AutoTable Academy";
+        public byte[]? LogoBytes { get; set; }
         public string Term { get; set; } = string.Empty;
         public string StudentName { get; set; } = string.Empty;
         public string AdmissionNumber { get; set; } = string.Empty;

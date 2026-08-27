@@ -14,6 +14,7 @@ namespace AutoTable.ViewModels
         [ObservableProperty] private string _schoolPhone = "";
         [ObservableProperty] private string _headTeacherName = "";
         [ObservableProperty] private string _motto = "";
+        [ObservableProperty] private byte[]? _logoBytes;
         [ObservableProperty] private string _statusMessage = "";
 
         public SchoolSettingsViewModel()
@@ -30,6 +31,7 @@ namespace AutoTable.ViewModels
             SchoolPhone = settings.SchoolPhone;
             HeadTeacherName = settings.HeadTeacherName;
             Motto = settings.Motto;
+            LogoBytes = settings.LogoBytes;
         }
 
         [CommunityToolkit.Mvvm.Input.RelayCommand]
@@ -41,7 +43,8 @@ namespace AutoTable.ViewModels
                 SchoolAddress = SchoolAddress,
                 SchoolPhone = SchoolPhone,
                 HeadTeacherName = HeadTeacherName,
-                Motto = Motto
+                Motto = Motto,
+                LogoBytes = LogoBytes
             };
             await _dataService.UpdateSchoolSettingsAsync(settings);
             StatusMessage = "Settings saved successfully.";

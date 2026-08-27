@@ -84,5 +84,8 @@ namespace AutoTable.Models
 
         public bool HasPromotional => PromotionalAssessments.Count > 0;
         public bool HasContributory => ContributoryAssessments.Count > 0;
+
+        /// <summary>Logo image bytes — set from SchoolSettings.</summary>
+        public byte[]? LogoBytes { get; set; }
     }
 }

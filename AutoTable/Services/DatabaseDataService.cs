@@ -1239,6 +1239,7 @@ namespace AutoTable.Services
                 ClassTeacher = cls.ClassTeacher?.FullName ?? string.Empty,
                 HeadTeacher = schoolSettings.HeadTeacherName,
                 HeadTeacherComment = await GetHeadTeacherCommentAsync(student.Id, termEntity.Id),
+                LogoBytes = schoolSettings.LogoBytes,
                 GradingSystemName = gradingSystem?.Name ?? string.Empty,
                 PassMark = passMark,
                 PromotionalAssessments = promotional,
@@ -1501,6 +1502,7 @@ namespace AutoTable.Services
                 return new AutoTable.Models.MidTermSlipModel
                 {
                     SchoolName = midTermSchoolSettings.SchoolName,
+                    LogoBytes = midTermSchoolSettings.LogoBytes,
                     Term = term ?? string.Empty,
                     StudentName = s.FullName,
                     AdmissionNumber = s.LIN ?? string.Empty,
@@ -2596,7 +2598,8 @@ namespace AutoTable.Services
                 SchoolAddress = entity.SchoolAddress,
                 SchoolPhone = entity.SchoolPhone,
                 HeadTeacherName = entity.HeadTeacherName,
-                Motto = entity.Motto
+                Motto = entity.Motto,
+                LogoBytes = entity.LogoBytes
             };
         }
 
@@ -2614,6 +2617,7 @@ namespace AutoTable.Services
             entity.SchoolPhone = settings.SchoolPhone;
             entity.HeadTeacherName = settings.HeadTeacherName;
             entity.Motto = settings.Motto;
+            entity.LogoBytes = settings.LogoBytes;
             await db.SaveChangesAsync();
             return settings;
         }
