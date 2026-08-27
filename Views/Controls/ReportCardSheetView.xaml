@@ -17,6 +17,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- School header -->
@@ -209,16 +210,27 @@
             </Grid>
 
             <!-- Teacher comment -->
-            <Border Grid.Row="6" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="10" MinHeight="90">
-                <StackPanel Spacing="5">
+            <Border Grid.Row="6" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="10" MinHeight="70">
+                <StackPanel Spacing="4">
                     <TextBlock Text="CLASS TEACHER'S COMMENT" FontSize="10" FontWeight="Bold" Foreground="#1F3864" />
                     <TextBlock Text="{Binding TeacherComment}" FontSize="11" TextWrapping="Wrap" Foreground="#2C3E50" />
-                    <TextBlock Text="{Binding ClassTeacherLine}" FontSize="11" FontWeight="SemiBold"
+                    <TextBlock Text="{Binding ClassTeacherLine}" FontSize="10" FontWeight="SemiBold"
                                Foreground="#444444" HorizontalAlignment="Right" />
                 </StackPanel>
             </Border>
-<!-- Signatures -->
-            <Grid Grid.Row="7" Margin="0,10,0,0">
+
+            <!-- Head teacher comment -->
+            <Border Grid.Row="7" BorderBrush="#C9D3E6" BorderThickness="1" CornerRadius="3" Padding="10" MinHeight="70" Margin="0,4,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="HEAD TEACHER'S COMMENT" FontSize="10" FontWeight="Bold" Foreground="#1F3864" />
+                    <TextBlock Text="{Binding HeadTeacherComment}" FontSize="11" TextWrapping="Wrap" Foreground="#2C3E50" />
+                    <TextBlock Text="{Binding HeadTeacherLine}" FontSize="10" FontWeight="SemiBold"
+                               Foreground="#444444" HorizontalAlignment="Right" />
+                </StackPanel>
+            </Border>
+
+            <!-- Signatures -->
+            <Grid Grid.Row="8" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>

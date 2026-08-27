@@ -30,6 +30,11 @@ namespace AutoTable.Models
         public string ClassName { get; set; } = string.Empty;
         public double Average { get; set; }
         public string Status { get; set; } = string.Empty;
+        /// <summary>Fee payment status for finance-filtered printing: "Paid", "Partial", "Unpaid", or "N/A".</summary>
+        public string FeeStatus { get; set; } = "N/A";
+        public double ExpectedAmount { get; set; }
+        public double PaidAmount { get; set; }
+        public double Balance => ExpectedAmount - PaidAmount;
     }
 
     public class AutomationItem

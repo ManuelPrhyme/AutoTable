@@ -19,6 +19,7 @@ namespace AutoTable.ViewModels
         [ObservableProperty] private string _selectedTerm = "All";
         [ObservableProperty] private string _selectedStream = null;
         [ObservableProperty] private string _searchText = "";
+        [ObservableProperty] private bool _feeClearedOnly = false;
 
         // --- Collections ---
         public ObservableCollection<string> Classes { get; }
@@ -47,6 +48,7 @@ namespace AutoTable.ViewModels
         partial void OnSelectedTermChanged(string value) => _ = Load();
         partial void OnSelectedStreamChanged(string value) => _ = Load();
         partial void OnSearchTextChanged(string value) => ApplySearchFilter();
+        partial void OnFeeClearedOnlyChanged(bool value) => ApplySearchFilter();
 
         private async Task InitializeAsync()
         {
@@ -89,7 +91,10 @@ namespace AutoTable.ViewModels
                     AdmissionNumber = r.AdmissionNumber,
                     ClassName = r.ClassName,
                     Average = r.Average,
-                    Status = r.Status
+                    Status = r.Status,
+                    FeeStatus = r.FeeStatus,
+                    ExpectedAmount = r.ExpectedAmount,
+                    PaidAmount = r.PaidAmount
                 });
             }
             ApplySearchFilter();
@@ -107,33 +112,36 @@ namespace AutoTable.ViewModels
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal;
 
-            var filtered = hasSearch
-                ? _loadedRows.Where(row =>
-                {
-                    // Match by initials derived from first and last name,
-                    // or by a case-insensitive prefix of the full name / second name.
-                    string[] parts = row.StudentName.Split(
-                        new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    string firstName = parts.Length > 0 ? parts[0] : "";
-                    string lastName = parts.Length > 1 ? parts[parts.Length - 1] : "";
-                    string initials = string.Concat(
-                        parts.Where(p => !string.IsNullOrEmpty(p))
-                             .Select(p => p[0]));
+            var filtered = _loadedRows.Where(row =>
+            {
+                // Finance filter: only show fee-cleared students
+                if (FeeClearedOnly && row.FeeStatus != "Paid" && row.FeeStatus != "N/A")
+                    return false;
 
-                    return row.StudentName.StartsWith(searchText, cmp)
-                        || initials.StartsWith(searchText, cmp)
-                        || (lastName.Length > 0 && lastName.StartsWith(searchText, cmp));
-                })
-                : (IEnumerable<ReportCardRow>)_loadedRows;
+                if (!hasSearch) return true;
 
-            foreach (var r in filtered)
-                ReportCards.Add(r);
+                // Match by initials derived from first and last name,
+                // or by a case-insensitive prefix of the full name / second name.
+                string[] parts = row.StudentName.Split(
+                    new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                string firstName = parts.Length > 0 ? parts[0] : "";
+                string lastName = parts.Length > 1 ? parts[parts.Length - 1] : "";
+                string initials = string.Concat(
+                    parts.Where(p => !string.IsNullOrEmpty(p))
+                         .Select(p => p[0]));
 
-            OnPropertyChanged(nameof(TotalStudents));
-            OnPropertyChanged(nameof(GeneratedCount));
+                return row.StudentName.Contains(searchText, cmp)
+                    || row.AdmissionNumber.Contains(searchText, cmp)
+                    || initials.Contains(searchText, cmp)
+                    || firstName.Contains(searchText, cmp)
+                    || lastName.Contains(searchText, cmp);
+            }).ToList();
+
+            for (int i = 0; i < filtered.Count; i++)
+                filtered[i].Rank = i + 1;
+
+            foreach (var row in filtered)
+                ReportCards.Add(row);
         }
-
-        [RelayCommand] private void GenerateAll() { }
-        [RelayCommand] private void PrintAll() { PrintedCount = ReportCards.Count; OnPropertyChanged(nameof(PrintedCount)); }
     }
 }

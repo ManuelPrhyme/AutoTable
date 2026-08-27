@@ -1233,6 +1233,8 @@ namespace AutoTable.Services
                 GuardianName = student.GuardianName ?? string.Empty,
                 GuardianPhone = student.GuardianPhone ?? string.Empty,
                 ClassTeacher = cls.ClassTeacher?.FullName ?? string.Empty,
+                HeadTeacher = string.Empty, // TODO: resolve from school settings when available
+                HeadTeacherComment = string.Empty, // TODO: allow editing per student
                 GradingSystemName = gradingSystem?.Name ?? string.Empty,
                 PassMark = passMark,
                 PromotionalAssessments = promotional,
@@ -1340,6 +1342,19 @@ namespace AutoTable.Services
                 .Where(m => studentIds.Contains(m.StudentId) && assessmentIds.Contains(m.AssessmentId))
                 .ToListAsync();
 
+            // Get fee payment data per student for finance filtering
+            // Resolve term entity for fee lookup
+            TermEntity? feeTerm = null;
+            if (!string.IsNullOrWhiteSpace(term))
+                feeTerm = await db.Terms.FirstOrDefaultAsync(t => t.Name == term);
+            var termFees = await db.TermFees
+                .Where(tf => feeTerm == null || tf.TermId == feeTerm.Id)
+                .ToListAsync();
+            var feePayments = await db.FeePayments
+                .Where(fp => studentIds.Contains(fp.StudentId) &&
+                    (feeTerm == null || fp.TermId == feeTerm.Id))
+                .ToListAsync();
+
             // Build report card rows
             var rows = students.Select(s =>
             {
@@ -1366,13 +1381,23 @@ namespace AutoTable.Services
                 var avg = scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
                 var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
                 var status = avg == 0 ? "No Data" : avg < passMark ? "At Risk" : avg >= 70 ? "Excellent" : "On Track";
+
+                // Compute fee status for this student
+                var studentTermFee = termFees.FirstOrDefault(tf => tf.ClassId == s.ClassId);
+                var expected = studentTermFee?.Amount ?? 0;
+                var paid = feePayments.Where(fp => fp.StudentId == s.Id).Sum(fp => fp.Amount);
+                string feeStatus = expected <= 0 ? "N/A" : paid >= expected ? "Paid" : paid > 0 ? "Partial" : "Unpaid";
+
                 return new Models.ReportCardRow
                 {
                     StudentName = s.FullName,
                     AdmissionNumber = s.LIN ?? string.Empty,
                     ClassName = s.Class?.Name ?? "-",
                     Average = avg,
-                    Status = status
+                    Status = status,
+                    FeeStatus = feeStatus,
+                    ExpectedAmount = expected,
+                    PaidAmount = paid
                 };
             }).OrderBy(r => r.ClassName).ThenByDescending(r => r.Average).ToList();
 

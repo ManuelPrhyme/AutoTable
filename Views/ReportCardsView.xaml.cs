@@ -144,6 +144,43 @@ namespace AutoTable.Views
             await ShowPreviewAndPrintAsync(sheets, $"Print Preview — {sheets.Count} report cards");
         }
 
+        private async void ExportPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.ReportCards.Count == 0)
+            {
+                await new ContentDialog
+                {
+                    Title = "Export PDF",
+                    Content = "No students loaded. Adjust filters and try again.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return;
+            }
+
+            var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
+            if (sheets.Count == 0) return;
+
+            // Show info dialog: user should select "Microsoft Print to PDF" in the print dialog
+            var infoDialog = new ContentDialog
+            {
+                Title = "Export as PDF",
+                Content = $"{sheets.Count} report card(s) ready. In the print dialog, select \"Microsoft Print to PDF\" as the printer, then click Print to save as PDF.",
+                PrimaryButtonText = "Open Print Dialog",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+            var infoResult = await infoDialog.ShowAsync();
+            if (infoResult != ContentDialogResult.Primary) return;
+
+            try
+            {
+                RegisterForPrinting(sheets);
+                await PrintManager.ShowPrintUIAsync();
+            }
+            finally { UnregisterForPrinting(); }
+        }
+
         private async void MidTermSlips_Click(object sender, RoutedEventArgs e)
         {
             var service = AppServices.DataService;

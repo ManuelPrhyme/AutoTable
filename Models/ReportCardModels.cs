@@ -72,6 +72,16 @@ namespace AutoTable.Models
         /// <summary>Populated comment block (subject strengths + class teacher remark).</summary>
         public string TeacherComment { get; set; } = string.Empty;
 
+        // Head teacher comment
+        /// <summary>Head teacher's name (shown in the signature block).</summary>
+        public string HeadTeacher { get; set; } = string.Empty;
+        /// <summary>"Head Teacher: Name" line shown below the head teacher comment (blank when unknown).</summary>
+        public string HeadTeacherLine => string.IsNullOrEmpty(HeadTeacher)
+            ? string.Empty
+            : $"Head Teacher: {HeadTeacher}";
+        /// <summary>Head teacher's comment on the student's performance.</summary>
+        public string HeadTeacherComment { get; set; } = string.Empty;
+
         public bool HasPromotional => PromotionalAssessments.Count > 0;
         public bool HasContributory => ContributoryAssessments.Count > 0;
     }
