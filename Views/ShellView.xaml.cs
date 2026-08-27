@@ -80,10 +80,8 @@ namespace AutoTable.Views
             // Admin-only pages: hide sidebar items for non-admins
             NavModeration.Visibility = _vm.IsAdministrator
                 ? Visibility.Visible : Visibility.Collapsed;
-            NavTermManagement.Visibility = _vm.IsAdministrator
-                ? Visibility.Visible : Visibility.Collapsed;
-            NavClasses.Visibility = _vm.IsAdministrator
-                ? Visibility.Visible : Visibility.Collapsed;
+            NavTermManagement.Visibility = Visibility.Visible;
+            NavClasses.Visibility = Visibility.Visible;
             NavBudget.Visibility = _vm.IsAdministrator
                 ? Visibility.Visible : Visibility.Collapsed;
             NavPromotion.Visibility = _vm.IsAdministrator
@@ -147,7 +145,7 @@ namespace AutoTable.Views
 
         private static readonly HashSet<string> AdminOnlyRoutes = new()
         {
-            "TermManagement", "Classes", "Budget", "Promotion"
+            "Budget", "Promotion"
         };
 
         private async void NavigateTo(string tag, Button btn)

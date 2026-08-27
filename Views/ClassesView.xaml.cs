@@ -17,14 +17,12 @@ namespace AutoTable.Views
     public sealed partial class ClassesView : Page
     {
         private readonly ClassesViewModel _vm;
-        private readonly bool _isAdmin;
 
         public ClassesView()
         {
             InitializeComponent();
             _vm = new ClassesViewModel();
             DataContext = _vm;
-            _isAdmin = SessionService.Instance.IsAdministrator;
             Loaded += ClassesView_Loaded;
         }
 
@@ -32,13 +30,6 @@ namespace AutoTable.Views
         {
             await _vm.LoadAsync();          // also loads grading systems
             await _vm.LoadAllStreamsAsync();
-
-            // Admin-only: hide create/edit/grading-system buttons for non-admins
-            if (!_isAdmin)
-            {
-                CreateClassButton.Visibility = Visibility.Collapsed;
-                CreateGradingSystemButton.Visibility = Visibility.Collapsed;
-            }
         }
 
         private const string NewGradingSystemOption = "➕ New grading system…";
@@ -61,11 +52,6 @@ namespace AutoTable.Views
         // new inline), streams and subjects (assign existing or create new inline).
         private async void CreateClass_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isAdmin)
-            {
-                await ShowErrorAsync("Access Restricted", "Only administrators can create classes.");
-                return;
-            }
 
             // Any teacher qualifies — registered teachers AND student teachers.
             var teachers = await AppServices.DataService!.GetTeachersAsync();
@@ -191,11 +177,6 @@ namespace AutoTable.Views
 
         private async void EditClass_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isAdmin)
-            {
-                await ShowErrorAsync("Access Restricted", "Only administrators can edit classes.");
-                return;
-            }
             if ((sender as Button)?.Tag is ClassInfo cls)
                 await OpenEditClassModalAsync(cls);
         }
@@ -406,11 +387,6 @@ namespace AutoTable.Views
         // ─────────────────────────────────────────────────────────────
         private async void CreateGradingSystem_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isAdmin)
-            {
-                await ShowErrorAsync("Access Restricted", "Only administrators can create grading systems.");
-                return;
-            }
 
             var (panel, nameBox, defaultChk, passMarkBox, _) = BuildGradingSystemEditor();
 
@@ -438,11 +414,6 @@ namespace AutoTable.Views
 
         private async void DeleteGradingSystem_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isAdmin)
-            {
-                await ShowErrorAsync("Access Restricted", "Only administrators can delete grading systems.");
-                return;
-            }
             if ((sender as Button)?.Tag is not int id) return;
             var confirm = new ContentDialog
             {
