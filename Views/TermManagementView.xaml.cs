@@ -2,7 +2,10 @@ using AutoTable.ViewModels;
 using AutoTable.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using System;
+using System.Linq;
 
 namespace AutoTable.Views
 {
@@ -32,6 +35,9 @@ namespace AutoTable.Views
 
             // Wire up term selection to update the fee panel context
             TermsList.SelectionChanged += TermsList_SelectionChanged;
+
+            // Update active indicators after terms are loaded
+            UpdateActiveIndicators();
 
             // Write quick diagnostic snapshot of loaded terms to temp for troubleshooting
             try
@@ -213,6 +219,7 @@ namespace AutoTable.Views
             if (sender is Button btn && btn.Tag is int termId)
             {
                 await _vm.ActivateTermAsync(termId);
+                UpdateActiveIndicators();
             }
         }
 
@@ -221,6 +228,30 @@ namespace AutoTable.Views
             if (sender is Button btn && btn.Tag is int termId)
             {
                 await _vm.DeactivateTermAsync(termId);
+                UpdateActiveIndicators();
+            }
+        }
+
+        /// <summary>Walks the visual tree of TermsList and colors the indicator dot green for the active term.</summary>
+        private void UpdateActiveIndicators()
+        {
+            var activeId = _vm.ActiveTermId;
+            foreach (var item in TermsList.Items)
+            {
+                if (item is AutoTable.Models.SimpleLookup term)
+                {
+                    var container = TermsList.ContainerFromItem(term) as ListViewItem;
+                    if (container == null) continue;
+                    // The XAML root of the DataTemplate contains the indicator Border named "ActiveIndicator"
+                    var root = container.ContentTemplateRoot as FrameworkElement;
+                    var indicator = root?.FindName("ActiveIndicator") as Border;
+                    if (indicator != null)
+                    {
+                        indicator.Background = (term.Id == activeId)
+                            ? (Brush)Application.Current.Resources["SuccessGreenBrush"]
+                            : (Brush)Application.Current.Resources["TextMutedBrush"];
+                    }
+                }
             }
         }
     }

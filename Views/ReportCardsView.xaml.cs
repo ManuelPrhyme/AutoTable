@@ -97,8 +97,37 @@ namespace AutoTable.Views
 
         private async Task<IReadOnlyList<ReportCardSheetView>> BuildSheetsAsync(IEnumerable<ReportCardRow> rows)
         {
+            var rowList = rows.ToList();
+            var total = rowList.Count;
             var list = new List<ReportCardSheetView>();
-            foreach (var row in rows) list.Add(await BuildSheetAsync(row));
+
+            // Show progress bar only for batch operations (2+ students)
+            bool showProgress = total > 1;
+            if (showProgress)
+            {
+                ProgressCard.Visibility = Visibility.Visible;
+                ProgressRing.Value = 0;
+                ProgressText.Text = $"Generating report cards...";
+                ProgressDetail.Text = $"0 / {total} students";
+            }
+
+            for (int i = 0; i < total; i++)
+            {
+                if (showProgress)
+                {
+                    ProgressRing.Value = (double)i / total * 100;
+                    ProgressDetail.Text = $"{i + 1} / {total} students  —  {rowList[i].StudentName}";
+                }
+                list.Add(await BuildSheetAsync(rowList[i]));
+            }
+
+            if (showProgress)
+            {
+                ProgressRing.Value = 100;
+                ProgressText.Text = $"Done — {total} report card(s) ready";
+                ProgressDetail.Text = "";
+            }
+
             return list;
         }
 
@@ -108,9 +137,19 @@ namespace AutoTable.Views
             var service = AppServices.DataService;
             if (service == null) return true;
 
-            // Load existing comment
+            // Resolve the selected term to its DB id (null when "All")
+            int? termId = null;
+            if (!string.IsNullOrWhiteSpace(ViewModel.SelectedTerm) && ViewModel.SelectedTerm != "All")
+            {
+                var termLookups = await service.GetTermLookupsAsync();
+                var match = termLookups.FirstOrDefault(t =>
+                    string.Equals(t.Name, ViewModel.SelectedTerm, StringComparison.OrdinalIgnoreCase));
+                termId = match?.Id;
+            }
+
+            // Load existing comment (scoped to the selected term)
             var settings = await service.GetSchoolSettingsAsync();
-            var existingComment = await service.GetHeadTeacherCommentAsync(row.StudentId, null);
+            var existingComment = await service.GetHeadTeacherCommentAsync(row.StudentId, termId);
 
             var commentBox = new TextBox
             {
@@ -164,7 +203,7 @@ namespace AutoTable.Views
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
             {
-                await service.SaveHeadTeacherCommentAsync(row.StudentId, null, commentBox.Text, settings.HeadTeacherName);
+                await service.SaveHeadTeacherCommentAsync(row.StudentId, termId, commentBox.Text, settings.HeadTeacherName);
             }
             return true;
         }
@@ -201,14 +240,22 @@ namespace AutoTable.Views
                 return;
             }
 
-            var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
-            await ShowPreviewAndPrintAsync(sheets, $"Report Cards — {sheets.Count} students");
+            try
+            {
+                var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
+                await ShowPreviewAndPrintAsync(sheets, $"Report Cards — {sheets.Count} students");
+            }
+            finally { HideProgress(); }
         }
 
         private async void PrintAll_Click(object sender, RoutedEventArgs e)
         {
-            var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
-            await ShowPreviewAndPrintAsync(sheets, $"Print Preview — {sheets.Count} report cards");
+            try
+            {
+                var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
+                await ShowPreviewAndPrintAsync(sheets, $"Print Preview — {sheets.Count} report cards");
+            }
+            finally { HideProgress(); }
         }
 
         private async void ExportPdf_Click(object sender, RoutedEventArgs e)
@@ -225,14 +272,19 @@ namespace AutoTable.Views
                 return;
             }
 
-            var sheets = await BuildSheetsAsync(ViewModel.ReportCards);
-            if (sheets.Count == 0) return;
+            ReportCardSheetView[] sheets;
+            try
+            {
+                sheets = (await BuildSheetsAsync(ViewModel.ReportCards)).ToArray();
+            }
+            finally { HideProgress(); }
+            if (sheets.Length == 0) return;
 
             // Show info dialog: user should select "Microsoft Print to PDF" in the print dialog
             var infoDialog = new ContentDialog
             {
                 Title = "Export as PDF",
-                Content = $"{sheets.Count} report card(s) ready. In the print dialog, select \"Microsoft Print to PDF\" as the printer, then click Print to save as PDF.",
+                Content = $"{sheets.Length} report card(s) ready. In the print dialog, select \"Microsoft Print to PDF\" as the printer, then click Print to save as PDF.",
                 PrimaryButtonText = "Open Print Dialog",
                 CloseButtonText = "Cancel",
                 XamlRoot = this.XamlRoot
@@ -246,6 +298,12 @@ namespace AutoTable.Views
                 await PrintManager.ShowPrintUIAsync();
             }
             finally { UnregisterForPrinting(); }
+        }
+
+        private void HideProgress()
+        {
+            ProgressCard.Visibility = Visibility.Collapsed;
+            ProgressRing.Value = 0;
         }
 
         private async void MidTermSlips_Click(object sender, RoutedEventArgs e)

@@ -107,7 +107,7 @@ namespace AutoTable.Views
             // (must be attached BEFORE setting SelectedIndex so the initial load fires)
             classPicker.SelectionChanged += async (s, ev) =>
             {
-                singleSubjectPicker.ItemsSource = null;
+    singleSubjectPicker.ItemsSource = null;
                 singleSubjectPicker.SelectedIndex = -1;
                 allClassSubjects.Clear();
                 multiSubjectItems.Children.Clear();

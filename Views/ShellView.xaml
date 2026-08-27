@@ -35,7 +35,7 @@
                         </Border>
                         <StackPanel VerticalAlignment="Center" Spacing="1">
                             <TextBlock Text="AutoTable" FontSize="15" FontWeight="Bold" Foreground="{ThemeResource TextOnDarkBrush}" />
-                            <TextBlock Text="Bright Future Primary" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
+                            <TextBlock x:Name="SchoolNameText" Text="AutoTable Academy" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

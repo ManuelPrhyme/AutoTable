@@ -43,6 +43,10 @@
     <Compile Include="../../Models/PerformanceModels.cs" Link="Models/PerformanceModels.cs" />
     <Compile Include="../../Models/StudentMarkRow.cs" Link="Models/StudentMarkRow.cs" />
     <Compile Include="../../Models/StudentPerformanceDetail.cs" Link="Models/StudentPerformanceDetail.cs" />
+    <!-- GradingSystemModels excluded: uses WinUI Visibility; stubs in test -->
+    <Compile Include="../../AutoTable/Models/PromotionModels.cs" Link="Models/PromotionModels.cs" />
+    <Compile Include="../../Models/ReportCardModels.cs" Link="Models/ReportCardModels.cs" />
+    <Compile Include="../../Models/SchoolSettingsModels.cs" Link="Models/SchoolSettingsModels.cs" />
   </ItemGroup>
 
   <PropertyGroup>

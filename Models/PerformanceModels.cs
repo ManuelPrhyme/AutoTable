@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace AutoTable.Models
 {
     public class ClassBreakdown

@@ -97,9 +97,9 @@
                 <Border BorderBrush="#C9D3E6" BorderThickness="1">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="3*" /><ColumnDefinition Width="2*" />
                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="1.2*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
@@ -107,9 +107,9 @@
                         <Border Grid.Row="0" Grid.ColumnSpan="5" Background="#E8EDF7">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="3*" /><ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="1.2*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="SUBJECT" FontSize="9" FontWeight="Bold" Padding="5,3" />
                                 <TextBlock Grid.Column="1" Text="ASSESSMENT" FontSize="9" FontWeight="Bold" Padding="5,3" />
@@ -123,9 +123,9 @@
                                 <DataTemplate>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="3*" /><ColumnDefinition Width="2*" />
                                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="1.2*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{Binding Subject}" FontSize="10" Padding="5,2" />
                                         <TextBlock Grid.Column="1" Text="{Binding AssessmentName}" FontSize="10" Padding="5,2" />
@@ -145,9 +145,9 @@
                 <Border BorderBrush="#C9D3E6" BorderThickness="1">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="3*" /><ColumnDefinition Width="2*" />
                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="1.2*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
@@ -155,9 +155,9 @@
                         <Border Grid.Row="0" Grid.ColumnSpan="5" Background="#E8EDF7">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="3*" /><ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="1.2*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="SUBJECT" FontSize="9" FontWeight="Bold" Padding="5,3" />
                                 <TextBlock Grid.Column="1" Text="ASSESSMENT" FontSize="9" FontWeight="Bold" Padding="5,3" />
@@ -171,9 +171,9 @@
                                 <DataTemplate>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="3*" /><ColumnDefinition Width="2*" />
                                             <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="1.2*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{Binding Subject}" FontSize="10" Padding="5,2" />
                                         <TextBlock Grid.Column="1" Text="{Binding AssessmentName}" FontSize="10" Padding="5,2" />

@@ -12,12 +12,12 @@ namespace AutoTable.ViewModels
 {
     public partial class ReportCardsViewModel : BaseViewModel
     {
-        private readonly IDataService _dataService;
+        private readonly IDataService? _dataService;
 
         // --- Filter properties ---
         [ObservableProperty] private string _selectedClass = "All";
         [ObservableProperty] private string _selectedTerm = "All";
-        [ObservableProperty] private string _selectedStream = null;
+        [ObservableProperty] private string? _selectedStream = null;
         [ObservableProperty] private string _searchText = "";
         [ObservableProperty] private bool _feeClearedOnly = false;
 
@@ -37,38 +37,70 @@ namespace AutoTable.ViewModels
 
         public ReportCardsViewModel()
         {
-            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
             Classes = new ObservableCollection<string>();
             Terms = new ObservableCollection<string>();
             Streams = new ObservableCollection<string>();
-            _ = InitializeAsync();
+
+            _dataService = AppServices.DataService;
+
+            // Defer initialization so the page layout completes first
+            _ = SafeInitializeAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => _ = Load();
-        partial void OnSelectedTermChanged(string value) => _ = Load();
-        partial void OnSelectedStreamChanged(string value) => _ = Load();
+        private bool _initialized;
+
+        partial void OnSelectedClassChanged(string value) { if (_initialized) _ = SafeLoadAsync(); }
+        partial void OnSelectedTermChanged(string value) { if (_initialized) _ = SafeLoadAsync(); }
+        partial void OnSelectedStreamChanged(string? value) { if (_initialized) _ = SafeLoadAsync(); }
         partial void OnSearchTextChanged(string value) => ApplySearchFilter();
         partial void OnFeeClearedOnlyChanged(bool value) => ApplySearchFilter();
 
-        private async Task InitializeAsync()
+        private async Task SafeInitializeAsync()
         {
-            Classes.Add("All");
-            var classes = await _dataService.GetClassesAsync();
-            foreach (var c in classes) Classes.Add(c.Name);
+            try
+            {
+                // Let the page finish its initial layout before querying the DB
+                await Task.Delay(200);
 
-            Terms.Add("All");
-            var terms = await _dataService.GetTermsAsync();
-            foreach (var t in terms) Terms.Add(t);
+                if (_dataService == null)
+                {
+                    StatusMessage = "Data service not available.";
+                    return;
+                }
 
-            Streams.Add("All");
-            var streams = await _dataService.GetStreamsAsync();
-            foreach (var s in streams) Streams.Add(s);
+                Classes.Add("All");
+                var classes = await _dataService.GetClassesAsync();
+                foreach (var c in classes) Classes.Add(c.Name);
 
-            await Load();
+                Terms.Add("All");
+                var terms = await _dataService.GetTermsAsync();
+                foreach (var t in terms) Terms.Add(t);
+
+                Streams.Add("All");
+                var streams = await _dataService.GetStreamsAsync();
+                foreach (var s in streams) Streams.Add(s);
+
+                await Load();
+                _initialized = true;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to load report cards: {ex.Message}";
+            }
         }
+
+        private async Task SafeLoadAsync()
+        {
+            try { await Load(); }
+            catch (Exception ex) { StatusMessage = $"Load error: {ex.Message}"; }
+        }
+
+        [ObservableProperty] private string _statusMessage = string.Empty;
 
         private async Task Load()
         {
+            if (_dataService == null) return;
+
             ReportCards.Clear();
             _loadedRows.Clear();
 

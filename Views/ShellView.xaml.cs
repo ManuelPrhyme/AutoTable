@@ -71,13 +71,26 @@ namespace AutoTable.Views
             ThemeToggle.Toggled += ThemeToggle_Toggled;
         }
 
-        private void ShellView_Loaded(object sender, RoutedEventArgs e)
+        private async void ShellView_Loaded(object sender, RoutedEventArgs e)
         {
             var user = SessionService.Instance.CurrentUser;
             SidebarUserName.Text = user?.FullName ?? "User";
             SidebarUserRole.Text = _vm.UserRoleLabel;
             SidebarAvatar.DisplayName = user?.FullName ?? "U";
             HeaderUserName.Text = user?.FullName ?? "User";
+
+            // Load school name from settings
+            try
+            {
+                var ds = AppServices.DataService;
+                if (ds != null)
+                {
+                    var settings = await ds.GetSchoolSettingsAsync();
+                    if (!string.IsNullOrWhiteSpace(settings.SchoolName))
+                        SchoolNameText.Text = settings.SchoolName;
+                }
+            }
+            catch { }
 
             // ── ROLE-BASED SIDEBAR GATING (dormant during development) ──────
             // Uncomment the block below and remove the unconditional Visible lines
