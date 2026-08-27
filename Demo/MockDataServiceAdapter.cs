@@ -51,6 +51,11 @@ namespace AutoTable.Demo
             return Task.FromResult<IReadOnlyList<Models.ReportCardRow>>(new List<Models.ReportCardRow>());
         }
 
+        public Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string className, string? term, string? stream)
+        {
+            return Task.FromResult<IReadOnlyList<Models.MidTermSlipModel>>(new List<Models.MidTermSlipModel>());
+        }
+
         public Task<AssessmentItem?> GetAssessmentAsync(string name, string className, string subject)
         {
             var found = _mock.GetAssessments().FirstOrDefault(a => a.Name == name && a.ClassName == className && a.Subject == subject);

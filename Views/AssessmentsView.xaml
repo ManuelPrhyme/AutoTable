@@ -78,7 +78,7 @@
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="6" Padding="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="1.02*" />
                                 <ColumnDefinition Width="55" />
                                 <ColumnDefinition Width="0.8*" />
                                 <ColumnDefinition Width="40" />
@@ -115,7 +115,7 @@
                             <DataTemplate>
                                 <Grid ColumnSpacing="6" Padding="12,8">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="1.02*" />
                                         <ColumnDefinition Width="55" />
                                         <ColumnDefinition Width="0.8*" />
                                         <ColumnDefinition Width="40" />

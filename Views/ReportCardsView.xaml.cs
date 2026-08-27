@@ -126,6 +126,65 @@ namespace AutoTable.Views
             await ShowPreviewAndPrintAsync(sheets, $"Print Preview — {sheets.Count} report cards");
         }
 
+        private async void MidTermSlips_Click(object sender, RoutedEventArgs e)
+        {
+            var service = AppServices.DataService;
+            if (service == null) return;
+
+            var stream = ViewModel.SelectedStream;
+            if (stream == "None" || string.IsNullOrWhiteSpace(stream))
+                stream = null;
+
+            var slips = await service.GetMidTermSlipsAsync(
+                ViewModel.SelectedClass, ViewModel.SelectedTerm, stream);
+
+            if (slips.Count == 0)
+            {
+                await new ContentDialog
+                {
+                    Title = "Mid-Term Slips",
+                    Content = "No students found for the selected filters.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return;
+            }
+
+            // Build compact slip views — 3 per A4 page
+            var slipViews = slips.Select(s =>
+            {
+                var view = new MidTermSlipView { DataContext = s };
+                return view;
+            }).ToList();
+
+            // Show first slip in preview dialog
+            var dialog = new ContentDialog
+            {
+                Title = $"Mid-Term Slips — {slips.Count} students",
+                Content = new ScrollViewer
+                {
+                    Content = slipViews[0],
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                },
+                PrimaryButtonText = "Print All",
+                CloseButtonText = "Close",
+                XamlRoot = this.XamlRoot,
+                Width = 860,
+                Height = 500
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                RegisterForPrinting(slipViews);
+                await PrintManager.ShowPrintUIAsync();
+            }
+            finally { UnregisterForPrinting(); }
+        }
+
         private async Task ShowPreviewAndPrintAsync(IReadOnlyList<ReportCardSheetView> sheets, string title)
         {
             if (sheets.Count == 0) return;

@@ -13,6 +13,48 @@
 **Build:** 0 errors, 0 new warnings  
 **Working tree:** Clean (committed 27 Aug)
 
+### Report Cards Fix — Students Not Displaying ✅ DONE
+
+**Problem:** Report Cards page showed no students because `Load()` called `GetGradebookAsync` with a hardcoded "Mathematics" subject filter.
+
+**Fix:** Added `GetReportCardListAsync` method that returns ALL active students in a class with overall averages across ALL subjects.
+
+| File | Change |
+|------|--------|
+| `AutoTable/Services/IDataService.cs` | Added `GetReportCardListAsync` and `GetMidTermSlipsAsync` signatures |
+| `AutoTable/Services/DatabaseDataService.cs` | Implemented both methods |
+| `Demo/MockDataServiceAdapter.cs` | Added stubs |
+| `ViewModels/ReportCardsViewModel.cs` | Updated `Load()` to call `GetReportCardListAsync` instead of `GetGradebookAsync` |
+
+### Assessment Donut Progress + Author Column ✅ DONE
+
+**Changes:**
+- Replaced `ProgressBar` with `ProgressRing` (donut, 36×36px) in assessments grid
+- Added `RoundPercentConverter` for whole-number display inside donut
+- Added AUTHOR column to assessments table
+- Tightened column widths for better layout balance
+
+| File | Change |
+|------|--------|
+| `Views/AssessmentsView.xaml` | ProgressRing donut + AUTHOR column + tighter spacing |
+| `Converters/FormatConverters.cs` | Added `RoundPercentConverter` |
+| `App.xaml` | Registered `RoundPercentConverter` |
+
+### Mid-Term Slips ✅ DONE
+
+**Feature:** Compact mid-term report slips (3-4 per A4 page) with subject results, grades, remarks, and summary.
+
+| File | Change |
+|------|--------|
+| `Models/PerformanceModels.cs` | Added `MidTermSubjectResult` and `MidTermSlipModel` |
+| `AutoTable/Services/IDataService.cs` | Added `GetMidTermSlipsAsync` |
+| `AutoTable/Services/DatabaseDataService.cs` | Implemented `GetMidTermSlipsAsync` |
+| `Demo/MockDataServiceAdapter.cs` | Added stub |
+| `Views/Controls/MidTermSlipView.xaml` | Compact A4 slip layout |
+| `Views/Controls/MidTermSlipView.xaml.cs` | Code-behind |
+| `Views/ReportCardsView.xaml` | Added "Mid-Term Slips" button |
+| `Views/ReportCardsView.xaml.cs` | Added `MidTermSlips_Click` handler with preview + print |
+
 ---
 
 ### P5.4 — Admin Role-Gating ✅ DONE

@@ -37,6 +37,8 @@
                                 Command="{Binding GenerateAllCommand}" />
                         <Button Content="Print All" Style="{ThemeResource PrimaryButtonStyle}"
                                 Click="PrintAll_Click" />
+                        <Button x:Name="BtnMidTermSlips" Content="Mid-Term Slips" Style="{ThemeResource SecondaryButtonStyle}"
+                                Click="MidTermSlips_Click" />
                     </StackPanel>
                 </Grid>
             </Border>

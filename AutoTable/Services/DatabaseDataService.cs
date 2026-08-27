@@ -1345,7 +1345,112 @@ namespace AutoTable.Services
             return rows;
         }
 
-        public async Task<IReadOnlyList<Student>> GetStudentsAsync()
+        /// <summary>
+        /// Returns mid-term slip data for all active students in a class.
+        /// </summary>
+        public async Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(
+            string className, string? term, string? stream)
+        {
+            using var db = CreateContext();
+            var clsName = (className ?? string.Empty).Trim().ToLower();
+            var cls = await db.Classes
+                .Include(c => c.GradingSystem)
+                .Include(c => c.ClassTeacher)
+                .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == clsName);
+            if (cls == null) return new List<Models.MidTermSlipModel>();
+
+            var gradingSystem = cls.GradingSystem;
+            if (gradingSystem == null)
+                gradingSystem = await db.GradingSystems.FirstOrDefaultAsync(g => g.IsDefault)
+                    ?? await db.GradingSystems.OrderBy(g => g.Name).FirstOrDefaultAsync();
+            var passMark = gradingSystem?.PassMark ?? 50;
+            var bands = gradingSystem != null
+                ? await db.GradeBands.Where(b => b.GradingSystemId == gradingSystem.Id).OrderBy(b => b.MinScore).ToListAsync()
+                : new List<GradeBandEntity>();
+            var bandInfos = bands.Select(b => new AutoTable.Models.GradeBandInfo
+            {
+                Id = b.Id, Label = b.Label,
+                MinScore = b.MinScore, MaxScore = b.MaxScore,
+                IsPromotionalPass = b.IsPromotionalPass,
+                IsRepeater = b.IsRepeater,
+                IsPromotionalFail = b.IsPromotionalFail
+            }).ToList();
+
+            var studentsQuery = db.Students
+                .Include(s => s.Stream)
+                .Where(s => s.ClassId == cls.Id && s.IsActive);
+            if (!string.IsNullOrWhiteSpace(stream))
+            {
+                var streamLower = stream.Trim().ToLower();
+                studentsQuery = studentsQuery.Where(s => s.Stream != null && s.Stream.Name.ToLower() == streamLower);
+            }
+            var students = await studentsQuery.OrderBy(s => s.FullName).ToListAsync();
+
+            var assessmentsQuery = db.Assessments.Where(a => a.ClassId == cls.Id);
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                var termEntity = await db.Terms.FirstOrDefaultAsync(t => t.Name == term);
+                if (termEntity != null)
+                    assessmentsQuery = assessmentsQuery.Where(a => a.TermId == termEntity.Id);
+            }
+            var assessmentEntities = await assessmentsQuery
+                .Include(a => a.Subject)
+                .OrderBy(a => a.Subject!.Name)
+                .ThenBy(a => a.Name)
+                .ToListAsync();
+
+            var assessmentIds = assessmentEntities.Select(a => a.Id).ToList();
+            var studentIds = students.Select(s => s.Id).ToList();
+            var marks = await db.Marks
+                .Where(m => studentIds.Contains(m.StudentId) && assessmentIds.Contains(m.AssessmentId))
+                .ToListAsync();
+
+            var slips = students.Select(s =>
+            {
+                var results = assessmentEntities.Select(a =>
+                {
+                    var mark = marks.FirstOrDefault(m => m.StudentId == s.Id && m.AssessmentId == a.Id);
+                    var avg = mark?.Mark ?? 0;
+                    var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
+                    var remarks = avg == 0 ? "No data" : avg < passMark ? "Needs attention" : "Good";
+                    return new AutoTable.Models.MidTermSubjectResult
+                    {
+                        Subject = a.Subject?.Name ?? "-",
+                        AssessmentName = a.Name,
+                        Mark = Math.Round(avg, 1),
+                        Grade = grade,
+                        Remarks = remarks
+                    };
+                }).ToList();
+
+                var scores = results.Where(r => r.Mark > 0).Select(r => r.Mark).ToList();
+                var overallAvg = scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
+                var overallGrade = overallAvg > 0 ? GradeFromBands(overallAvg, bandInfos) : "-";
+                var status = overallAvg == 0 ? "No Data" : overallAvg < passMark ? "At Risk" : overallAvg >= 70 ? "Excellent" : "On Track";
+
+                return new AutoTable.Models.MidTermSlipModel
+                {
+                    SchoolName = "AutoTable Academy",
+                    Term = term ?? string.Empty,
+                    StudentName = s.FullName,
+                    AdmissionNumber = s.LIN ?? string.Empty,
+                    ClassName = cls.Name,
+                    Stream = s.Stream?.Name ?? string.Empty,
+                    ClassTeacher = cls.ClassTeacher?.FullName ?? string.Empty,
+                    Gender = s.Gender ?? string.Empty,
+                    DateOfBirth = s.DateOfBirth?.ToString("dd MMM yyyy") ?? string.Empty,
+                    GuardianName = s.GuardianName ?? string.Empty,
+                    GuardianPhone = s.GuardianPhone ?? string.Empty,
+                    Results = results,
+                    OverallAverage = overallAvg,
+                    OverallGrade = overallGrade,
+                    Status = status
+                };
+            }).OrderByDescending(x => x.OverallAverage).ToList();
+
+            for (int i = 0; i < slips.Count; i++) slips[i].Rank = i + 1;
+            return slips;
+        }        public async Task<IReadOnlyList<Student>> GetStudentsAsync()
         {
             using var db = CreateContext();
             var list = await db.Students.Include(s => s.Class).Include(s => s.Stream).OrderByDescending(s => s.CreatedAt).ToListAsync();
