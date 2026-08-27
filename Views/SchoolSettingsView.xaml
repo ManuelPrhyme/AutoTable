@@ -8,79 +8,151 @@
     mc:Ignorable="d"
     Background="{ThemeResource SurfaceGrayBrush}">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Padding="24" Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="School Settings" Style="{ThemeResource PageTitleStyle}" />
+        <!-- Title -->
+        <TextBlock Grid.Row="0" Text="School Settings" Style="{ThemeResource PageTitleStyle}" />
 
-            <Border Style="{ThemeResource TableCardStyle}">
-                <StackPanel Spacing="16" Padding="20">
+        <!-- Two-column content -->
+        <Grid Grid.Row="1" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="408" MaxWidth="484" />
+                <ColumnDefinition Width="*" MinWidth="408" MaxWidth="484" />
+            </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="SCHOOL INFORMATION" Style="{ThemeResource SectionTitleStyle}" />
+            <!-- LEFT COLUMN: School Information + Logo -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="16">
 
-                    <TextBox Header="School Name"
-                             Text="{Binding SchoolName, Mode=TwoWay}"
-                             PlaceholderText="e.g. AutoTable Academy" />
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
 
-                    <TextBox Header="School Address"
-                             Text="{Binding SchoolAddress, Mode=TwoWay}"
-                             PlaceholderText="e.g. Plot 123, Kampala Road" />
+                            <TextBlock Text="SCHOOL INFORMATION" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
 
-                    <TextBox Header="School Phone"
-                             Text="{Binding SchoolPhone, Mode=TwoWay}"
-                             PlaceholderText="e.g. +256 700 123456" />
+                            <TextBox Header="School Name"
+                                     Text="{Binding SchoolName, Mode=TwoWay}"
+                                     PlaceholderText="e.g. AutoTable Academy" />
 
-                    <TextBox Header="School Motto"
-                             Text="{Binding Motto, Mode=TwoWay}"
-                             PlaceholderText="e.g. Knowledge is Power" />
+                            <TextBox Header="School Address"
+                                     Text="{Binding SchoolAddress, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Plot 123, Kampala Road" />
 
-                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+                            <TextBox Header="School Phone"
+                                     Text="{Binding SchoolPhone, Mode=TwoWay}"
+                                     PlaceholderText="e.g. +256 700 123456" />
 
-                    <TextBlock Text="SCHOOL LOGO" Style="{ThemeResource SectionTitleStyle}" />
+                            <TextBox Header="School Motto"
+                                     Text="{Binding Motto, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Knowledge is Power" />
 
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <!-- Logo preview -->
-                        <Border Grid.Column="0" Width="120" Height="120"
-                                BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
-                                CornerRadius="8" Background="#F8F8F8"
-                                HorizontalAlignment="Left">
-                            <Image x:Name="LogoPreview" Stretch="Uniform" Margin="8" />
-                        </Border>
-                        <!-- Logo controls -->
-                        <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                            <TextBlock Text="Upload your school logo (PNG, JPG)"
-                                       FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" />
-                            <Button x:Name="PickLogoButton" Content="Choose Logo"
-                                    Click="PickLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
-                            <Button x:Name="ClearLogoButton" Content="Remove Logo"
-                                    Click="ClearLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
                         </StackPanel>
-                    </Grid>
+                    </Border>
 
-                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
 
-                    <TextBlock Text="HEAD TEACHER" Style="{ThemeResource SectionTitleStyle}" />
+                            <TextBlock Text="SCHOOL LOGO" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
 
-                    <TextBox Header="Head Teacher Name"
-                             Text="{Binding HeadTeacherName, Mode=TwoWay}"
-                             PlaceholderText="e.g. Mrs. Jane Smith" />
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+                                <Border Grid.Column="0" Width="120" Height="120"
+                                        BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
+                                        CornerRadius="8" Background="#F8F8F8">
+                                    <Image x:Name="LogoPreview" Stretch="Uniform" Margin="8" />
+                                </Border>
 
-                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
-                                   Foreground="{ThemeResource SuccessGreenBrush}" FontSize="13" />
-                        <Button Content="Save Settings" Style="{ThemeResource PrimaryButtonStyle}"
-                                Click="Save_Click" MinWidth="140" />
-                    </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="Upload your school logo"
+                                               FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="Supports PNG, JPG, BMP, GIF"
+                                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}" />
+                                    <Button x:Name="PickLogoButton" Content="Choose Logo"
+                                            Click="PickLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
+                                    <Button x:Name="ClearLogoButton" Content="Remove Logo"
+                                            Click="ClearLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
+                                </StackPanel>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
 
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
 
-        </StackPanel>
-    </ScrollViewer>
+            <!-- RIGHT COLUMN: Head Teacher -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="16">
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="HEAD TEACHER" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBox Header="Head Teacher Name"
+                                     Text="{Binding HeadTeacherName, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Mrs. Jane Smith" />
+
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="PREVIEW" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <Border BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16" Background="White">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{Binding SchoolName}" FontSize="16" FontWeight="Bold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding SchoolAddress}" FontSize="12"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding SchoolPhone}" FontSize="12"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding Motto}" FontSize="11" FontStyle="Italic"
+                                               Foreground="{ThemeResource TextMutedBrush}" />
+                                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+                                    <TextBlock Text="Head Teacher" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding HeadTeacherName}" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
+
+        <!-- Action Bar -->
+        <Border Grid.Row="2" Style="{ThemeResource FilterBarStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"
+                           Foreground="{ThemeResource SuccessGreenBrush}" FontSize="13" />
+                <Button Grid.Column="1" Content="Save Settings" Style="{ThemeResource PrimaryButtonStyle}"
+                        Click="Save_Click" MinWidth="140" />
+            </Grid>
+        </Border>
+
+    </Grid>
 </Page>
