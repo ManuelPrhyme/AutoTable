@@ -15,16 +15,16 @@ namespace AutoTable.ViewModels
         private readonly IDataService _dataService;
 
         // Sentinel value for filter ComboBoxes � selecting "None" turns that filter off
-        public const string NoneOption = "None";
+        public const string AllOption = "All";
 
         // Query parameters � each capable of being null
-        // A value of null or "None" means "no filter applied" for that dimension
-        [ObservableProperty] private string? _selectedAcademicYear;
-        [ObservableProperty] private string? _selectedTerm = "Term 2, 2025";
-        [ObservableProperty] private string? _selectedClass = "P5";
-        [ObservableProperty] private string? _selectedStream;
-        [ObservableProperty] private string? _selectedStudent;
-        [ObservableProperty] private string? _selectedSubject = "Mathematics";
+        // A value of null or "All" means "no filter applied" for that dimension
+        [ObservableProperty] private string? _selectedAcademicYear = "All";
+        [ObservableProperty] private string? _selectedTerm = "All";
+        [ObservableProperty] private string? _selectedClass = "All";
+        [ObservableProperty] private string? _selectedStream = "All";
+        [ObservableProperty] private string? _selectedStudent = "All";
+        [ObservableProperty] private string? _selectedSubject = "All";
 
         // Search bar text
         [ObservableProperty] private string? _searchText;
@@ -85,42 +85,42 @@ namespace AutoTable.ViewModels
             if (Classes.Count == 0)
             {
                 var classes = await _dataService.GetClassesAsync();
-                Classes.Add(NoneOption);
+                Classes.Add(AllOption);
                 foreach (var c in classes) Classes.Add(c.Name);
             }
 
             if (Streams.Count == 0)
             {
                 var streams = await _dataService.GetStreamsAsync();
-                Streams.Add(NoneOption);
+                Streams.Add(AllOption);
                 foreach (var s in streams) Streams.Add(s);
             }
 
             if (AcademicYears.Count == 0)
             {
                 var years = await _dataService.GetAcademicYearsAsync();
-                AcademicYears.Add(NoneOption);
+                AcademicYears.Add(AllOption);
                 foreach (var y in years) AcademicYears.Add(y);
             }
 
             if (Subjects.Count == 0)
             {
                 var subjects = await _dataService.GetSubjectsAsync();
-                Subjects.Add(NoneOption);
+                Subjects.Add(AllOption);
                 foreach (var s in subjects) Subjects.Add(s.Name);
             }
 
             if (Terms.Count == 0)
             {
                 var terms = await _dataService.GetTermsAsync();
-                Terms.Add(NoneOption);
+                Terms.Add(AllOption);
                 foreach (var t in terms) Terms.Add(t);
             }
 
             if (AllStudents.Count == 0)
             {
                 var students = await _dataService.GetAllStudentsAsync();
-                AllStudents.Add(NoneOption);
+                AllStudents.Add(AllOption);
                 foreach (var s in students) AllStudents.Add(s);
             }
 
@@ -130,27 +130,27 @@ namespace AutoTable.ViewModels
         private async Task Load()
         {
             var academicYear = SelectedAcademicYear;
-            if (academicYear == NoneOption || string.IsNullOrWhiteSpace(academicYear))
+            if (academicYear == AllOption || string.IsNullOrWhiteSpace(academicYear))
                 academicYear = null;
 
             var term = SelectedTerm;
-            if (term == NoneOption || string.IsNullOrWhiteSpace(term))
+            if (term == AllOption || string.IsNullOrWhiteSpace(term))
                 term = null;
 
             var className = SelectedClass;
-            if (className == NoneOption || string.IsNullOrWhiteSpace(className))
+            if (className == AllOption || string.IsNullOrWhiteSpace(className))
                 className = null;
 
             var stream = SelectedStream;
-            if (stream == NoneOption || string.IsNullOrWhiteSpace(stream))
+            if (stream == AllOption || string.IsNullOrWhiteSpace(stream))
                 stream = null;
 
             var studentName = SelectedStudent;
-            if (studentName == NoneOption || string.IsNullOrWhiteSpace(studentName))
+            if (studentName == AllOption || string.IsNullOrWhiteSpace(studentName))
                 studentName = null;
 
             var subject = SelectedSubject;
-            if (subject == NoneOption || string.IsNullOrWhiteSpace(subject))
+            if (subject == AllOption || string.IsNullOrWhiteSpace(subject))
                 subject = null;
 
             var rows = await _dataService.GetGradebookAsync(
