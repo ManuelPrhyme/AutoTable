@@ -7,11 +7,59 @@
 
 ---
 
-## Current Session: 26 Aug 2026
+## Current Session: 27 Aug 2026
 
 **Branch:** `sql_rec`  
 **Build:** 0 errors, 0 new warnings  
-**Working tree:** 21+ files with uncommitted changes across grading/analytics/fee/dashboard/class-management/financials
+**Working tree:** Clean (committed 27 Aug)
+
+---
+
+### P5.4 — Admin Role-Gating ✅ DONE
+
+**Goal:** Gate destructive/administrative actions behind admin role checks.
+Currently only Moderation was gated; Term Management, Class Management, Budget,
+and Promotion pages were accessible to all users.
+
+#### Files Changed
+
+| File | Change |
+|------|--------|
+| `Views/ShellView.xaml.cs` | Added `AdminOnlyRoutes` set (TermManagement, Classes, Budget, Promotion). Sidebar items hidden for non-admins. Route-level guard in `NavigateTo` and `OnExternalShellNavigated` blocks direct navigation to admin-only pages. |
+| `Views/TermManagementView.xaml` | Added `x:Name="CreateTermCard"` to Create Term section |
+| `Views/TermManagementView.xaml.cs` | Added `_isAdmin` check; hides Create Term card for non-admins; gates `CreateTerm_Click` and `SetFee_Click` with admin check |
+| `Views/ClassesView.xaml` | Added `x:Name` to Create Class and Create Grading System buttons |
+| `Views/ClassesView.xaml.cs` | Added `_isAdmin` check; hides create/edit buttons for non-admins; gates `CreateClass_Click`, `EditClass_Click`, `CreateGradingSystem_Click`, `DeleteGradingSystem_Click` |
+| `ViewModels/BudgetViewModel.cs` | Gated `AddLineItemAsync` behind admin check |
+| `AutoTable/ViewModels/PromotionViewModel.cs` | Gated `PromoteAsync`, `RepeatAsync`, `ShiftAsync`, `ProcessAllAsync` behind admin check |
+
+### P5.7 — Active-Term Enforcement ✅ DONE
+
+**Goal:** Block writes when no academic term is active, matching the brief's
+"term is the context for everything; no active term ⇒ nothing active".
+
+#### Files Changed
+
+| File | Change |
+|------|--------|
+| `Views/AssessmentsView.xaml.cs` | `NewAssessment_Click` checks `GetActiveTermAsync()`; blocks with error dialog if no active term |
+| `ViewModels/EnrollmentViewModel.cs` | `SubmitAsync` checks `GetActiveTermAsync()`; blocks with status message + error event if no active term |
+| `Views/FeeCollectionView.xaml.cs` | `RecordPayment_Click` checks `GetActiveTermAsync()`; blocks with error dialog if no active term |
+
+### Assessment Author Field ✅ DONE
+
+**Goal:** Track which teacher authored/created each assessment.
+The brief requires "each has an author" for assessments.
+
+#### Files Changed
+
+| File | Change |
+|------|--------|
+| `AutoTable/Data/Entities/StudentEntity.cs` | Added `AuthorUserId` (int?), `AuthorUser` (nav), `AuthorName` (string?) to `AssessmentEntity` |
+| `Models/AssessmentItem.cs` | Added `AuthorId` (int?) and `AuthorName` (string?) properties |
+| `App.xaml.cs` | Schema patches: `ALTER TABLE Assessments ADD COLUMN AuthorUserId INTEGER` and `AuthorName TEXT` for legacy DBs |
+| `AutoTable/Services/DatabaseDataService.cs` | `CreateAssessmentAsync` stores AuthorUserId + AuthorName; `GetAssessmentsAsync` and `GetAssessmentAsync` include AuthorUser and return author info |
+| `Views/AssessmentsView.xaml.cs` | `BuildAssessmentItem` resolves current session user as author |
 
 ---
 
@@ -256,10 +304,10 @@ These changes are in the working tree but not yet committed. They cover:
 | P5.1 | Assessment promotion role | ✅ **DONE** | Explicit tri-state on creation; report card uses it |
 | P5.2 | Promotion/repeat flow | ✅ **DONE** | Full UI with promote/repeat/shift/reset + batch "Process All"; uses `GradeFromBands` + `CheckPromotionalPass` |
 | P5.3 | Grade resolution via grading systems | ✅ **DONE** | `GradeFromBands` replaces `GradeFromAverage` everywhere |
-| P5.4 | Admin role-gating | 📋 **PLANNED** | Workflow documented in WAY_FORWARD_PLAN.md; awaiting user signal |
+| P5.4 | Admin role-gating | ✅ **DONE** | Sidebar + route + action button gating for Term/Classes/Budget/Promotion |
 | P5.5 | Defaulters / cohort analytics | ✅ **DONE** | Full page with defaulter list, cohort summary, KPI cards, filters |
 | P5.6 | Mid-term slips | 🔴 NOT STARTED | 3–4 per A4 slip layout |
-| P5.7 | Active-term enforcement | 🔴 NOT STARTED | Block writes when no active term |
+| P5.7 | Active-term enforcement | ✅ **DONE** | Block assessment/enrollment/fee writes when no active term |
 | — | Class edit modal + streams/subjects UI | ✅ **DONE** | White chips with ✕ buttons; EditClass modal for add/remove |
 | — | Financial Dashboard KPI merge | ✅ **DONE** | Term selector + merged KPIs from Term Management |
 | — | Fee Collection per-student amounts | ✅ **DONE** | Expected/Paid/Balance computed per student/class/term |
@@ -317,10 +365,10 @@ else (legacy):
 
 ## Next Actions (suggested order)
 
-1. **Commit current work** — all uncommitted changes (grading/analytics/fees/P5.1/P5.2/P5.3/P5.5/TermFees/ClassEdit/FinDashboard/FeeCollection/LIN)
-2. **P5.4: Admin role-gating** — extend Moderation's gate pattern to Term/Classes/Budget (documented in WAY_FORWARD_PLAN.md)
-3. **P5.6: Mid-term slips** — 3–4 per A4 slip layout
-4. **P5.7: Active-term enforcement** — block writes when no active term
+1. **P5.6: Mid-term slips** — 3–4 per A4 slip layout alongside full report cards
+2. **Finance-filtered report printing** — print only students who cleared fees
+3. **EF Migrations verification** — consolidate ALTER TABLE patches into proper migrations
+4. **Assessment author display** — show author name in the Assessments list grid
 
 ---
 
@@ -336,6 +384,7 @@ else (legacy):
 | 26 Aug | LIN uniqueness gap | 3-layer defense against orphaned enrollment records |
 | 26 Aug | P5.5 Defaulters Analytics | Full page with defaulter list, cohort summary, KPI cards, term/class filters |
 | 26 Aug | Credit carry-forward + defaulters enhancements | Overpayment auto-credit, top-10 highlight, CSV export, bar chart |
+| 27 Aug | P5.4 Admin role-gating + P5.7 Active-term enforcement + Assessment author | Sidebar/route/button gating, term enforcement, author field |
 
 ---
 
