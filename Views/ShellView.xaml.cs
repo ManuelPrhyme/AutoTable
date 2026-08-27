@@ -58,6 +58,8 @@ namespace AutoTable.Views
             ["FeeCollection"]      = typeof(FeeCollectionView),
             ["Budget"]             = typeof(BudgetView),
             ["AiInsights"]         = typeof(AiInsightsView),
+            ["SchoolSettings"]     = typeof(SchoolSettingsView),
+            ["Defaulters"]         = typeof(DefaultersAnalyticsView),
         };
 
         public ShellView()

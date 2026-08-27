@@ -110,7 +110,7 @@ namespace AutoTable.Views
 
             // Load existing comment
             var settings = await service.GetSchoolSettingsAsync();
-            var existingComment = await service.GetHeadTeacherCommentAsync(0, null); // TODO: resolve studentId
+            var existingComment = await service.GetHeadTeacherCommentAsync(row.StudentId, null);
 
             var commentBox = new TextBox
             {
@@ -164,8 +164,7 @@ namespace AutoTable.Views
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary)
             {
-                // Save the comment (studentId=0 placeholder — real ID would require lookup)
-                await service.SaveHeadTeacherCommentAsync(0, null, commentBox.Text, settings.HeadTeacherName);
+                await service.SaveHeadTeacherCommentAsync(row.StudentId, null, commentBox.Text, settings.HeadTeacherName);
             }
             return true;
         }

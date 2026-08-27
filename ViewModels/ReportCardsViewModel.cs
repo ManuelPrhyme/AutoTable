@@ -87,6 +87,7 @@ namespace AutoTable.ViewModels
                 _loadedRows.Add(new ReportCardRow
                 {
                     Rank = r.Rank,
+                    StudentId = r.StudentId,
                     StudentName = r.StudentName,
                     AdmissionNumber = r.AdmissionNumber,
                     ClassName = r.ClassName,

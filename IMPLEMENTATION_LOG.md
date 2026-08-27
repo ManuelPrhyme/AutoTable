@@ -10,7 +10,7 @@
 ## Current Session: 27 Aug 2026
 
 **Branch:** `sql_rec`  
-**Build:** 0 errors, 0 new warnings  
+**Build:** 0 errors, 13 warnings (pre-existing nullable)  
 **Working tree:** Clean (committed 27 Aug)
 
 ---
@@ -255,6 +255,13 @@ White chips with ✕ buttons; EditClass modal for add/remove; immediate subject/
 | — | Immediate subject/stream persistence | ✅ **DONE** |
 | — | Student credit carry-forward | ✅ **DONE** |
 | — | Top 10 worst defaulters + CSV + chart | ✅ **DONE** |
+| — | Finance-filtered report printing | ✅ **DONE** |
+| — | PDF export (via system print dialog) | ✅ **DONE** |
+| — | Head teacher comment on A4 sheet | ✅ **DONE** |
+| — | School Settings page | ✅ **DONE** |
+| — | Mid-term slips use school settings | ✅ **DONE** |
+| — | Head teacher comment uses real student ID | ✅ **DONE** |
+| — | Defaulters in sidebar navigation | ✅ **DONE** |
 
 ---
 
@@ -296,17 +303,14 @@ else (legacy):
 
 ---
 
-## Next Actions — Report Center / Printing Focus
+## Next Actions — Remaining Gaps
 
 | # | Task | Priority |
 |---|------|----------|
-| 1 | **Report Card sheet layout polish** — verify A4 preview renders correctly with all sections | P1 |
-| 2 | **Mid-term slips: batch print** — verify 3-4 slips per page in print preview | P1 |
-| 3 | **Finance-filtered report printing** — print only students who cleared fees | P2 |
-| 4 | **Print All / Generate All: batch processing** — progress indicator for large classes | P2 |
-| 5 | **Report card: head teacher comment field** — editable comment on each student | P2 |
-| 6 | **PDF export** — save report cards as PDF instead of only printing | P2 |
-| 7 | **EF Migrations verification** — consolidate ALTER TABLE patches | P3 |
+| 1 | **EF Migrations verification** — consolidate ALTER TABLE patches into proper migrations | P3 |
+| 2 | **Head teacher comment: resolve termId** — pass selected term ID instead of null | P3 |
+| 3 | **Batch progress indicator** — show progress when generating many sheets | P3 |
+| 4 | **Print preview pagination** — page navigation for multi-student prints | P3 |
 
 ---
 
@@ -325,6 +329,8 @@ else (legacy):
 | 27 Aug | P5.4 + P5.7 + Assessment author | Admin role-gating, term enforcement, author field |
 | 27 Aug | Report Cards fix + Donut + Mid-Term + "All" filters | Students display fix, donut progress, mid-term slips, Gradebook "All" |
 | 27 Aug | Print dialog + Generate All + Role gating dormancy | Custom print dialog (left/right), Generate All, role gating commented out |
+| 27 Aug | Finance filter + PDF export + Head teacher comment | Fee Cleared Only filter, Export PDF, head teacher comment on A4 sheet |
+| 27 Aug | School Settings + student ID fix + mid-term wiring | School Settings page, fixed head teacher comment student ID, mid-term slips read from settings |
 
 ---
 

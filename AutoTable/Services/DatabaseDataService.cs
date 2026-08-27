@@ -1394,6 +1394,7 @@ namespace AutoTable.Services
 
                 return new Models.ReportCardRow
                 {
+                    StudentId = s.Id,
                     StudentName = s.FullName,
                     AdmissionNumber = s.LIN ?? string.Empty,
                     ClassName = s.Class?.Name ?? "-",
@@ -1441,6 +1442,9 @@ namespace AutoTable.Services
                 IsRepeater = b.IsRepeater,
                 IsPromotionalFail = b.IsPromotionalFail
             }).ToList();
+
+            // Resolve school settings for mid-term slips
+            var midTermSchoolSettings = await GetSchoolSettingsAsync();
 
             var studentsQuery = db.Students
                 .Include(s => s.Stream)
@@ -1496,7 +1500,7 @@ namespace AutoTable.Services
 
                 return new AutoTable.Models.MidTermSlipModel
                 {
-                    SchoolName = "AutoTable Academy",
+                    SchoolName = midTermSchoolSettings.SchoolName,
                     Term = term ?? string.Empty,
                     StudentName = s.FullName,
                     AdmissionNumber = s.LIN ?? string.Empty,
