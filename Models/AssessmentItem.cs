@@ -59,6 +59,12 @@ namespace AutoTable.Models
         public string? AuthorName { get; set; }
         /// <summary>The ID of the teacher who authored this assessment.</summary>
         public int? AuthorId { get; set; }
+        /// <summary>Subject names covered by a multi-subject assessment (AllInClass / SpecificSubjects / AllInSchool). Empty for single-subject.</summary>
+        public List<string> SubjectNames { get; set; } = new();
+        /// <summary>True for school-wide (AllInSchool) assessments that apply to every class.</summary>
+        public bool IsSchoolWide { get; set; }
+        /// <summary>True when this is a multi-subject assessment (single shared paper covering several subjects).</summary>
+        public bool IsMultiSubject => Scope != AssessmentScope.Single || SubjectNames.Count > 0;
         public string StatusLabel => IsPublished ? "Published" : IsVerified ? "Verified" : MarksEnteredPercent >= 100 ? "Complete" : "In Progress";
     }
 }

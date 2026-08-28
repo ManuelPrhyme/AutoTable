@@ -34,6 +34,7 @@ namespace AutoTable.Data
         public DbSet<TermEntity> Terms => Set<TermEntity>();
         public DbSet<AcademicYearEntity> AcademicYears => Set<AcademicYearEntity>();
         public DbSet<AssessmentEntity> Assessments => Set<AssessmentEntity>();
+        public DbSet<AssessmentSubjectEntity> AssessmentSubjects => Set<AssessmentSubjectEntity>();
         public DbSet<ClassSubjectEntity> ClassSubjects => Set<ClassSubjectEntity>();
         public DbSet<MarkEntity> Marks => Set<MarkEntity>();
         public DbSet<FeePaymentEntity> FeePayments => Set<FeePaymentEntity>();
@@ -125,6 +126,27 @@ namespace AutoTable.Data
                 .WithMany(s => s.ClassSubjects)
                 .HasForeignKey(cs => cs.SubjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Multi-subject assessment → subjects (many-to-many via AssessmentSubjects)
+            modelBuilder.Entity<AssessmentSubjectEntity>()
+                .HasKey(ass => new { ass.AssessmentId, ass.SubjectId });
+            modelBuilder.Entity<AssessmentSubjectEntity>()
+                .HasOne(ass => ass.Assessment)
+                .WithMany(a => a.AssessmentSubjects)
+                .HasForeignKey(ass => ass.AssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<AssessmentSubjectEntity>()
+                .HasOne(ass => ass.Subject)
+                .WithMany(s => s.AssessmentSubjects)
+                .HasForeignKey(ass => ass.SubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mark → subject: null for single-subject marks
+            modelBuilder.Entity<MarkEntity>()
+                .HasOne(m => m.Subject)
+                .WithMany(s => s.Marks)
+                .HasForeignKey(m => m.SubjectId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Relationships and cascade rules
             modelBuilder.Entity<AssessmentEntity>()

@@ -140,13 +140,32 @@ namespace AutoTable.Services
             await ProcessOverpaymentCreditAsync(db, studentId, termId);
         }
 
-        public async Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null)
+        public async Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null, string? subjectName = null)
         {
             using var db = CreateContext();
-            var existing = await db.Marks.FirstOrDefaultAsync(m => m.AssessmentId == assessmentId && m.StudentId == studentId);
+            var assess = await db.Assessments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == assessmentId);
+            if (assess == null)
+                throw new InvalidOperationException("Assessment not found.");
+
+            // Multi-subject assessments carry one mark per student PER SUBJECT; those mark
+            // rows are keyed by (assessment, student, subject). Single-subject assessments
+            // keep their marks keyed by (assessment, student) with SubjectId left null.
+            int? subjectId = null;
+            if (assess.SubjectId == null)
+            {
+                if (string.IsNullOrWhiteSpace(subjectName))
+                    throw new InvalidOperationException("Select the subject to enter marks for in this multi-subject assessment.");
+                var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name.ToLower() == subjectName.Trim().ToLower());
+                if (subj == null)
+                    throw new InvalidOperationException($"Subject '{subjectName}' was not found.");
+                subjectId = subj.Id;
+            }
+
+            var existing = await db.Marks.FirstOrDefaultAsync(m =>
+                m.AssessmentId == assessmentId && m.StudentId == studentId && m.SubjectId == subjectId);
             if (existing == null)
             {
-                existing = new MarkEntity { AssessmentId = assessmentId, StudentId = studentId, Mark = mark, Grade = grade, Remarks = remarks, EnteredAt = DateTime.UtcNow };
+                existing = new MarkEntity { AssessmentId = assessmentId, StudentId = studentId, SubjectId = subjectId, Mark = mark, Grade = grade, Remarks = remarks, EnteredAt = DateTime.UtcNow };
                 db.Marks.Add(existing);
             }
             else
@@ -161,10 +180,18 @@ namespace AutoTable.Services
             await UpdateAssessmentCompletionAsync(assessmentId);
         }
 
-        public async Task DeleteMarkAsync(int assessmentId, int studentId)
+        public async Task DeleteMarkAsync(int assessmentId, int studentId, string? subjectName = null)
         {
             using var db = CreateContext();
-            var existing = await db.Marks.FirstOrDefaultAsync(m => m.AssessmentId == assessmentId && m.StudentId == studentId);
+            var assess = await db.Assessments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == assessmentId);
+            int? subjectId = null;
+            if (assess != null && assess.SubjectId == null && !string.IsNullOrWhiteSpace(subjectName))
+            {
+                var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name.ToLower() == subjectName.Trim().ToLower());
+                subjectId = subj?.Id;
+            }
+            var existing = await db.Marks.FirstOrDefaultAsync(m =>
+                m.AssessmentId == assessmentId && m.StudentId == studentId && m.SubjectId == subjectId);
             if (existing == null) return;
             db.Marks.Remove(existing);
             await db.SaveChangesAsync();
@@ -177,8 +204,14 @@ namespace AutoTable.Services
             var assess = await db.Assessments.Include(a => a.Marks).FirstOrDefaultAsync(a => a.Id == assessmentId);
             if (assess == null) return;
             var studentsInClass = await db.Students.Where(s => s.ClassId == assess.ClassId && s.IsActive).CountAsync();
+            // Completion reflects the ENTIRE assessment: a multi-subject paper expects one
+            // mark per student per linked subject (denominator = students × subjects),
+            // while a single-subject paper expects one mark per student.
+            var subjectCount = await db.AssessmentSubjects.CountAsync(ass => ass.AssessmentId == assessmentId);
+            var expected = subjectCount > 0 ? studentsInClass * subjectCount : studentsInClass;
             var marksEntered = assess.Marks.Count(m => m.Mark != null);
-            assess.MarksEnteredPercent = studentsInClass == 0 ? 0 : (int)Math.Round(marksEntered * 100.0 / studentsInClass);
+            assess.MarksEnteredPercent = expected == 0 ? 0 : (int)Math.Round(marksEntered * 100.0 / expected);
+            if (assess.MarksEnteredPercent > 100) assess.MarksEnteredPercent = 100;
             db.Assessments.Update(assess);
             await db.SaveChangesAsync();
         }
@@ -533,7 +566,9 @@ namespace AutoTable.Services
             var a = await db.Assessments
                 .Include(x => x.AuthorUser)
                 .FirstOrDefaultAsync(x =>
-                x.ClassId == cls.Id && x.SubjectId == subj.Id &&
+                (x.ClassId == cls.Id || x.IsSchoolWide) &&
+                (x.SubjectId == subj.Id ||
+                 (x.SubjectId == null && db.AssessmentSubjects.Any(ass => ass.AssessmentId == x.Id && ass.SubjectId == subj.Id))) &&
                 x.Name.Trim().ToLower() == assName.ToLower());
 
             if (a == null) return null;
@@ -600,9 +635,8 @@ namespace AutoTable.Services
             t.Name = name;
             t.StartDate = startDate;
             t.EndDate = endDate;
-            // If the term end date is in the past, mark it inactive
-            if (t.EndDate.HasValue && t.EndDate.Value < DateTime.UtcNow)
-                t.IsActive = false;
+            // IsActive is user-controlled only: an active term stays active even if its
+            // end date has passed — the user decides when to switch terms.
 
             db.Terms.Update(t);
             await db.SaveChangesAsync();
@@ -652,24 +686,35 @@ namespace AutoTable.Services
             var list = await db.Assessments
                 .Include(a => a.Class)
                 .Include(a => a.Subject)
+                .Include(a => a.AssessmentSubjects).ThenInclude(ass => ass.Subject)
                 .Include(a => a.AuthorUser)
                 .OrderBy(a => a.DueDate)
                 .ToListAsync();
 
-            return list.Select(a => new AssessmentItem
+            return list.Select(a =>
             {
-                Id = a.Id.ToString(),
-                Name = a.Name,
-                ClassName = a.Class?.Name ?? string.Empty,
-                Subject = a.Subject?.Name ?? string.Empty,
-                WeightPercent = a.WeightPercent,
-                DueDate = a.DueDate ?? DateTime.MinValue,
-                MarksEnteredPercent = a.MarksEnteredPercent,
-                IsVerified = a.IsVerified,
-                IsPublished = a.IsPublished,
-                PromotionRole = (AssessmentPromotionRole)a.PromotionRole,
-                AuthorId = a.AuthorUserId,
-                AuthorName = a.AuthorName ?? a.AuthorUser?.FullName
+                var multiNames = a.SubjectId == null
+                    ? a.AssessmentSubjects.Where(ass => ass.Subject != null).Select(ass => ass.Subject!.Name).ToList()
+                    : new List<string>();
+                var singleName = a.Subject?.Name ?? string.Empty;
+                return new AssessmentItem
+                {
+                    Id = a.Id.ToString(),
+                    Name = a.Name,
+                    ClassName = a.IsSchoolWide ? "All Classes" : (a.Class?.Name ?? string.Empty),
+                    Subject = a.SubjectId == null && multiNames.Count > 0 ? string.Join(", ", multiNames) : singleName,
+                    Scope = a.IsSchoolWide ? AssessmentScope.AllInSchool : (a.SubjectId == null ? AssessmentScope.AllInClass : AssessmentScope.Single),
+                    SubjectNames = multiNames,
+                    IsSchoolWide = a.IsSchoolWide,
+                    WeightPercent = a.WeightPercent,
+                    DueDate = a.DueDate ?? DateTime.MinValue,
+                    MarksEnteredPercent = a.MarksEnteredPercent,
+                    IsVerified = a.IsVerified,
+                    IsPublished = a.IsPublished,
+                    PromotionRole = (AssessmentPromotionRole)a.PromotionRole,
+                    AuthorId = a.AuthorUserId,
+                    AuthorName = a.AuthorName ?? a.AuthorUser?.FullName
+                };
             }).ToList();
         }
 
@@ -710,9 +755,9 @@ namespace AutoTable.Services
             var marksQuery = db.Marks
                 .Include(m => m.Student)
                 .Include(m => m.Assessment)
-                .Where(m => m.Assessment!.ClassId == cls.Id);
+                .Where(m => m.Assessment!.ClassId == cls.Id || m.Assessment!.IsSchoolWide);
             if (subj != null)
-                marksQuery = marksQuery.Where(m => m.Assessment.SubjectId == subj.Id);
+                marksQuery = marksQuery.Where(m => m.Assessment!.SubjectId == subj.Id || m.SubjectId == subj.Id);
 
             if (!string.IsNullOrWhiteSpace(academicYear))
             {
@@ -784,17 +829,15 @@ namespace AutoTable.Services
             var assName = assessmentName?.Trim() ?? string.Empty;
 
             var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name.ToLower() == clsName.ToLower());
-            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name.ToLower() == subjName.ToLower());
-            if (cls == null || subj == null || clsName.Length == 0 || subjName.Length == 0)
-                return new List<StudentMarkRow>();
+            if (cls == null || clsName.Length == 0) return new List<StudentMarkRow>();
 
             var clsId = cls.Id;
-            var subjId = subj.Id;
             var assess = await db.Assessments.FirstOrDefaultAsync(a =>
-                a.ClassId == clsId && a.SubjectId == subjId &&
+                (a.ClassId == clsId || a.IsSchoolWide) &&
                 a.Name.Trim().ToLower() == assName.ToLower());
 
-            if (cls == null || subj == null || assess == null)
+            // No assessment found → return the class roster with empty marks.
+            if (assess == null)
             {
                 var studs = await db.Students.Where(s => s.ClassId == clsId && s.IsActive).ToListAsync();
                 return studs.Select((s, i) => new StudentMarkRow
@@ -810,10 +853,6 @@ namespace AutoTable.Services
                 }).ToList();
             }
 
-            var marks = await db.Marks.Include(m => m.Student)
-                .Where(m => m.AssessmentId == assess.Id)
-                .ToListAsync();
-
             // Determine eligible students based on assessment scope
             List<StudentEntity> students;
             if (assess.IsClassWide || assess.StreamId == null)
@@ -824,6 +863,42 @@ namespace AutoTable.Services
             {
                 students = await db.Students.Where(s => s.ClassId == cls.Id && s.StreamId == assess.StreamId && s.IsActive).ToListAsync();
             }
+
+            // Resolve the subject: multi-subject assessments require the chosen subject;
+            // single-subject assessments use their own subject (marks carry no SubjectId).
+            int? subjId = null;
+            if (subjName.Length > 0)
+            {
+                var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name.ToLower() == subjName.ToLower());
+                subjId = subj?.Id;
+            }
+            bool isMulti = assess.SubjectId == null;
+            if (isMulti && subjId == null)
+            {
+                // No subject chosen for a multi-subject paper → nothing to show.
+                return students.Select(s => new StudentMarkRow
+                {
+                    StudentId = s.Id.ToString(),
+                    StudentName = s.FullName,
+                    AdmissionNumber = s.LIN ?? string.Empty,
+                    ClassName = cls.Name,
+                    Mark = null,
+                    Grade = "-",
+                    Remarks = string.Empty,
+                    IsEditable = true
+                }).ToList();
+            }
+
+            IReadOnlyList<MarkEntity> marks;
+            if (isMulti)
+                marks = await db.Marks.Include(m => m.Student)
+                    .Where(m => m.AssessmentId == assess.Id && m.SubjectId == subjId)
+                    .ToListAsync();
+            else
+                marks = await db.Marks.Include(m => m.Student)
+                    .Where(m => m.AssessmentId == assess.Id)
+                    .ToListAsync();
+
             var result = students.Select(s =>
             {
                 var mark = marks.FirstOrDefault(m => m.StudentId == s.Id);
@@ -1053,6 +1128,7 @@ namespace AutoTable.Services
             }).ToList();
 
             var marksQuery = db.Marks.Include(m => m.Assessment).ThenInclude(a => a!.Subject)
+                .Include(m => m.Subject)
                 .Where(m => m.Student!.FullName == studentName);
 
             var year = await db.AcademicYears.FirstOrDefaultAsync(y => y.Name == academicYear);
@@ -1061,7 +1137,9 @@ namespace AutoTable.Services
             if (termEntity != null) marksQuery = marksQuery.Where(m => m.Assessment!.TermId == termEntity.Id);
 
             var marks = await marksQuery.ToListAsync();
-            foreach (var group in marks.GroupBy(m => m.Assessment!.Subject!.Name).OrderBy(g => g.Key))
+            // Group by the MARK's subject: marks in multi-subject assessments carry their
+            // own SubjectId; single-subject marks resolve via Assessment.SubjectId.
+            foreach (var group in marks.GroupBy(m => m.Subject?.Name ?? m.Assessment!.Subject?.Name ?? "General").OrderBy(g => g.Key))
             {
                 var scores = group.Select(m => m.Mark ?? 0).OrderByDescending(v => v).ToList();
                 var avg = scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
@@ -1099,7 +1177,7 @@ namespace AutoTable.Services
             var cls = student?.ClassId != null ? await db.Classes.FindAsync(student.ClassId) : null;
             if (cls != null)
             {
-                var clsMarks = await db.Marks.Include(m => m.Assessment).Where(m => m.Assessment!.ClassId == cls.Id && m.Assessment.Subject!.Name == subject).ToListAsync();
+                var clsMarks = await db.Marks.Include(m => m.Assessment).Where(m => (m.Assessment!.ClassId == cls.Id || m.Assessment!.IsSchoolWide) && (m.Assessment!.Subject!.Name == subject || m.Subject!.Name == subject)).ToListAsync();
                 var classAvgs = clsMarks
                     .GroupBy(m => m.StudentId)
                     .Select(g => g.Average(m => m.Mark ?? 0))
@@ -1151,8 +1229,9 @@ namespace AutoTable.Services
 
             var assessments = await db.Assessments
                 .Include(a => a.Subject)
-                .Where(a => a.ClassId == cls.Id && a.TermId == termEntity.Id)
-                .OrderBy(a => a.Subject!.Name).ThenByDescending(a => a.DueDate)
+                .Include(a => a.AssessmentSubjects).ThenInclude(ass => ass.Subject)
+                .Where(a => (a.ClassId == cls.Id || a.IsSchoolWide) && a.TermId == termEntity.Id)
+                .OrderBy(a => a.DueDate).ThenByDescending(a => a.WeightPercent)
                 .ToListAsync();
 
             var marks = await db.Marks
@@ -1172,17 +1251,38 @@ namespace AutoTable.Services
             var contributory = new List<ReportCardAssessmentRow>();
             bool hasAnyRoleSet = assessments.Any(a => a.PromotionRole != 0);
 
-            foreach (var subjectGroup in assessments.GroupBy(a => a.Subject?.Name ?? "General").OrderBy(g => g.Key))
+            // A multi-subject assessment fans out to one report-card row per linked
+            // subject; single-subject assessments keep their own subject.
+            var subjectEntries = new List<(AssessmentEntity Assessment, string SubjectName, int? SubjectId)>();
+            foreach (var a in assessments)
+            {
+                if (a.AssessmentSubjects.Count > 0)
+                    foreach (var ass in a.AssessmentSubjects)
+                        subjectEntries.Add((a, ass.Subject?.Name ?? "General", (int?)ass.SubjectId));
+                else
+                    subjectEntries.Add((a, a.Subject?.Name ?? "General", null));
+            }
+            subjectEntries = subjectEntries.OrderBy(e => e.SubjectName)
+                .ThenByDescending(e => e.Assessment.WeightPercent)
+                .ThenByDescending(e => e.Assessment.DueDate)
+                .ToList();
+
+            foreach (var subjectGroup in subjectEntries.GroupBy(e => e.SubjectName).OrderBy(g => g.Key))
             {
                 if (hasAnyRoleSet)
                 {
                     // Explicit classification based on the 5-state PromotionRole.
-                    foreach (var a in subjectGroup)
+                    foreach (var entry in subjectGroup)
                     {
+                        var a = entry.Assessment;
                         // "Just an assessment" does not belong on the report card.
                         if (a.PromotionRole == (int)AssessmentPromotionRole.None) continue;
 
-                        var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
+                        // Match the mark to the subject: multi-subject assessments store one
+                        // mark per subject (SubjectId); single-subject marks have none.
+                        var mark = marks
+                            .FirstOrDefault(m => m.AssessmentId == a.Id &&
+                                (entry.SubjectId == null || m.SubjectId == entry.SubjectId))?.Mark;
                         var avg = mark ?? 0;
                         var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
                         var isPromo = a.PromotionRole == (int)AssessmentPromotionRole.EndOfTerm
@@ -1203,11 +1303,13 @@ namespace AutoTable.Services
                 else
                 {
                     // Legacy fallback: highest-weighted / last-due = promotional
-                    var ordered = subjectGroup.OrderByDescending(a => a.WeightPercent).ThenByDescending(a => a.DueDate).ToList();
-                    for (int i = 0; i < ordered.Count; i++)
+                    for (int i = 0; i < subjectGroup.Count(); i++)
                     {
-                        var a = ordered[i];
-                        var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
+                        var entry = subjectGroup.ElementAt(i);
+                        var a = entry.Assessment;
+                        var mark = marks
+                            .FirstOrDefault(m => m.AssessmentId == a.Id &&
+                                (entry.SubjectId == null || m.SubjectId == entry.SubjectId))?.Mark;
                         var avg = mark ?? 0;
                         var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
                         var row = new ReportCardAssessmentRow
@@ -1359,7 +1461,7 @@ namespace AutoTable.Services
             // Get assessments — filtered by class or all
             var assessmentsQuery = db.Assessments.AsQueryable();
             if (!allClasses && cls != null)
-                assessmentsQuery = assessmentsQuery.Where(a => a.ClassId == cls.Id);
+                assessmentsQuery = assessmentsQuery.Where(a => a.ClassId == cls.Id || a.IsSchoolWide);
 
             if (!string.IsNullOrWhiteSpace(term))
             {
@@ -1487,7 +1589,7 @@ namespace AutoTable.Services
             }
             var students = await studentsQuery.OrderBy(s => s.FullName).ToListAsync();
 
-            var assessmentsQuery = db.Assessments.Where(a => a.ClassId == cls.Id);
+            var assessmentsQuery = db.Assessments.Where(a => a.ClassId == cls.Id || a.IsSchoolWide);
             if (!string.IsNullOrWhiteSpace(term))
             {
                 var termEntity = await db.Terms.FirstOrDefaultAsync(t => t.Name == term);
@@ -2182,7 +2284,8 @@ namespace AutoTable.Services
             using var db = CreateContext();
             var s = await db.Subjects.FindAsync(subjectId);
             if (s == null) return;
-            var hasAssessments = await db.Assessments.AnyAsync(a => a.SubjectId == subjectId);
+            var hasAssessments = await db.Assessments.AnyAsync(a => a.SubjectId == subjectId)
+                || await db.AssessmentSubjects.AnyAsync(ass => ass.SubjectId == subjectId);
             if (hasAssessments)
                 throw new InvalidOperationException("Cannot delete subject with existing assessments.");
             db.Subjects.Remove(s);
@@ -2204,8 +2307,10 @@ namespace AutoTable.Services
             using var db = CreateContext();
             var cs = await db.ClassSubjects.FindAsync(classId, subjectId);
             if (cs == null) return;
-            // prevent removal if assessments exist for this class-subject
-            var hasAssessments = await db.Assessments.AnyAsync(a => a.ClassId == classId && a.SubjectId == subjectId);
+            // prevent removal if assessments exist for this class-subject (single-subject
+            // assessments directly, or as a linked subject on a multi-subject assessment)
+            var hasAssessments = await db.Assessments.AnyAsync(a => a.ClassId == classId && a.SubjectId == subjectId)
+                || await db.AssessmentSubjects.AnyAsync(ass => ass.SubjectId == subjectId && ass.Assessment!.ClassId == classId);
             if (hasAssessments)
                 throw new InvalidOperationException("Cannot remove subject assigned to class while assessments exist for that pairing.");
             db.ClassSubjects.Remove(cs);
@@ -2226,9 +2331,6 @@ namespace AutoTable.Services
         public async Task<AutoTable.Models.AssessmentItem> CreateAssessmentAsync(AutoTable.Models.AssessmentItem item)
         {
             using var db = CreateContext();
-            // resolve class and subject
-            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == item.ClassName) ?? await db.Classes.FirstOrDefaultAsync();
-            var subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == item.Subject) ?? await db.Subjects.FirstOrDefaultAsync();
 
             // Prefer the active term; fall back to the most recent term by start date.
             var term = await db.Terms.FirstOrDefaultAsync(t => t.IsActive)
@@ -2244,25 +2346,45 @@ namespace AutoTable.Services
                 await db.SaveChangesAsync();
             }
 
+            // For multi-subject assessments the subjects are carried in SubjectNames and
+            // linked through the AssessmentSubjects table. For single-subject they come from item.Subject.
+            var isMulti = item.Scope != AutoTable.Models.AssessmentScope.Single;
+            var resolvedNames = (item.SubjectNames ?? new List<string>())
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (isMulti && resolvedNames.Count == 0)
+                throw new InvalidOperationException("A multi-subject assessment needs at least one subject.");
+
+            // Single-subject: resolve the subject.
+            SubjectEntity? subj = null;
+            if (!isMulti)
+            {
+                subj = await db.Subjects.FirstOrDefaultAsync(s => s.Name == item.Subject)
+                    ?? await db.Subjects.FirstOrDefaultAsync();
+            }
+
+            var cls = await db.Classes.FirstOrDefaultAsync(c => c.Name == item.ClassName) ?? await db.Classes.FirstOrDefaultAsync();
+
             // Report precisely which prerequisite is missing so the UI can guide the user.
             if (cls == null)
-                throw new InvalidOperationException("No class exists yet. Create a class under Administration â†’ Classes Management first.");
-            if (subj == null)
-                throw new InvalidOperationException("No subject exists yet. Create a subject under Administration â†’ Classes Management first.");
+                throw new InvalidOperationException("No class exists yet. Create a class under Administration → Classes Management first.");
             if (term == null)
-                throw new InvalidOperationException("No term exists yet. Create a term under Administration â†’ Term Management first.");
+                throw new InvalidOperationException("No term exists yet. Create a term under Administration → Term Management first.");
 
             var entity = new AssessmentEntity
             {
                 Name = item.Name,
                 ClassId = cls.Id,
-                SubjectId = subj.Id,
+                SubjectId = isMulti ? null : subj!.Id,
                 AcademicYearId = ay.Id,
                 TermId = term.Id,
                 WeightPercent = item.WeightPercent,
                 DueDate = item.DueDate,
                 StreamId = item.StreamId,
                 IsClassWide = item.IsClassWide,
+                IsSchoolWide = item.Scope == AutoTable.Models.AssessmentScope.AllInSchool,
                 IsVerified = false,
                 IsPublished = false,
                 MarksEnteredPercent = 0,
@@ -2273,12 +2395,31 @@ namespace AutoTable.Services
             db.Assessments.Add(entity);
             await db.SaveChangesAsync();
 
+            // Attach subject links for a multi-subject assessment.
+            foreach (var name in resolvedNames)
+            {
+                var s = await db.Subjects.FirstOrDefaultAsync(x => x.Name.ToLower() == name.ToLower());
+                if (s == null) continue;
+                db.AssessmentSubjects.Add(new AssessmentSubjectEntity { AssessmentId = entity.Id, SubjectId = s.Id });
+            }
+            await db.SaveChangesAsync();
+
+            var linkedNames = isMulti
+                ? (await db.AssessmentSubjects
+                    .Where(ass => ass.AssessmentId == entity.Id)
+                    .Include(ass => ass.Subject)
+                    .Select(ass => ass.Subject!.Name)
+                    .ToListAsync())
+                : new List<string>();
+
             return new AutoTable.Models.AssessmentItem
             {
                 Id = entity.Id.ToString(),
                 Name = entity.Name,
                 ClassName = cls.Name,
-                Subject = subj.Name,
+                Subject = isMulti ? string.Join(", ", linkedNames) : (subj?.Name ?? string.Empty),
+                Scope = item.Scope,
+                SubjectNames = linkedNames,
                 WeightPercent = entity.WeightPercent,
                 DueDate = entity.DueDate ?? DateTime.MinValue,
                 MarksEnteredPercent = entity.MarksEnteredPercent,
@@ -2385,6 +2526,7 @@ namespace AutoTable.Services
         {
             var marks = await db.Marks
                 .Where(m => m.StudentId == studentId && m.Mark.HasValue)
+                .Include(m => m.Subject)
                 .Include(m => m.Assessment).ThenInclude(a => a.Subject)
                 .Include(m => m.Assessment).ThenInclude(a => a.Term)
                 .ToListAsync();
@@ -2413,7 +2555,9 @@ namespace AutoTable.Services
             bool hasAnyRoleSet = termMarks.Any(m => m.Assessment!.PromotionRole != (int)AutoTable.Models.AssessmentPromotionRole.None);
 
             var subjectAvgs = new List<double>();
-            foreach (var grp in termMarks.GroupBy(m => m.Assessment!.Subject?.Name ?? "General"))
+            // Group by the MARK's subject: marks in multi-subject assessments carry their
+            // own SubjectId; single-subject marks resolve via Assessment.SubjectId.
+            foreach (var grp in termMarks.GroupBy(m => m.Subject?.Name ?? m.Assessment!.Subject?.Name ?? "General"))
             {
                 double? mark = null;
 

@@ -162,12 +162,12 @@ namespace AutoTable.Views
                 if (isAllInClass)
                 {
                     var clsName = (classPicker.SelectedItem as AutoTable.Models.SimpleLookup)?.Name ?? "the class";
-                    scopeHint.Text = $"Creates one assessment per subject in {clsName}.";
+                    scopeHint.Text = $"Creates ONE assessment covering all subjects in {clsName}. Pick the subject at marks entry.";
                 }
                 else if (isSpecific)
-                    scopeHint.Text = "Check the subjects below. One assessment per selected subject will be created.";
+                    scopeHint.Text = "Check the subjects below. ONE assessment is created covering the selected subjects; pick the subject at marks entry.";
                 else if (isAllInSchool)
-                    scopeHint.Text = "Creates one assessment per subject across ALL classes in the school.";
+                    scopeHint.Text = "Creates ONE school-wide assessment covering every subject taught; pick the subject at marks entry.";
                 else
                     scopeHint.Visibility = Visibility.Collapsed;
             }
@@ -221,8 +221,10 @@ namespace AutoTable.Views
                     // ── Resolve promotion role ──
                     var promoRole = (AutoTable.Models.AssessmentPromotionRole)promoRoleBox.SelectedIndex;
 
-                    // ── Resolve subjects to create assessments for ──
-                    var createdItems = new List<AutoTable.Models.AssessmentItem>();
+                    // ── Resolve subjects covered by this assessment ──
+                    // Every non-single scope creates ONE assessment linked to multiple
+                    // subjects (no per-subject duplicates).
+                    var coveredSubjects = new List<string>();
 
                     if (scope == AutoTable.Models.AssessmentScope.Single)
                     {
@@ -239,9 +241,7 @@ namespace AutoTable.Views
                             await err.ShowAsync();
                             return;
                         }
-                        var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
-                        var created = await AppServices.DataService!.CreateAssessmentAsync(item);
-                        if (created != null) createdItems.Add(created);
+                        coveredSubjects.Add(subjName);
                     }
                     else if (scope == AutoTable.Models.AssessmentScope.AllInClass)
                     {
@@ -251,20 +251,14 @@ namespace AutoTable.Views
                             await err.ShowAsync();
                             return;
                         }
-                        // Reload subjects for the class to be sure
-                        var subjects = (await AppServices.DataService!.GetSubjectsForClassAsync(selectedClass.Id)).Select(s => s.Name).ToList();
-                        if (subjects.Count == 0)
+                        // One assessment covering ALL subjects in the class.
+                        coveredSubjects.AddRange(
+                            (await AppServices.DataService!.GetSubjectsForClassAsync(selectedClass.Id)).Select(s => s.Name));
+                        if (coveredSubjects.Count == 0)
                         {
                             var err = new ContentDialog { Title = "No subjects", Content = $"No subjects assigned to {selectedClass.Name}. Add subjects under Classes Management first.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                             await err.ShowAsync();
                             return;
-                        }
-                        foreach (var subjName in subjects)
-                        {
-                            var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
-                            var created = await AppServices.DataService!.CreateAssessmentAsync(item);
-                            if (created != null) createdItems.Add(created);
-                            
                         }
                     }
                     else if (scope == AutoTable.Models.AssessmentScope.SpecificSubjects)
@@ -275,40 +269,48 @@ namespace AutoTable.Views
                             await err.ShowAsync();
                             return;
                         }
-                        var selectedSubjects = multiSubjectItems.Children
+                        coveredSubjects.AddRange(multiSubjectItems.Children
                             .OfType<CheckBox>()
                             .Where(cb => cb.IsChecked == true)
                             .Select(cb => cb.Content?.ToString() ?? "")
-                            .Where(n => !string.IsNullOrWhiteSpace(n))
-                            .ToList();
-                        if (selectedSubjects.Count == 0)
+                            .Where(n => !string.IsNullOrWhiteSpace(n)));
+                        if (coveredSubjects.Count == 0)
                         {
                             var err = new ContentDialog { Title = "No subjects selected", Content = "Please check at least one subject.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                             await err.ShowAsync();
                             return;
                         }
-                        foreach (var subjName in selectedSubjects)
-                        {
-                            var item = BuildAssessmentItem(assessmentName, selectedClass.Name, subjName, scope, weight, dueDate, null, promoRole);
-                            var created = await AppServices.DataService!.CreateAssessmentAsync(item);
-                            if (created != null) createdItems.Add(created);
-                        }
                     }
                     else if (scope == AutoTable.Models.AssessmentScope.AllInSchool)
                     {
-                        // Create assessments for ALL classes × ALL subjects
+                        // One school-wide assessment covering every subject taught in the school.
                         var allClasses = await AppServices.DataService!.GetClassesAsync();
                         foreach (var cls in allClasses)
                         {
-                            var subjects = (await AppServices.DataService!.GetSubjectsForClassAsync(cls.Id)).Select(s => s.Name).ToList();
-                            foreach (var subjName in subjects)
+                            foreach (var subj in await AppServices.DataService!.GetSubjectsForClassAsync(cls.Id))
                             {
-                                var item = BuildAssessmentItem(assessmentName, cls.Name, subjName, scope, weight, dueDate, null, promoRole);
-                                var created = await AppServices.DataService!.CreateAssessmentAsync(item);
-                                if (created != null) createdItems.Add(created);
+                                if (!coveredSubjects.Contains(subj.Name, StringComparer.OrdinalIgnoreCase))
+                                    coveredSubjects.Add(subj.Name);
                             }
                         }
+                        if (coveredSubjects.Count == 0)
+                        {
+                            var err = new ContentDialog { Title = "No subjects", Content = "No subjects are assigned to any class yet.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                            await err.ShowAsync();
+                            return;
+                        }
                     }
+
+                    // ── Create the SINGLE assessment (subject links resolve server-side) ──
+                    var primarySubject = coveredSubjects.Count == 1 ? coveredSubjects[0] : coveredSubjects.First();
+                    var classNameForItem = scope == AutoTable.Models.AssessmentScope.AllInSchool
+                        ? "All Classes"
+                        : selectedClass!.Name;
+                    var item = BuildAssessmentItem(assessmentName, classNameForItem, primarySubject, scope, weight, dueDate, null, promoRole);
+                    item.SubjectNames = coveredSubjects;
+                    var created = await AppServices.DataService!.CreateAssessmentAsync(item);
+                    var createdItems = new List<AutoTable.Models.AssessmentItem>();
+                    if (created != null) createdItems.Add(created);
 
                     // Insert all created assessments at top of list
                     for (int i = createdItems.Count - 1; i >= 0; i--)
@@ -332,7 +334,8 @@ namespace AutoTable.Views
         private static AssessmentItem BuildAssessmentItem(
             string name, string className, string subject, AssessmentScope scope,
             int weight, DateTime dueDate, int? streamId,
-            AssessmentPromotionRole promoRole = AssessmentPromotionRole.None)
+            AssessmentPromotionRole promoRole = AssessmentPromotionRole.None,
+            List<string>? subjectNames = null)
         {
             // Set the author to the current logged-in user
             var currentUser = Services.SessionService.Instance.CurrentUser;
@@ -356,6 +359,7 @@ namespace AutoTable.Views
                 ClassName = className,
                 Subject = subject,
                 Scope = scope,
+                SubjectNames = subjectNames ?? new List<string>(),
                 WeightPercent = weight,
                 DueDate = dueDate,
                 IsClassWide = true,

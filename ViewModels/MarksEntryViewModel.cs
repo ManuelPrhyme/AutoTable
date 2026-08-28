@@ -15,8 +15,8 @@ namespace AutoTable.ViewModels
         private readonly IDataService _dataService;
 
         [ObservableProperty] private string _selectedClass = "P5";
-        [ObservableProperty] private string _selectedSubject = "Mathematics";
-        [ObservableProperty] private string _selectedAssessment = "Mid Term I";
+        [ObservableProperty] private string _selectedSubject = string.Empty;
+        [ObservableProperty] private string _selectedAssessment = string.Empty;
         [ObservableProperty] private string _statusMessage = string.Empty;
         [ObservableProperty] private int _completionPercent;
 
@@ -42,9 +42,68 @@ namespace AutoTable.ViewModels
             _ = InitializeAsync();
         }
 
+        // When a multi-subject assessment is selected the Subject filter "spins up"
+        // so the user can choose which subject's marks they are entering for that
+        // single shared assessment. Hidden for single-subject assessments.
+        [ObservableProperty] private bool _isSubjectFilterVisible = true;
+        private bool _suppressSubjectReload;
+
+        public Microsoft.UI.Xaml.Visibility SubjectFilterVisibility =>
+            IsSubjectFilterVisible ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        partial void OnIsSubjectFilterVisibleChanged(bool value) => OnPropertyChanged(nameof(SubjectFilterVisibility));
+
         partial void OnSelectedClassChanged(string value) => _ = ReloadForFiltersAsync();
-        partial void OnSelectedSubjectChanged(string value) => _ = ReloadForFiltersAsync();
-        partial void OnSelectedAssessmentChanged(string value) => _ = LoadMarks();
+        partial void OnSelectedSubjectChanged(string value)
+        {
+            // Programmatic subject assignments (filter spin-up) manage their own reload.
+            if (_suppressSubjectReload) return;
+            if (IsSubjectFilterVisible) _ = LoadMarks();
+        }
+        partial void OnSelectedAssessmentChanged(string value) => _ = OnAssessmentSelectionChangedAsync();
+
+        /// <summary>
+        /// When the selected assessment changes: multi-subject assessments reveal the
+        /// Subject filter (populated with the assessment's linked subjects) so the user
+        /// picks the subject to enter marks for; single-subject assessments hide it and
+        /// pin the subject to the assessment's own subject.
+        /// </summary>
+        private async Task OnAssessmentSelectionChangedAsync()
+        {
+            if (!_initialized) return;
+
+            var match = FindAssessment();
+            bool isMulti = match != null && match.SubjectNames.Count > 0;
+            IsSubjectFilterVisible = isMulti;
+
+            if (isMulti)
+            {
+                var prev = SelectedSubject;
+                Subjects.Clear();
+                foreach (var s in match!.SubjectNames) Subjects.Add(s);
+
+                _suppressSubjectReload = true;
+                if (!string.IsNullOrEmpty(prev) && Subjects.Contains(prev)) SelectedSubject = prev;
+                else if (Subjects.Count > 0) SelectedSubject = Subjects[0];
+                else SelectedSubject = string.Empty;
+                _suppressSubjectReload = false;
+
+                await LoadMarks();
+            }
+            else if (match != null)
+            {
+                // Single-subject assessment: keep the Subjects list intact but pin the
+                // selection to the assessment's own subject.
+                var own = match.Subject?.Trim() ?? string.Empty;
+                if (!string.Equals(SelectedSubject?.Trim(), own, StringComparison.OrdinalIgnoreCase))
+                {
+                    _suppressSubjectReload = true;
+                    SelectedSubject = own;   // LoadMarks runs below
+                    _suppressSubjectReload = false;
+                }
+                await LoadMarks();
+            }
+        }
 
         private async Task InitializeAsync()
         {
@@ -58,13 +117,13 @@ namespace AutoTable.ViewModels
 
                 _allAssessments = (await _dataService.GetAssessmentsAsync()).ToList();
 
-                // Default the filters to the first assessment's class/subject so the
-                // bar starts on a combination that actually has an assessment.
+                // Default the filters to the first assessment's class so the
+                // bar starts on a class that actually has an assessment. The subject
+                // filter is (re)driven by OnAssessmentSelectionChangedAsync.
                 if (_allAssessments.Count > 0)
                 {
                     var first = _allAssessments[0];
                     if (Classes.Contains(first.ClassName)) SelectedClass = first.ClassName;
-                    if (Subjects.Contains(first.Subject)) SelectedSubject = first.Subject;
                 }
 
                 _initialized = true;
@@ -77,9 +136,9 @@ namespace AutoTable.ViewModels
         }
 
         /// <summary>
-        /// Rebuilds the Assessment dropdown so it only contains assessments that were
-        /// created for the currently selected class AND subject. If none exist for the
-        /// combination the list is cleared with a helpful message instead of letting the
+        /// Rebuilds the Assessment dropdown so it only contains assessments that apply to
+        /// the currently selected class (its own papers plus any school-wide paper). If
+        /// none exist the list is cleared with a helpful message instead of letting the
         /// user pick something that can never be found in the database.
         /// </summary>
         private void RefreshAssessmentList()
@@ -87,9 +146,11 @@ namespace AutoTable.ViewModels
             var previous = SelectedAssessment;
             Assessments.Clear();
 
+            // Assessments for the selected class, plus any school-wide paper
+            // (ClassName "All Classes"), which applies to every class.
             var names = _allAssessments
                 .Where(a => string.Equals(a.ClassName?.Trim(), SelectedClass?.Trim(), StringComparison.OrdinalIgnoreCase)
-                         && string.Equals(a.Subject?.Trim(), SelectedSubject?.Trim(), StringComparison.OrdinalIgnoreCase))
+                         || string.Equals(a.ClassName?.Trim(), "All Classes", StringComparison.OrdinalIgnoreCase))
                 .Select(a => a.Name.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(n => n)
@@ -102,7 +163,7 @@ namespace AutoTable.ViewModels
                 SelectedAssessment = string.Empty;
                 StudentMarks.Clear();
                 CompletionPercent = 0;
-                StatusMessage = $"No assessments have been created for {SelectedClass} - {SelectedSubject} yet. Create one on the Assessments page first.";
+                StatusMessage = $"No assessments have been created for {SelectedClass} yet. Create one on the Assessments page first.";
                 return;
             }
 
@@ -237,7 +298,10 @@ namespace AutoTable.ViewModels
                         studentId,
                         row.Mark.Value,
                         row.Grade == "-" ? GradeFromMark(row.Mark.Value) : row.Grade,
-                        string.IsNullOrWhiteSpace(row.Remarks) ? null : row.Remarks);
+                        string.IsNullOrWhiteSpace(row.Remarks) ? null : row.Remarks,
+                        // Multi-subject assessments store one mark per subject: the chosen
+                        // subject is required so the mark lands in the right slot.
+                        IsSubjectFilterVisible ? SelectedSubject : null);
                     saved++;
                 }
 
@@ -253,14 +317,25 @@ namespace AutoTable.ViewModels
         }
 
         /// <summary>
-        /// Finds the assessment matching the current class + subject + assessment-name
-        /// selection (case-insensitive, whitespace-tolerant) from the cached list.
+        /// Finds the assessment matching the current assessment-name selection and class
+        /// (case-insensitive, whitespace-tolerant) from the cached list. School-wide
+        /// assessments (ClassName "All Classes") match any selected class. When several
+        /// single-subject assessments share a name (legacy data), prefer the one whose
+        /// subject matches the current subject selection.
         /// </summary>
         private AssessmentItem? FindAssessment()
-            => _allAssessments.FirstOrDefault(a =>
+        {
+            var candidates = _allAssessments.Where(a =>
                 string.Equals(a.Name?.Trim(), SelectedAssessment?.Trim(), StringComparison.OrdinalIgnoreCase)
-             && string.Equals(a.ClassName?.Trim(), SelectedClass?.Trim(), StringComparison.OrdinalIgnoreCase)
-             && string.Equals(a.Subject?.Trim(), SelectedSubject?.Trim(), StringComparison.OrdinalIgnoreCase));
+             && (string.Equals(a.ClassName?.Trim(), SelectedClass?.Trim(), StringComparison.OrdinalIgnoreCase)
+              || string.Equals(a.ClassName?.Trim(), "All Classes", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+            if (candidates.Count <= 1) return candidates.FirstOrDefault();
+
+            var subjectMatch = candidates.FirstOrDefault(a => a.SubjectNames.Count == 0 &&
+                string.Equals(a.Subject?.Trim(), SelectedSubject?.Trim(), StringComparison.OrdinalIgnoreCase));
+            return subjectMatch ?? candidates[0];
+        }
 
         public void UpdateCompletion()
         {

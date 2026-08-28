@@ -74,13 +74,13 @@ namespace AutoTable.Demo
             return Task.FromResult<IReadOnlyList<Models.StudentMarkRow>>(rows);
         }
 
-        public Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null)
+        public Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null, string? subjectName = null)
         {
             // Mock: no-op
             return Task.CompletedTask;
         }
 
-        public Task DeleteMarkAsync(int assessmentId, int studentId)
+        public Task DeleteMarkAsync(int assessmentId, int studentId, string? subjectName = null)
         {
             // Mock: no-op
             return Task.CompletedTask;

@@ -30,6 +30,8 @@ namespace AutoTable.Data
             PatchGradingSystems(connection);
             PatchSchoolSettings(connection);
             PatchHeadTeacherComments(connection);
+            PatchMarks(connection);
+            PatchAssessmentSubjects(connection);
         }
 
         // ── Terms ──────────────────────────────────────────────────────────
@@ -284,6 +286,43 @@ namespace AutoTable.Data
                     CreatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (StudentId) REFERENCES Students(Id),
                     FOREIGN KEY (TermId) REFERENCES Terms(Id)
+                );");
+        }
+
+        // ── Marks (multi-subject support) ──────────────────────────────────
+        private static void PatchMarks(SqliteConnection conn)
+        {
+            // SubjectId is null for single-subject marks (resolved via Assessment.SubjectId);
+            // set only for marks in multi-subject assessments.
+            AddColumnIfMissing(conn, "Marks", "SubjectId", "ALTER TABLE Marks ADD COLUMN SubjectId INTEGER;");
+
+            // One-time back-fill: every existing mark belongs to a single-subject
+            // assessment, so stamp it with that assessment's subject.
+            using (var backfill = conn.CreateCommand())
+            {
+                backfill.CommandText = @"
+                    UPDATE Marks
+                    SET SubjectId = (SELECT a.SubjectId FROM Assessments a WHERE a.Id = Marks.AssessmentId)
+                    WHERE SubjectId IS NULL
+                      AND EXISTS (SELECT 1 FROM Assessments a2 WHERE a2.Id = Marks.AssessmentId AND a2.SubjectId IS NOT NULL);";
+                backfill.ExecuteNonQuery();
+            }
+
+            // School-wide flag for AllInSchool assessments (ClassId only anchors the row;
+            // the paper applies to every class).
+            AddColumnIfMissing(conn, "Assessments", "IsSchoolWide", "ALTER TABLE Assessments ADD COLUMN IsSchoolWide INTEGER NOT NULL DEFAULT 0;");
+        }
+
+        // ── AssessmentSubjects (multi-subject assessments) ──────────────────
+        private static void PatchAssessmentSubjects(SqliteConnection conn)
+        {
+            CreateTableIfNotExists(conn, "AssessmentSubjects", @"
+                CREATE TABLE IF NOT EXISTS AssessmentSubjects (
+                    AssessmentId INTEGER NOT NULL,
+                    SubjectId INTEGER NOT NULL,
+                    PRIMARY KEY (AssessmentId, SubjectId),
+                    FOREIGN KEY (AssessmentId) REFERENCES Assessments(Id) ON DELETE CASCADE,
+                    FOREIGN KEY (SubjectId) REFERENCES Subjects(Id)
                 );");
         }
 

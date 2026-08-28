@@ -24,12 +24,15 @@
                     <ComboBox Grid.Column="0" Header="Class" MinWidth="100"
                               ItemsSource="{Binding Classes}"
                               SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
-                    <ComboBox Grid.Column="1" Header="Subject" MinWidth="160"
-                              ItemsSource="{Binding Subjects}"
-                              SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
-                    <ComboBox Grid.Column="2" Header="Assessment" MinWidth="150"
+                    <ComboBox Grid.Column="1" Header="Assessment" MinWidth="170"
                               ItemsSource="{Binding Assessments}"
                               SelectedItem="{Binding SelectedAssessment, Mode=TwoWay}" />
+                    <!-- Subject filter: only visible (spins up) when the selected assessment
+                         is a multi-subject paper, to pick the subject being marked. -->
+                    <ComboBox Grid.Column="2" Header="Subject" MinWidth="160"
+                              ItemsSource="{Binding Subjects}"
+                              SelectedItem="{Binding SelectedSubject, Mode=TwoWay}"
+                              Visibility="{x:Bind ViewModel.SubjectFilterVisibility, Mode=OneWay}" />
                     <Button Grid.Column="4" VerticalAlignment="Bottom"
                             Content="Load Marks" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding LoadMarksCommand}" />

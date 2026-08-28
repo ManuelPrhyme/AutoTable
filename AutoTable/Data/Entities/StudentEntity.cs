@@ -107,6 +107,8 @@ namespace AutoTable.Data.Entities
         public string Name { get; set; } = string.Empty;
         public ICollection<AssessmentEntity> Assessments { get; set; } = new List<AssessmentEntity>();
         public ICollection<ClassSubjectEntity> ClassSubjects { get; set; } = new List<ClassSubjectEntity>();
+        public ICollection<AssessmentSubjectEntity> AssessmentSubjects { get; set; } = new List<AssessmentSubjectEntity>();
+        public ICollection<MarkEntity> Marks { get; set; } = new List<MarkEntity>();
     }
 
     public class ClassSubjectEntity
@@ -114,6 +116,18 @@ namespace AutoTable.Data.Entities
         public int ClassId { get; set; }
         public ClassEntity? Class { get; set; }
 
+        public int SubjectId { get; set; }
+        public SubjectEntity? Subject { get; set; }
+    }
+
+    /// <summary>
+    /// Links a multi-subject assessment to each subject it covers. A single-subject
+    /// assessment instead uses AssessmentEntity.SubjectId directly and has no links.
+    /// </summary>
+    public class AssessmentSubjectEntity
+    {
+        public int AssessmentId { get; set; }
+        public AssessmentEntity? Assessment { get; set; }
         public int SubjectId { get; set; }
         public SubjectEntity? Subject { get; set; }
     }
@@ -140,7 +154,10 @@ namespace AutoTable.Data.Entities
         public string Name { get; set; } = string.Empty;
         public int ClassId { get; set; }
         public ClassEntity? Class { get; set; }
-        public int SubjectId { get; set; }
+        // For a single-subject assessment this is the subject's id. For a multi-subject
+        // assessment (AllInClass / SpecificSubjects / AllInSchool) it is null and the
+        // covered subjects live in the AssessmentSubjects link table.
+        public int? SubjectId { get; set; }
         public SubjectEntity? Subject { get; set; }
         public int AcademicYearId { get; set; }
         public AcademicYearEntity? AcademicYear { get; set; }
@@ -151,6 +168,9 @@ namespace AutoTable.Data.Entities
         public StreamEntity? Stream { get; set; }
         // If true the assessment applies to the whole class; if false and StreamId set it applies only to that stream
         public bool IsClassWide { get; set; } = true;
+        // True for school-wide (AllInSchool) assessments: applies to every class, and the
+        // ClassId merely anchors the record (marks entry / report cards match any class).
+        public bool IsSchoolWide { get; set; }
         public int WeightPercent { get; set; }
         public DateTime? DueDate { get; set; }
         public bool IsVerified { get; set; }
@@ -165,6 +185,7 @@ namespace AutoTable.Data.Entities
         public string? AuthorName { get; set; }
 
         public ICollection<MarkEntity> Marks { get; set; } = new List<MarkEntity>();
+        public ICollection<AssessmentSubjectEntity> AssessmentSubjects { get; set; } = new List<AssessmentSubjectEntity>();
     }
 
     public class MarkEntity
@@ -174,6 +195,10 @@ namespace AutoTable.Data.Entities
         public StudentEntity? Student { get; set; }
         public int AssessmentId { get; set; }
         public AssessmentEntity? Assessment { get; set; }
+        // The subject this mark is for. Set for marks in multi-subject assessments;
+        // left null for single-subject assessments (resolved via Assessment.SubjectId).
+        public int? SubjectId { get; set; }
+        public SubjectEntity? Subject { get; set; }
         public double? Mark { get; set; }
         public string? Grade { get; set; }
         public string? Remarks { get; set; }

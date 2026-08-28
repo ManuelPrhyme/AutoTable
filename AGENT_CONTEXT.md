@@ -24,7 +24,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 
 ---
 
-## Current State (26 Aug 2026)
+## Current State (28 Aug 2026)
 
 ### Build: 0 errors, clean
 
@@ -40,9 +40,12 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - **Immediate subject/stream persistence** — new items saved to DB on Add click, not deferred
 - **Streams Add button fix** — priority logic corrected, button styled
 - Integration tests (9 passing)
-- **P5.1: Assessment promotion role** — tri-state enum + creation dialog + report card classification
+- **P5.1: Assessment promotion role** — 5-state enum (see mapping below) + creation dialog + report card classification
 - **P5.2: Promotion/repeat flow** — full UI with promote/repeat/shift/reset + batch "Process All"
 - **P5.3: Grade resolution via grading systems** — `GradeFromBands` replaces `GradeFromAverage`
+- **Multi-subject assessments** — ONE assessment per scope (Single/AllInClass/SpecificSubjects/AllInSchool); marks keyed per subject via Marks.SubjectId + AssessmentSubject link table; marks entry filters Class → Assessment → Subject (subject filter appears only for multi-subject papers); completion = students x linked subjects; idempotent patches + one-time mark back-fill
+- **Print hardening** — system print dialog (all installed printers + Microsoft Print to PDF), A4 portrait/color defaults, failure guard with clear message
+- **Term lifecycle fix** — IsActive is purely user-controlled; no end-date auto-deactivation (App.xaml.cs startup + UpdateTermAsync)
 - **TermFees table fix** — schema migration for existing DBs
 - **Financial Dashboard KPI merge** — term selector + merged KPI cards
 - **Fee Collection per-student amounts** — Expected/Paid/Balance per student/class/term
@@ -121,19 +124,32 @@ Class.GradingSystem → GradingSystems.FirstOrDefault(IsDefault) → first avail
 
 ---
 
-## PromotionRole Mapping
+## PromotionRole Mapping (5-state, since 28 Aug)
 
 ```
-AssessmentPromotionRole.None            → int 0  (default)
-AssessmentPromotionRole.CountsTowardPromotion → int 1
-AssessmentPromotionRole.PromotionExam   → int 2
+AssessmentPromotionRole.None                  → int 0  (default: "Just an Assessment")
+AssessmentPromotionRole.CountsTowardPromotion → int 1  (Contributory End of Year / Promotional)
+AssessmentPromotionRole.PromotionExam         → int 2  (End of Year / Promotional)
+AssessmentPromotionRole.EndOfTerm             → int 3  (End of Term)
+AssessmentPromotionRole.ContributoryEndOfTerm → int 4  (Contributory End of Term)
 ```
+
+Legacy ints 0/1/2 preserved; no migration needed. The creation dialog resolves the
+selected option through a parallel enum array (display order differs from int order).
 
 Report card classification:
-- If any assessment has `PromotionRole != 0`: use explicit roles
+- If any assessment has `PromotionRole != 0`: EndOfTerm/PromotionExam → promotional table;
+  ContributoryEndOfTerm/CountsTowardPromotion → contributory table; None → excluded.
 - Otherwise (legacy data): fallback to weight-based heuristic
+- Multi-subject assessments fan out to one report-card row per linked subject.
 
----
+Year-end promotion average (`ComputeStudentAverageAsync`): counts ONLY end-of-year
+items (PromotionExam = deciding mark, CountsTowardPromotion averaged); end-of-term
+roles and None are excluded. Groups by the MARK's subject (`Marks.SubjectId` first).
+
+Admin role-gating (P5.4): gates are coded on all promotion commands but COMMENTED
+OUT (dev mode). Uncomment `SessionService.IsAdministrator` checks in
+`PromotionViewModel` + `ShellView.xaml.cs` before production.
 
 ## How to Run
 
@@ -155,4 +171,4 @@ See **IMPLEMENTATION_LOG.md** for a detailed, up-to-date log of what's being imp
 
 ---
 
-*Last updated: 26 Aug 2026 — Buffy (Codebuff agent)*
+*Last updated: 28 Aug 2026 — Cline (autonomous agent)*

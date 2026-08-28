@@ -7,7 +7,93 @@
 
 ---
 
-## Current Session: 27 Aug 2026
+## Current Session: 28 Aug 2026
+
+**Branch:** `sql_rec`
+**Build:** 0 errors (full solution)
+**Working tree:** Active session (15+ files, commit pending)
+
+---
+
+### Promotion Role — 5-State Model ✅ DONE
+
+`AssessmentPromotionRole` extended from tri-state to **five states** (legacy ints preserved):
+
+| # | State | Persisted int |
+|---|-------|--------------|
+| 1 | Just an Assessment | 0 (None) |
+| 2 | End of Term | 3 (EndOfTerm) |
+| 3 | Contributory (End of Term) | 4 (ContributoryEndOfTerm) |
+| 4 | Contributory (End of Year / Promotional) | 1 (CountsTowardPromotion) |
+| 5 | End of Year (Promotional) | 2 (PromotionExam) |
+
+| File | Change |
+|------|--------|
+| `Models/AssessmentItem.cs` | 5-state enum + doc comments |
+| `Views/AssessmentsView.xaml.cs` | Dialog offers all 5; resolves via parallel enum array (display order ≠ int order) |
+| `DatabaseDataService.cs` (report card) | EndOfTerm/PromotionExam → promotional table; Contributory* → contributory table; None excluded. Multi-subject papers fan out per subject. |
+| `DatabaseDataService.cs` (promotion average) | Only end-of-year items count (PromotionExam = deciding, CountsTowardPromotion averaged) |
+
+---
+
+### Multi-Subject Assessments — One Assessment, Many Subjects ✅ DONE
+
+Replaced the "one AssessmentEntity per subject" model with a single shared assessment carrying linked subjects.
+
+**Schema** (`StudentEntity.cs`, `AppDbContext.cs`, `SchemaPatches.cs`):
+- `MarkEntity.SubjectId` (nullable) — marks in multi-subject papers are keyed `(AssessmentId, StudentId, SubjectId)`
+- `AssessmentEntity.SubjectId` now nullable; single-subject assessments keep it set (NOT migrated, per decision)
+- New `AssessmentSubject` link table
+- New `Assessments.IsSchoolWide` flag — AllInSchool papers match any class
+- Idempotent ALTER patches + one-time back-fill (existing marks stamped from their assessment's subject)
+
+**Services** (`DatabaseDataService.cs`, `IDataService.cs`, `MockDataServiceAdapter.cs`):
+- `CreateAssessmentAsync` — one entity per scope; multi-subject carries `SubjectNames` → link table
+- `UpdateMarkAsync` / `DeleteMarkAsync` — optional `subjectName`; required + validated for multi-subject papers
+- `UpdateAssessmentCompletionAsync` — completion reflects the ENTIRE assessment: `students × linked subjects`
+- `GetStudentMarksAsync` — loads the chosen subject's mark column
+- Gradebook, report card (one row per subject), student performance, promotion average — group by the **mark's subject**
+- Subject delete / remove-from-class guards also check the link table
+
+**UI** (`Views/AssessmentsView.xaml.cs`, `ViewModels/MarksEntryViewModel.cs`, `Views/MarksEntryView.xaml`):
+- Creation: no more per-subject loops; hints updated ("pick the subject at marks entry")
+- Marks entry filter order: **Class → Assessment → Subject** — the Subject filter appears only when a multi-subject assessment is selected, populated with its linked subjects; saves pass the chosen subject
+
+---
+
+### Print — PDF + Any Installed Printer ✅ DONE
+
+The Windows PrintManager pipeline already lists every installed printer plus "Microsoft Print to PDF". Hardened it:
+
+| File | Change |
+|------|--------|
+| `Views/ReportCardsView.xaml.cs` | `ConfigurePrintTaskOptions` (A4 portrait, color, best-effort); `ShowPrintDialogAsync` guard with "Printing unavailable" message; clearer Export-PDF guidance |
+| `Views/FeeCollectionView.xaml.cs` | Same A4 defaults + failure guard on fee slips |
+
+---
+
+### Active Term — User-Controlled ✅ DONE
+
+An active term no longer gets silently deactivated when its end date passes.
+
+| File | Change |
+|------|--------|
+| `App.xaml.cs` | Removed "deactivate ended active terms" startup housekeeping; only picks a default active term when NONE is active |
+| `DatabaseDataService.UpdateTermAsync` | Removed `EndDate < now → IsActive = false` override |
+
+---
+
+### UI Polish ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Views/AssessmentsView.xaml` | All Assessments table: 8 equal `*` columns edge-to-edge (padding intact) + vertical scrollbar (`MaxHeight="480"`) |
+| `Views/ReportCardsView.xaml` | Filter bar re-grouped: Class/Term/Stream left; Search + Fee Cleared checkbox right (flex spacer) |
+| `ViewModels/PromotionViewModel.cs` | Admin gating applied-but-commented on all 5 commands (Reset added to match) |
+
+---
+
+## Previous Session: 27 Aug 2026
 
 **Branch:** `sql_rec`  
 **Build:** 0 errors  
@@ -213,11 +299,33 @@ private async Task SafeInitializeAsync() {
 }
 ```
 
-### PromotionRole Mapping
+### PromotionRole Mapping (5-state, 28 Aug)
 ```
-AssessmentPromotionRole.None            → int 0
-AssessmentPromotionRole.CountsTowardPromotion → int 1
-AssessmentPromotionRole.PromotionExam   → int 2
+AssessmentPromotionRole.None                 → int 0  (Just an Assessment)
+AssessmentPromotionRole.CountsTowardPromotion → int 1  (Contributory End of Year / Promotional)
+AssessmentPromotionRole.PromotionExam        → int 2  (End of Year / Promotional)
+AssessmentPromotionRole.EndOfTerm            → int 3  (End of Term)
+AssessmentPromotionRole.ContributoryEndOfTerm → int 4  (Contributory End of Term)
+```
+
+Report card classification:
+- EndOfTerm / PromotionExam → promotional table; ContributoryEndOfTerm / CountsTowardPromotion → contributory table; None → excluded
+- If any assessment has `PromotionRole != 0`: use explicit roles
+- Otherwise (legacy data): fallback to weight-based heuristic
+
+### Multi-Subject Assessments (28 Aug)
+```
+Mark row key:      (AssessmentId, StudentId, SubjectId)   // SubjectId null for single-subject marks
+Completion:        students × linked subjects (whole assessment)
+Marks entry flow:  Class → Assessment → Subject (subject filter only for multi-subject papers)
+Subject links:     AssessmentSubject link table (AssessmentEntity.SubjectId null for multi)
+School-wide:       Assessments.IsSchoolWide = true → matches any class
+```
+
+### Active Term Rule (28 Aug)
+```
+IsActive is user-controlled ONLY. No end-date auto-deactivation
+(App.xaml.cs housekeeping + UpdateTermAsync both cleaned).
 ```
 
 ### Grading System Resolution
@@ -239,7 +347,11 @@ Class.GradingSystem → GradingSystems.FirstOrDefault(IsDefault) → fallback to
 
 | # | Task | Priority |
 |---|------|----------|
-| 1 | **Print preview pagination** — page navigation for multi-student prints | P3 |
+| 1 | Commit working tree (5-state roles, multi-subject, print, term fix) | P1 |
+| 2 | Integration tests for subject-aware marks (`UpdateMarkAsync` overloads) | P2 |
+| 3 | UNIQUE(AssessmentId, SubjectId) index on AssessmentSubject | P3 |
+| 4 | Print preview pagination — page navigation for multi-student prints | P3 |
+| 5 | Re-enable dormant admin role-gating before production | P2 (pre-prod) |
 
 ---
 
@@ -261,7 +373,8 @@ Class.GradingSystem → GradingSystems.FirstOrDefault(IsDefault) → fallback to
 | 27 Aug | Finance filter + PDF export + Head teacher comment | Fee Cleared Only filter, Export PDF, head teacher comment on A4 sheet |
 | 27 Aug | School Settings + student ID fix + mid-term wiring | School Settings page, fixed head teacher comment student ID, mid-term slips read from settings |
 | 27 Aug | **Crash fixes + UI layout + schema consolidation** | Report Cards crash fix (3 root causes), schema patches consolidation, head teacher termId fix, batch progress indicator, filter bar redesign, assessment column balancing, term management layout, classes & subjects layout fixes |
+| 28 Aug | **5-state promotion roles + multi-subject assessments** | PromotionRole 5-state model, report-card/promotion classification rework, multi-subject assessments (link table, subject-aware marks, dynamic subject filter at marks entry), print hardening (PDF/any printer), active-term user control, UI polish |
 
 ---
 
-*Last updated: 27 Aug 2026 — Buffy (Codebuff agent)*
+*Last updated: 28 Aug 2026 — Buffy (Codebuff agent)*

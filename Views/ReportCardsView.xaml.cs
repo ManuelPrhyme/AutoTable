@@ -52,12 +52,45 @@ namespace AutoTable.Views
             var def = args.Request.GetDeferral();
             try
             {
-                args.Request.CreatePrintTask("Report Card", requestArgs =>
+                var printTask = args.Request.CreatePrintTask("Report Card", requestArgs =>
                 {
                     requestArgs.SetSource(_printDocumentSource);
                 });
+                ConfigurePrintTaskOptions(printTask.Options);
             }
             finally { def.Complete(); }
+        }
+
+        /// <summary>
+        /// Applies sensible defaults (A4 portrait, color) so output is consistent on any
+        /// installed printer and on "Microsoft Print to PDF". Individual printers may not
+        /// support every option, so each is set best-effort.
+        /// </summary>
+        private static void ConfigurePrintTaskOptions(PrintTaskOptions options)
+        {
+            try { options.Orientation = PrintOrientation.Portrait; } catch { }
+            try { options.MediaSize = PrintMediaSize.IsoA4; } catch { }
+            try { options.ColorMode = PrintColorMode.Color; } catch { }
+        }
+
+        /// <summary>
+        /// Opens the Windows print dialog, where the user picks ANY installed printer or
+        /// "Microsoft Print to PDF" (Windows then asks for a save location). Shows a
+        /// helpful message instead of failing silently when the dialog can't open.
+        /// </summary>
+        private async Task ShowPrintDialogAsync()
+        {
+            var opened = await PrintManager.ShowPrintUIAsync();
+            if (!opened)
+            {
+                await new ContentDialog
+                {
+                    Title = "Printing unavailable",
+                    Content = "Windows could not open the print dialog. Make sure at least one printer (or \"Microsoft Print to PDF\") is installed and enabled, then try again.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+            }
         }
 
         private void PrintDocument_Paginate(object? sender, PaginateEventArgs e)
@@ -280,11 +313,12 @@ namespace AutoTable.Views
             finally { HideProgress(); }
             if (sheets.Length == 0) return;
 
-            // Show info dialog: user should select "Microsoft Print to PDF" in the print dialog
+            // Show info dialog: the system print dialog lets the user pick "Microsoft Print
+            // to PDF" (saves to a chosen location) or any other installed printer.
             var infoDialog = new ContentDialog
             {
                 Title = "Export as PDF",
-                Content = $"{sheets.Length} report card(s) ready. In the print dialog, select \"Microsoft Print to PDF\" as the printer, then click Print to save as PDF.",
+                Content = $"{sheets.Length} report card(s) ready.\n\nIn the print dialog select \"Microsoft Print to PDF\" as the printer, then click Print — Windows will ask where to save the PDF. You can also send the cards to any other installed printer.",
                 PrimaryButtonText = "Open Print Dialog",
                 CloseButtonText = "Cancel",
                 XamlRoot = this.XamlRoot
@@ -295,7 +329,7 @@ namespace AutoTable.Views
             try
             {
                 RegisterForPrinting(sheets);
-                await PrintManager.ShowPrintUIAsync();
+                await ShowPrintDialogAsync();
             }
             finally { UnregisterForPrinting(); }
         }
@@ -360,7 +394,7 @@ namespace AutoTable.Views
             try
             {
                 RegisterForPrinting(slipViews);
-                await PrintManager.ShowPrintUIAsync();
+                await ShowPrintDialogAsync();
             }
             finally { UnregisterForPrinting(); }
         }
@@ -389,7 +423,7 @@ namespace AutoTable.Views
             try
             {
                 RegisterForPrinting(sheets);
-                await PrintManager.ShowPrintUIAsync();
+                await ShowPrintDialogAsync();
             }
             finally { UnregisterForPrinting(); }
         }

@@ -102,23 +102,17 @@ namespace AutoTable
                         // Apply all schema patches for legacy DB compatibility (idempotent)
                         SchemaPatches.ApplyAll(sqliteConnection);
 
-                        // Before registering the data service, perform term activation housekeeping:
+                        // Before registering the data service, perform term activation housekeeping.
+                        // NOTE: an active term stays active regardless of its end date — IsActive
+                        // is a user-controlled setting, never auto-revoked by the calendar.
                         try
                         {
                             using var ctx = new AutoTable.Data.AppDbContext(options);
                             var now = DateTime.UtcNow;
                             var changed = false;
 
-                            // Deactivate any active term that has ended
-                            var endedActive = ctx.Terms.Where(t => t.IsActive && t.EndDate.HasValue && t.EndDate.Value < now).ToListAsync().GetAwaiter().GetResult();
-                            foreach (var et in endedActive)
-                            {
-                                et.IsActive = false;
-                                ctx.Terms.Update(et);
-                                changed = true;
-                            }
-
-                            // Ensure there is exactly one active term: prefer term that contains 'now', else most recent by StartDate
+                            // Ensure there is exactly one active term ONLY if none is active:
+                            // prefer term that contains 'now', else most recent by StartDate.
                             if (!ctx.Terms.AnyAsync(t => t.IsActive).GetAwaiter().GetResult())
                             {
                                 var inRange = ctx.Terms.Where(t => t.StartDate.HasValue && t.EndDate.HasValue && t.StartDate.Value <= now && t.EndDate.Value >= now).OrderByDescending(t => t.StartDate).FirstOrDefaultAsync().GetAwaiter().GetResult();

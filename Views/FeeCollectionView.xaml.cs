@@ -453,12 +453,25 @@ namespace AutoTable.Views
             var def = args.Request.GetDeferral();
             try
             {
-                args.Request.CreatePrintTask("Fee Payment Slip", requestArgs =>
+                var printTask = args.Request.CreatePrintTask("Fee Payment Slip", requestArgs =>
                 {
                     requestArgs.SetSource(_printDocumentSource);
                 });
+                ConfigurePrintTaskOptions(printTask.Options);
             }
             finally { def.Complete(); }
+        }
+
+        /// <summary>
+        /// Applies sensible defaults (A4 portrait, color) so output is consistent on any
+        /// installed printer and on "Microsoft Print to PDF". Individual printers may not
+        /// support every option, so each is set best-effort.
+        /// </summary>
+        private static void ConfigurePrintTaskOptions(PrintTaskOptions options)
+        {
+            try { options.Orientation = PrintOrientation.Portrait; } catch { }
+            try { options.MediaSize = PrintMediaSize.IsoA4; } catch { }
+            try { options.ColorMode = PrintColorMode.Color; } catch { }
         }
 
         private void SlipDocument_Paginate(object? sender, PaginateEventArgs e)
@@ -618,7 +631,17 @@ namespace AutoTable.Views
             try
             {
                 RegisterSlipsForPrinting(slips);
-                await PrintManager.ShowPrintUIAsync();
+                // System print dialog: pick any installed printer or "Microsoft Print to PDF".
+                if (!await PrintManager.ShowPrintUIAsync())
+                {
+                    await new ContentDialog
+                    {
+                        Title = "Printing unavailable",
+                        Content = "Windows could not open the print dialog. Make sure at least one printer (or \"Microsoft Print to PDF\") is installed and enabled, then try again.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    }.ShowAsync();
+                }
             }
             finally { UnregisterSlipsFromPrinting(); }
         }

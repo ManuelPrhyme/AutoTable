@@ -725,3 +725,54 @@ Recommendations:
 - P5.4 (admin role-gating) is the natural next step before P5.5-P5.7.
 - EF migrations should be consolidated before any production deploy.
 Tags: feature, class-management, grading-systems, promotion, fees, dashboard, fixes
+
+---
+Iteration ID: iteration-2026-08-28-1
+Timestamp: 2026-08-28T00:00:00Z
+Author: Manuel
+Success Level: Success
+Operational Plan Reference: WAY_FORWARD_PLAN.md ; Step(s): P5.1 (extended to 5-state roles), multi-subject assessments (ad-hoc), print hardening, term lifecycle fix
+Commits:
+- (uncommitted working tree - commit pending)
+Files changed:
+- Models/AssessmentItem.cs
+- AutoTable/Data/Entities/StudentEntity.cs
+- AutoTable/Data/AppDbContext.cs
+- AutoTable/Data/SchemaPatches.cs
+- AutoTable/Services/DatabaseDataService.cs
+- AutoTable/Services/IDataService.cs
+- Demo/MockDataServiceAdapter.cs
+- ViewModels/MarksEntryViewModel.cs
+- ViewModels/PromotionViewModel.cs
+- Views/AssessmentsView.xaml + .cs
+- Views/MarksEntryView.xaml
+- Views/ReportCardsView.xaml + .cs
+- Views/FeeCollectionView.xaml.cs
+- App.xaml.cs
+Tests:
+- dotnet build (full solution) - Passed (0 errors; 2,879 pre-existing warnings)
+Aligned changes:
+- P5.1 extended: PromotionRole is now a 5-state enum - Just an Assessment (None=0), End of Term (EndOfTerm=3), Contributory End of Term (ContributoryEndOfTerm=4), Contributory End of Year/Promotional (CountsTowardPromotion=1), End of Year/Promotional (PromotionExam=2). Legacy ints 0/1/2 preserved; no migration needed. Creation dialog resolves via parallel enum array (display order differs from int order).
+- Report card shows marks for ALL promotional/contributory assessments: EndOfTerm/PromotionExam -> promotional table; ContributoryEndOfTerm/CountsTowardPromotion -> contributory table; None -> excluded. Legacy weight-based fallback retained when no roles are set.
+- Promotion average (ComputeStudentAverageAsync) counts ONLY end-of-year items (PromotionExam = deciding mark, CountsTowardPromotion averaged); end-of-term roles excluded from the year-end promotion average.
+- P5.4 (dormant): admin gating applied-but-commented on all 5 promotion commands (Promote/Repeat/Shift/Reset/ProcessAll) using the commented SessionService.IsAdministrator pattern.
+- Multi-subject assessments (major feature): one assessment now applies to many subjects instead of spawning one per subject.
+Ad-hoc changes:
+- Multi-subject assessment redesign - Reason: user request; per-subject spawning cluttered lists - Files: entities/schema/services/MarksEntry UI - Action: documented in IMPLEMENTATION_LOG.md (done 28 Aug)
+- Print to PDF + any installed printer hardening - Reason: user request - Files: Views/ReportCardsView.xaml.cs, Views/FeeCollectionView.xaml.cs
+- Active term user-controlled - Reason: user report (active term silently deactivated by end date) - Files: App.xaml.cs, DatabaseDataService.UpdateTermAsync
+Impact Summary:
+- Multi-subject assessments: creation dialog creates ONE assessment per scope (Single/AllInClass/SpecificSubjects/AllInSchool) with linked subjects. Marks entry filter order is Class -> Assessment -> Subject; the Subject filter appears only when a multi-subject assessment is selected (populated with its linked subjects). Marks are keyed (assessment, student, subject); single-subject marks keep SubjectId=null and resolve via Assessment.SubjectId. Completion reflects the ENTIRE assessment (students x linked subjects). Gradebook, report card (fans out one row per subject), student performance, and promotion average all group by the MARK's subject. Subject delete/remove guards also check the link table.
+- Schema: MarkEntity.SubjectId added (nullable), AssessmentEntity.SubjectId now nullable, new AssessmentSubject link table, new Assessments.IsSchoolWide flag (AllInSchool papers match every class). Idempotent patches + one-time back-fill stamps existing marks with their assessment's subject. Single-subject assessments NOT migrated (per decision).
+- Print: system print dialog (all installed printers + Microsoft Print to PDF) with A4 portrait/color defaults applied best-effort via ConfigurePrintTaskOptions; ShowPrintDialogAsync surfaces a clear failure message instead of a silent no-op (report cards, mid-term slips, fee slips).
+- Terms: IsActive is purely user-controlled - removed end-date auto-deactivation in App.xaml.cs startup housekeeping and UpdateTermAsync. Startup only picks a default active term when NONE is active.
+- UI polish: All Assessments table columns even (8x star) edge-to-edge with padding intact + vertical scrollbar (MaxHeight 480); Report Cards filter bar re-grouped (Class/Term/Stream left; Search + Fee Cleared right).
+Next Actions:
+- 1. Commit the working tree (15+ files, several independent features - consider splitting commits)
+- 2. Update integration tests for subject-aware marks (UpdateMarkAsync overloads)
+- 3. Verify multi-subject completion ring display on the Assessments page
+- 4. Re-enable admin role-gating before production (all gates currently dormant)
+Recommendations:
+- Add UNIQUE(AssessmentId, SubjectId) index on AssessmentSubject in the next schema pass.
+- Demo-mode adapter stubs accept the new signatures but do not model per-subject marks.
+Tags: feature, multi-subject, promotion-roles, print, term-lifecycle, ui, ad-hoc

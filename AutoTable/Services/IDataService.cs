@@ -110,8 +110,8 @@ namespace AutoTable.Services
 
         // Marks / assessment CRUD (Phase 2)
         Task<AutoTable.Models.AssessmentItem?> GetAssessmentAsync(string name, string className, string subject);
-        Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null);
-        Task DeleteMarkAsync(int assessmentId, int studentId);
+        Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null, string? subjectName = null);
+        Task DeleteMarkAsync(int assessmentId, int studentId, string? subjectName = null);
         Task UpdateAssessmentCompletionAsync(int assessmentId);
 
         // Moderation lifecycle (Phase 4)
