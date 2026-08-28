@@ -27,7 +27,7 @@ namespace AutoTable.ViewModels
         public PromotionViewModel()
         {
             _dataService = AppServices.DataService ?? throw new InvalidOperationException("DataService not configured.");
-            _ = LoadAsync();
+    _ = LoadAsync();
         }
 
         partial void OnSelectedClassChanged(SimpleLookup? value) => _ = LoadAsync();
@@ -122,6 +122,12 @@ namespace AutoTable.ViewModels
         private async Task ResetAsync(PromotionRow row)
         {
             if (row == null) return;
+            // ── ROLE-BASED GATING (dormant during development) ──────
+            // if (!SessionService.Instance.IsAdministrator)
+            // {
+            //     StatusMessage = "Only administrators can reset a student's promotion decision.";
+            //     return;
+            // }
             try
             {
                 await _dataService.ResetPromotionAsync(row.StudentId);

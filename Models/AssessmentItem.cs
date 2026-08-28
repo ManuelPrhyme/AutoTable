@@ -18,16 +18,22 @@ namespace AutoTable.Models
     }
 
     /// <summary>
-    /// Determines how an assessment contributes to the end-of-term promotion decision.
+    /// Determines how an assessment counts toward the end-of-term result and the
+    /// end-of-year promotion decision. An assessment is one of five states.
+    /// <para>Integer values are persisted in the DB; 0-2 are legacy values and must not change.</para>
     /// </summary>
     public enum AssessmentPromotionRole
     {
-        /// <summary>Just an assessment — does not count toward promotion (default).</summary>
-        None,
-        /// <summary>Assessment counts toward the promotion average (contributory).</summary>
-        CountsTowardPromotion,
-        /// <summary>The promotion exam — the Term 3 / end-of-year paper that decides promotion.</summary>
-        PromotionExam
+        /// <summary>Just an assessment — does not count toward end-of-term or end-of-year (default).</summary>
+        None = 0,
+        /// <summary>Contributory (End of Year / Promotional) — contributes to the end-of-year promotion average.</summary>
+        CountsTowardPromotion = 1,
+        /// <summary>End of Year (Promotional) — the year-end paper that decides promotion.</summary>
+        PromotionExam = 2,
+        /// <summary>End of Term — the term-end paper that decides the end-of-term result.</summary>
+        EndOfTerm = 3,
+        /// <summary>Contributory (End of Term) — contributes to the end-of-term result.</summary>
+        ContributoryEndOfTerm = 4
     }
 
     public class AssessmentItem

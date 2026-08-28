@@ -24,30 +24,32 @@
                     <RowDefinition Height="Auto" />  <!-- Action buttons -->
                 </Grid.RowDefinitions>
 
-                <!-- Row 0: Search + Fee + Class / Term / Stream all on one line -->
+                <!-- Row 0: Class / Term / Stream filters on the left; Search + Fee checkbox as a unit on the right -->
                 <Grid Grid.Row="0" ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Header="Search"
-                             Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Width="220" VerticalAlignment="Bottom" />
-                    <CheckBox Grid.Column="1" Content="Fee Cleared Only" IsChecked="{Binding FeeClearedOnly, Mode=TwoWay}"
-                              VerticalAlignment="Bottom" FontSize="12" Margin="0,0,8,0" />
-                    <ComboBox Grid.Column="2" Header="Class" MinWidth="100"
+                    <ComboBox Grid.Column="0" Header="Class" MinWidth="100"
                               ItemsSource="{Binding Classes}"
                               SelectedItem="{Binding SelectedClass, Mode=TwoWay}" VerticalAlignment="Bottom" />
-                    <ComboBox Grid.Column="3" Header="Term" MinWidth="140"
+                    <ComboBox Grid.Column="1" Header="Term" MinWidth="140"
                               ItemsSource="{Binding Terms}"
                               SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" VerticalAlignment="Bottom" />
-                    <ComboBox Grid.Column="4" Header="Stream" MinWidth="120"
+                    <ComboBox Grid.Column="2" Header="Stream" MinWidth="120"
                               ItemsSource="{Binding Streams}"
                               SelectedItem="{Binding SelectedStream, Mode=TwoWay}" VerticalAlignment="Bottom" />
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                        <TextBox Header="Search"
+                                 Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="220" VerticalAlignment="Bottom" />
+                        <CheckBox Content="Fee Cleared Only" IsChecked="{Binding FeeClearedOnly, Mode=TwoWay}"
+                                  VerticalAlignment="Bottom" FontSize="12" Margin="0,0,8,0" />
+                    </StackPanel>
                 </Grid>
 
                 <!-- Row 1: Action buttons, left-aligned -->

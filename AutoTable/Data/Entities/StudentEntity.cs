@@ -156,7 +156,7 @@ namespace AutoTable.Data.Entities
         public bool IsVerified { get; set; }
         public bool IsPublished { get; set; }
         public int MarksEnteredPercent { get; set; }
-        /// <summary>0=None, 1=CountsTowardPromotion, 2=PromotionExam — maps to AssessmentPromotionRole enum.</summary>
+        /// <summary>AssessmentPromotionRole values: 0=None (Just an assessment), 1=CountsTowardPromotion (Contributory End-of-Year), 2=PromotionExam (End-of-Year), 3=EndOfTerm, 4=ContributoryEndOfTerm — maps to AssessmentPromotionRole enum.</summary>
         public int PromotionRole { get; set; }
         /// <summary>Optional: the teacher who authored/created this assessment.</summary>
         public int? AuthorUserId { get; set; }

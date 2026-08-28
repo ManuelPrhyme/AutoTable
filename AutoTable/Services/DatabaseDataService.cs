@@ -1160,9 +1160,12 @@ namespace AutoTable.Services
                 .Where(m => assessments.Select(a => a.Id).Contains(m.AssessmentId))
                 .ToListAsync();
 
-            // Use the explicit PromotionRole on each assessment to classify:
-            //   PromotionExam → promotional, CountsTowardPromotion → contributory,
-            //   None → contributory (does not count toward promotion).
+            // Use the explicit PromotionRole (five states) on each assessment to classify.
+            // The report card shows the marks for EVERY assessment that is promotional or
+            // contributory to promotion, or end-of-term & contributory to end-of-term.
+            //   EndOfTerm / PromotionExam         → promotional (deciding exam) table
+            //   ContributoryEndOfTerm / CountsTowardPromotion → contributory (feeds the result) table
+            //   None (Just an assessment)         → excluded from the report card
             // Fallback: if no assessment has a PromotionRole set (legacy data),
             // fall back to the old heuristic (highest-weighted = promotional).
             var promotional = new List<ReportCardAssessmentRow>();
@@ -1173,13 +1176,17 @@ namespace AutoTable.Services
             {
                 if (hasAnyRoleSet)
                 {
-                    // Explicit classification based on PromotionRole
+                    // Explicit classification based on the 5-state PromotionRole.
                     foreach (var a in subjectGroup)
                     {
+                        // "Just an assessment" does not belong on the report card.
+                        if (a.PromotionRole == (int)AssessmentPromotionRole.None) continue;
+
                         var mark = marks.FirstOrDefault(m => m.AssessmentId == a.Id)?.Mark;
                         var avg = mark ?? 0;
                         var grade = avg > 0 ? GradeFromBands(avg, bandInfos) : "-";
-                        var isPromo = a.PromotionRole == (int)AssessmentPromotionRole.PromotionExam;
+                        var isPromo = a.PromotionRole == (int)AssessmentPromotionRole.EndOfTerm
+                                   || a.PromotionRole == (int)AssessmentPromotionRole.PromotionExam;
                         var row = new ReportCardAssessmentRow
                         {
                             Subject = subjectGroup.Key,
@@ -2382,27 +2389,73 @@ namespace AutoTable.Services
                 .Include(m => m.Assessment).ThenInclude(a => a.Term)
                 .ToListAsync();
 
-            // The terminal term is considered the latest term that has assessments (Term 3 move-up).
+            // Assessment is a required FK loaded via Include (guarded below), so the
+            // null-forgiving operator is safe here and keeps the method warning-clean.
+            // The terminal term is the latest term that has assessments (Term 3 move-up).
             var latestTerm = marks
-                .Select(m => m.Assessment.Term)
-                .Where(t => t != null)
+                .Where(m => m.Assessment?.Term != null)
+                .Select(m => m.Assessment!.Term!)
                 .OrderByDescending(t => t.EndDate ?? t.StartDate)
                 .ThenByDescending(t => t.Id)
                 .FirstOrDefault();
 
             var termMarks = latestTerm == null
                 ? marks
-                : marks.Where(m => m.Assessment.Term != null && m.Assessment.Term.Id == latestTerm.Id).ToList();
+                : marks.Where(m => m.Assessment?.Term != null && m.Assessment.Term.Id == latestTerm.Id).ToList();
+
+            // When any assessment in the terminal term declares an explicit PromotionRole,
+            // respect it for the promotion average (mirrors the report-card classification):
+            //   PromotionExam          → that paper is the deciding mark for the subject;
+            //   CountsTowardPromotion  → contributes to the subject average;
+            //   None                   → excluded (does not count toward promotion).
+            // When no assessment declares a role (legacy data), fall back to the old
+            // highest-weighted / last-due mark per subject.
+            bool hasAnyRoleSet = termMarks.Any(m => m.Assessment!.PromotionRole != (int)AutoTable.Models.AssessmentPromotionRole.None);
 
             var subjectAvgs = new List<double>();
-            foreach (var grp in termMarks.GroupBy(m => m.Assessment.Subject?.Name ?? "General"))
+            foreach (var grp in termMarks.GroupBy(m => m.Assessment!.Subject?.Name ?? "General"))
             {
-                var best = grp
-                    .OrderByDescending(m => m.Assessment.WeightPercent)
-                    .ThenByDescending(m => m.Assessment.DueDate)
-                    .FirstOrDefault();
-                if (best != null)
-                    subjectAvgs.Add(best.Mark ?? 0);
+                double? mark = null;
+
+                if (hasAnyRoleSet)
+                {
+                    // The end-of-year promotion average counts only end-of-year promotional items:
+                    //   End of Year (Promotional) = the deciding exam;
+                    //   Contributory (End of Year / Promotional) = feeds the average.
+                    // End-of-Term, Contributory (End of Term) and "Just an assessment" are excluded
+                    // from the year-end promotion average.
+                    var exam = grp
+                        .OrderByDescending(m => m.Assessment!.WeightPercent)
+                        .ThenByDescending(m => m.Assessment!.DueDate)
+                        .FirstOrDefault(m => m.Assessment!.PromotionRole == (int)AutoTable.Models.AssessmentPromotionRole.PromotionExam);
+                    if (exam != null)
+                    {
+                        mark = exam.Mark;
+                    }
+                    else
+                    {
+                        // Otherwise average the contributory (Contributory End-of-Year) marks.
+                        var contributory = grp
+                            .Where(m => m.Assessment!.PromotionRole == (int)AutoTable.Models.AssessmentPromotionRole.CountsTowardPromotion)
+                            .Select(m => m.Mark)
+                            .Where(v => v.HasValue)
+                            .ToList();
+                        if (contributory.Count > 0)
+                            mark = contributory.Average(v => v!.Value);
+                    }
+                }
+                else
+                {
+                    // Legacy fallback: highest-weighted / last-due mark.
+                    var best = grp
+                        .OrderByDescending(m => m.Assessment!.WeightPercent)
+                        .ThenByDescending(m => m.Assessment!.DueDate)
+                        .FirstOrDefault();
+                    mark = best?.Mark;
+                }
+
+                if (mark.HasValue)
+                    subjectAvgs.Add(mark.Value);
             }
             return subjectAvgs.Count > 0 ? subjectAvgs.Average() : 0;
         }

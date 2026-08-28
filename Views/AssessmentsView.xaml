@@ -78,13 +78,13 @@
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
                         <Grid ColumnSpacing="4" Padding="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="160" />
-                                <ColumnDefinition Width="60" />
-                                <ColumnDefinition Width="120" />
-                                <ColumnDefinition Width="40" />
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="44" />
-                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="ASSESSMENT" />
@@ -102,7 +102,9 @@
                     <ListView
                         ItemsSource="{Binding Assessments}"
                         SelectionMode="None"
-                        IsItemClickEnabled="False">
+                        IsItemClickEnabled="False"
+                        MaxHeight="480"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0" />
@@ -113,15 +115,15 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnSpacing="4" Padding="12,8">
+                                <Grid ColumnSpacing="4" Padding="16,8" HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="160" />
-                                        <ColumnDefinition Width="60" />
-                                        <ColumnDefinition Width="120" />
-                                        <ColumnDefinition Width="40" />
-                                        <ColumnDefinition Width="80" />
-                                        <ColumnDefinition Width="44" />
-                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
