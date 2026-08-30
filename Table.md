@@ -10,7 +10,7 @@
 
 - Replace the **placeholders** (`{TABLE_NAME}`, `{COLUMN_COUNT}`, …) with the values for your table.
 - §1–§6 are the **generic recipe** (apply to any table).
-- §7 is a **worked example** — the All Assessments table — showing a filled-in instance.
+- §7 / §7b are **worked examples** — the All Assessments and Students tables — showing filled-in instances.
 - §8 is a **fill-in checklist** for applying the recipe to a new table.
 
 **The core guarantee:** the header-row grid and the data-row grid must share *identical
@@ -115,20 +115,26 @@ the header and in every row (the vertical value may differ).
 (plus `Padding=0`, `Margin=0`, `MinHeight=0`) so each row's grid fills the full
 card width and the star columns expand with it.
 
-### 3.5 Horizontal alignment (headers vs. data)
-**Headers:** Center-align text within each column cell using `HorizontalAlignment="Center"`
-on the header `TextBlock`. This creates a balanced, symmetrical look above the data.
+### 3.5 Horizontal alignment (headers must mirror the data)
+**Rule:** set the **same `HorizontalAlignment` on the header label as the row content** in
+that column. Because table content in this app is left-aligned, headers are almost always:
 
-**Data cells:** Left-align text within each column cell using `HorizontalAlignment="Left"`
-on the data `TextBlock`. This follows natural reading patterns and keeps text predictable.
+- **Headers:** `HorizontalAlignment="Left"` (or simply omit the attribute — the default
+  `Stretch` already renders text flush-left). This puts each title **directly above the
+  first character of its column content**, exactly like the Assessments table.
+- **Data cells:** `HorizontalAlignment="Left"` on each data `TextBlock` / `StackPanel`.
 
-**Exceptions:**
-- Status columns with dot+label indicators: keep `HorizontalAlignment="Left"` on the
-  `StackPanel` so the indicator starts at a consistent position.
-- Numeric columns: may use `HorizontalAlignment="Right"` for right-aligned figures,
-  but only if the header is also right-aligned.
-- Action button columns: use `HorizontalAlignment="Left"` on the `StackPanel` holding
-  the buttons.
+**Why not center?** Centering a header over left-aligned content makes the title drift off
+its column and no longer point at the content below it. Never center a header unless the
+content of that column is itself centered.
+
+**Exceptions (still mirror the content):**
+- Column with a centered control (e.g. the 36×36 `ProgressRing` in Assessments): its header
+  cell is **blank** — nothing to align.
+- Numeric columns: may use `HorizontalAlignment="Right"`, but only if the header label is
+  also right-aligned so they stay above their figures.
+- Status/Actions columns that hold a `StackPanel`: keep both header label and the
+  `StackPanel` at `Left`.
 
 ---
 
@@ -149,7 +155,7 @@ Wire text styles from the shared design tokens (in `Resources\DesignTokens.xaml`
 
 | Element | Style token | Spec |
 |---------|-------------|------|
-| Column header text | `{HEADER_TEXT_STYLE}` | Segoe UI, 13px, `SemiBold`, `TextPrimaryBrush`, **`HorizontalAlignment=Center`** |
+| Column header text | `{HEADER_TEXT_STYLE}` | Segoe UI, 13px, `SemiBold`, `TextPrimaryBrush`, **`HorizontalAlignment=Left`** (mirrors the data) |
 | Cell text | `{CELL_STYLE}` | Segoe UI, 14px, `Regular`, `TextPrimaryBrush`, `VerticalAlignment=Center`, **`HorizontalAlignment=Left`** |
 | Numeric cell | `{NUMERIC_STYLE}` | Segoe UI, 14px, `SemiBold`, `VerticalAlignment=Center` |
 | Special cell | *(your overrides)* | e.g. secondary text: 11px + `TextSecondaryBrush` |
@@ -196,7 +202,10 @@ Concrete wiring that instantiates the contract:
   `Margin=0`, `MinHeight=0`.
 - Card: `TableCardStyle`; title band `CardHeaderBorderStyle`; band `TableHeaderRowStyle`
   (`Padding=16,10`).
-- **Alignment:** Headers use `HorizontalAlignment="Center"`, data cells use `HorizontalAlignment="Left"`.
+- **Alignment:** Headers are flush-left (no explicit alignment — default `Stretch`
+  renders flush-left) and data cells are `HorizontalAlignment="Left"`, so each label sits
+  directly above the first character of its column content. The only unlabeled column
+  (5, the `ProgressRing`) has a blank header cell.
 
 ---
 
@@ -223,9 +232,10 @@ Concrete wiring:
   `Margin=0`, `MinHeight=0`.
 - Card: `TableCardStyle`; title band `CardHeaderBorderStyle`; band `TableHeaderRowStyle`
   (`Padding=16,10`).
-- **Alignment:** All header `TextBlock` elements use `HorizontalAlignment="Center"`.
-  All data cells use `HorizontalAlignment="Left"` (including the Status `StackPanel`
-  and Actions `StackPanel`).
+- **Alignment:** All header `TextBlock` elements use `HorizontalAlignment="Left"`
+  (updated 30 Aug 2026 — previously `Center`), matching the left-aligned data cells
+  (including the Status `StackPanel` and Actions `StackPanel`) so each title sits
+  directly above its column content.
 
 ---
 
@@ -240,6 +250,6 @@ Concrete wiring:
 - [ ] Leave a **blank header cell** for every icon/ring column.
 - [ ] Cap the `ListView` (`MaxHeight`) + `VerticalScrollBarVisibility="Auto"`.
 - [ ] Reuse `TableHeaderStyle` / `TableCellStyle` / `NumericCellStyle` tokens for typography.
-- [ ] **Headers:** Set `HorizontalAlignment="Center"` on each header `TextBlock`.
-- [ ] **Data cells:** Set `HorizontalAlignment="Left"` on each data `TextBlock` or `StackPanel`.
+- [ ] **Headers:** Set `HorizontalAlignment="Left"` (mirroring the content alignment) on each header `TextBlock`.
+- [ ] **Data cells:** Set `HorizontalAlignment="Left"` on each data `TextBlock` or `StackPanel` (right-align numerics only if their headers are also right-aligned).
 - [ ] Verify at 3 window widths (narrow / typical / wide) that header edges still align with row edges.
