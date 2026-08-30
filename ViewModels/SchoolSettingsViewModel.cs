@@ -48,6 +48,7 @@ namespace AutoTable.ViewModels
             };
             await _dataService.UpdateSchoolSettingsAsync(settings);
             StatusMessage = "Settings saved successfully.";
+            // AppServices.Toasts.Show("School Settings", "Settings saved successfully.");
         }
     }
 }

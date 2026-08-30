@@ -42,6 +42,7 @@ namespace AutoTable.ViewModels
             var created = await _dataService.CreateTeacherAsync(teacher);
             Teachers.Insert(0, created);
             StatusMessage = $"Added teacher '{created.FullName}'.";
+            // AppServices.Toasts.Show("Teacher Registered", $"Teacher '{created.FullName}' registered.");
         }
 
         [RelayCommand]

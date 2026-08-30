@@ -166,6 +166,8 @@ namespace AutoTable.Data.Entities
         // Optional: when assessment targets a single stream only
         public int? StreamId { get; set; }
         public StreamEntity? Stream { get; set; }
+        /// <summary>Comma-separated stream ids an assessment targets (multi-stream support). When set, marks rosters and report cards respect every listed stream.</summary>
+        public string? StreamIdsCsv { get; set; }
         // If true the assessment applies to the whole class; if false and StreamId set it applies only to that stream
         public bool IsClassWide { get; set; } = true;
         // True for school-wide (AllInSchool) assessments: applies to every class, and the
@@ -176,6 +178,8 @@ namespace AutoTable.Data.Entities
         public bool IsVerified { get; set; }
         public bool IsPublished { get; set; }
         public int MarksEnteredPercent { get; set; }
+        /// <summary>When the assessment record was first created (used for creation-order sorting/display).</summary>
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         /// <summary>AssessmentPromotionRole values: 0=None (Just an assessment), 1=CountsTowardPromotion (Contributory End-of-Year), 2=PromotionExam (End-of-Year), 3=EndOfTerm, 4=ContributoryEndOfTerm — maps to AssessmentPromotionRole enum.</summary>
         public int PromotionRole { get; set; }
         /// <summary>Optional: the teacher who authored/created this assessment.</summary>

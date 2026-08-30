@@ -776,3 +776,65 @@ Recommendations:
 - Add UNIQUE(AssessmentId, SubjectId) index on AssessmentSubject in the next schema pass.
 - Demo-mode adapter stubs accept the new signatures but do not model per-subject marks.
 Tags: feature, multi-subject, promotion-roles, print, term-lifecycle, ui, ad-hoc
+---
+Iteration ID: iteration-2026-08-30-1
+Timestamp: 2026-08-30T00:00:00Z
+Author: Manuel
+Success Level: Success
+Operational Plan Reference: WAY_FORWARD_PLAN.md ; Step(s): P5.1 (stream/multi-subject assessment scopes), ad-hoc (students list, branding, grading UI, toast infra)
+Commits:
+- (uncommitted working tree - commit pending; last commit 53832b9 "Assessment Adjustments")
+Files changed:
+- AutoTable.csproj
+- AutoTable/AppServices.cs
+- AutoTable/Data/Entities/StudentEntity.cs
+- AutoTable/Data/SchemaPatches.cs
+- AutoTable/Models/GradingSystemModels.cs
+- AutoTable/Models/Student.cs
+- AutoTable/Services/DatabaseDataService.cs
+- AutoTable/Services/IDataService.cs
+- AutoTable/ViewModels/StudentsViewModel.cs
+- AutoTable/Views/StudentsView.xaml + .cs
+- Converters/FormatConverters.cs
+- Demo/MockDataServiceAdapter.cs
+- Models/AssessmentItem.cs
+- Resources/DesignTokens.xaml
+- ViewModels/AssessmentsViewModel.cs
+- ViewModels/EnrollmentViewModel.cs
+- ViewModels/MarksEntryViewModel.cs
+- ViewModels/SchoolSettingsViewModel.cs
+- ViewModels/TeachersViewModel.cs
+- Views/AssessmentsView.xaml + .cs
+- Views/ClassesView.xaml + .cs
+- Views/FeeCollectionView.xaml.cs
+- Views/MarksEntryView.xaml
+- Views/ReportCardsView.xaml + .cs
+- Views/ShellView.xaml + .cs
+- (new) AutoTable/Services/ToastService.cs, NotificationStore.cs
+Tests:
+- dotnet build (full solution) - Passed (0 errors; ~2,900-3,310 pre-existing warnings)
+Aligned changes:
+- Stream-granularity assessments: AssessmentScope.Stream (value 4), AssessmentItem.StreamIds/StreamNames, stream papers target 1-N streams (StreamId + StreamIdsCsv), marks entry/report cards roster all target streams.
+- Multi-subject NOT NULL fix: PatchAssessmentsNullableSubject (full SQLite table rebuild on legacy DBs) so Assessments.SubjectId becomes nullable; PatchAssessmentsCreatedAt (Assessments.CreatedAt, back-fill via DueDate); PatchAssessmentsStreamIds (Assessments.StreamIds CSV).
+- Marks Entry stream filter (before Subject) + GetStudentMarksAsync(..., streamName) optional param; assessment page Subject filter class-restricted (GetSubjectsForClassAsync) + conditional Stream filter.
+- Assessments page sorted by creation date (OrderByDescending(CreatedAt).ThenByDescending(Id)).
+Ad-hoc changes:
+- Expandable/scrollable create-assessment modal (scope checkboxes, CalendarDatePicker, weight left-aligned) - Reason: user UI request - Files: Views/AssessmentsView.xaml(.cs)
+- Students list overhaul (status dots, Terminate/View/Edit/Shift, headers) - Reason: user request - Files: StudentsViewModel.cs, StudentsView.xaml(.cs), Student.cs, FormatConverters.cs
+- Students tab crash fix (DataTemplate resource scoping) - Reason: runtime regression - Files: StudentsView.xaml
+- Sidebar branding (School Name/Motto/Logo) - Reason: user request - Files: ShellView.xaml(.cs)
+- Grading-system hyphen + DangerGhostButtonStyle - Reason: user request - Files: GradingSystemModels.cs, DesignTokens.xaml
+- Toast infra added then disabled (dead types) - Reason: user requested toasts, then build issue during dev; commented out
+Impact Summary:
+- Assessment scoping is now fully granular: Entire School / class / specific streams (multi-select), each created as ONE assessment. Marks entry shows a Stream filter for stream-scoped papers and the Subject filter is restricted to the selected class's subjects; assessments appear newest-first. The Students page displays Active/Inactive status with cause, and lets you Shift, View, Edit, or Terminate (with reason) - inactive students stay queryable for audits but drop out of all active-student operations. Sidebar shows school identity; grading-system bands display "A - 90-100".
+Next Actions:
+- 1. Commit the working tree (30+ files - consider per-feature commits)
+- 2. Verify the multi-subject creation error no longer occurs on a real (non-copy) DB after rebuild+relaunch (schema patches run at startup)
+- 3. Re-enable toast call sites when ready (all infra is in place; uncomment 9 sites + AppServices.Toasts)
+- 4. Re-enable admin role-gating before production
+- 5. Update integration tests for stream-scoped marks + GetStudentMarksAsync streamName overload
+Recommendations:
+- Confirm the "red" P2 assessment intent (it targets the empty Blue stream) - recreate class-wide or target Pink, or adjust the record directly.
+- Add UNIQUE(AssessmentId, SubjectId) index on AssessmentSubject in the next schema pass.
+- Consider a "Created" column and oldest-first toggle on the Assessments table now that CreatedAt exists.
+Tags: feature, multi-subject, stream-scope, students-list, branding, ui, ad-hoc, fix

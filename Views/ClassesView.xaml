@@ -134,8 +134,7 @@
                                                 </Border>
                                             </StackPanel>
                                             <Button Grid.Column="2" Content="Delete" Click="DeleteGradingSystem_Click" Tag="{x:Bind Id}"
-                                                    Style="{ThemeResource GhostButtonStyle}" VerticalAlignment="Center" FontSize="11" Padding="6,2"
-                                                    Foreground="{ThemeResource DangerRedBrush}" BorderThickness="0" />
+                                            Style="{ThemeResource DangerGhostButtonStyle}" VerticalAlignment="Center" />
                                         </Grid>
                                         <TextBlock Text="{x:Bind BandsSummary}" Style="{ThemeResource MutedTextStyle}"
                                                    FontSize="12" TextWrapping="WrapWholeWords" />

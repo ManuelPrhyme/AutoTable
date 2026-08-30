@@ -46,12 +46,12 @@ namespace AutoTable.Demo
             return Task.FromResult<ReportCardSheetModel?>(null);
         }
 
-        public Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string className, string? term, string? stream)
+        public Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string? className, string? term, string? stream)
         {
             return Task.FromResult<IReadOnlyList<Models.ReportCardRow>>(new List<Models.ReportCardRow>());
         }
 
-        public Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string className, string? term, string? stream)
+        public Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string? className, string? term, string? stream)
         {
             return Task.FromResult<IReadOnlyList<Models.MidTermSlipModel>>(new List<Models.MidTermSlipModel>());
         }
@@ -68,7 +68,7 @@ namespace AutoTable.Demo
             return Task.FromResult<IReadOnlyList<Models.GradebookRow>>(rows);
         }
 
-        public Task<IReadOnlyList<Models.StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName)
+        public Task<IReadOnlyList<Models.StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName, string? streamName = null)
         {
             var rows = _mock.GetStudentMarks(className, subject, assessmentName);
             return Task.FromResult<IReadOnlyList<Models.StudentMarkRow>>(rows);

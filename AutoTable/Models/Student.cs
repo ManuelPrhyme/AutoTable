@@ -15,6 +15,36 @@ namespace AutoTable.Models
         public bool IsActive { get; set; } = true;
         public StudentTerminationReason TerminationReason { get; set; } = StudentTerminationReason.None;
         public DateTime? TerminationDate { get; set; }
+
+        // ── Display helpers (plain strings so the model stays UI-framework agnostic) ──
+        /// <summary>"Active" or "Inactive" — drives the status dot and its label.</summary>
+        public string StatusText => IsActive ? "Active" : "Inactive";
+        /// <summary>Cause of inactivity: "Completed course" for Completed, otherwise "Terminated".</summary>
+        public string InactiveCauseText => !IsActive
+            ? TerminationReason switch
+            {
+                StudentTerminationReason.Completed => "Completed course",
+                _ => "Terminated"
+            }
+            : string.Empty;
+        /// <summary>
+        /// Drives the status dot color. Returns "Active" for active students,
+        /// or the termination reason name for inactive students.
+        /// </summary>
+        public string StatusDotSource => IsActive ? "Active" : TerminationReason.ToString();
+        /// <summary>
+        /// Human-readable label for the status badge: "Active", "Completed", "Expelled",
+        /// "Changed School", or "Terminated".
+        /// </summary>
+        public string StatusLabel => IsActive ? "Active" : TerminationReason switch
+        {
+            StudentTerminationReason.Completed => "Completed",
+            StudentTerminationReason.Expelled => "Expelled",
+            StudentTerminationReason.ChangedSchool => "Changed School",
+            _ => "Terminated"
+        };
+        /// <summary>Year the student was terminated (null if still active).</summary>
+        public int? TerminationYear => TerminationDate?.Year;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         // Convenience properties for UI
         public string? ClassName { get; set; }

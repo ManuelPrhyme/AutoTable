@@ -393,6 +393,7 @@ namespace AutoTable.Views
                         ViewModel.SelectedTerm = activeTerm.Name;
                     await ViewModel.RefreshCommand!.ExecuteAsync(null);
                     ViewModel.StatusMessage = $"Recorded payment of {amt:N0} for {selectedStudent.FullName} ({termLabel}).";
+                    // AppServices.Toasts.Show("Payment Recorded", $"Recorded payment of {amt:N0} for {selectedStudent.FullName} ({termLabel}).");
                 }
                 catch (Exception ex)
                 {

@@ -1,5 +1,6 @@
 using AutoTable.Services;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoTable.ViewModels;
@@ -8,7 +9,9 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System.Collections.Generic;
+using Windows.Storage.Streams;
 
 namespace AutoTable.Views
 {
@@ -79,7 +82,7 @@ namespace AutoTable.Views
             SidebarAvatar.DisplayName = user?.FullName ?? "U";
             HeaderUserName.Text = user?.FullName ?? "User";
 
-            // Load school name from settings
+            // Load school branding (name, motto, logo) from settings
             try
             {
                 var ds = AppServices.DataService;
@@ -88,6 +91,9 @@ namespace AutoTable.Views
                     var settings = await ds.GetSchoolSettingsAsync();
                     if (!string.IsNullOrWhiteSpace(settings.SchoolName))
                         SchoolNameText.Text = settings.SchoolName;
+                    if (!string.IsNullOrWhiteSpace(settings.Motto))
+                        SchoolMottoText.Text = settings.Motto;
+                    ApplySchoolLogo(settings.LogoBytes);
                 }
             }
             catch { }
@@ -124,6 +130,33 @@ namespace AutoTable.Views
             Unloaded += (_, _) => NavigationService.Instance.ShellNavigated -= OnExternalShellNavigated;
 
             NavigateTo("Dashboard", NavDashboard);
+        }
+
+        /// <summary>
+        /// Shows the school logo loaded from Settings in the sidebar; the blue glyph
+        /// placeholder is used when no logo has been configured.
+        /// </summary>
+        private void ApplySchoolLogo(byte[]? logoBytes)
+        {
+            if (logoBytes != null && logoBytes.Length > 0)
+            {
+                try
+                {
+                    var bitmap = new BitmapImage();
+                    using var ms = new MemoryStream(logoBytes);
+                    bitmap.SetSource(ms.AsRandomAccessStream());
+                    SchoolLogoImage.Source = bitmap;
+                    SchoolLogoImage.Visibility = Visibility.Visible;
+                    LogoFallbackBorder.Visibility = Visibility.Collapsed;
+                    return;
+                }
+                catch
+                {
+                    // fall through to the placeholder on decode failure
+                }
+            }
+            SchoolLogoImage.Visibility = Visibility.Collapsed;
+            LogoFallbackBorder.Visibility = Visibility.Visible;
         }
 
         /// <summary>

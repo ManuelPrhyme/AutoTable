@@ -17,12 +17,14 @@ namespace AutoTable.ViewModels
         [ObservableProperty] private string _selectedClass = "P5";
         [ObservableProperty] private string _selectedSubject = string.Empty;
         [ObservableProperty] private string _selectedAssessment = string.Empty;
+        [ObservableProperty] private string _selectedStream = "All";
         [ObservableProperty] private string _statusMessage = string.Empty;
         [ObservableProperty] private int _completionPercent;
 
         public ObservableCollection<string> Classes { get; }
         public ObservableCollection<string> Subjects { get; }
         public ObservableCollection<string> Assessments { get; }
+        public ObservableCollection<string> Streams { get; }
         public ObservableCollection<StudentMarkRow> StudentMarks { get; }
 
         public bool IsAdministrator => SessionService.Instance.IsAdministrator;
@@ -38,6 +40,7 @@ namespace AutoTable.ViewModels
             Classes = new ObservableCollection<string>();
             Subjects = new ObservableCollection<string>();
             Assessments = new ObservableCollection<string>();
+            Streams = new ObservableCollection<string>(new[] { "All" });
             StudentMarks = new ObservableCollection<StudentMarkRow>();
             _ = InitializeAsync();
         }
@@ -53,6 +56,16 @@ namespace AutoTable.ViewModels
 
         partial void OnIsSubjectFilterVisibleChanged(bool value) => OnPropertyChanged(nameof(SubjectFilterVisibility));
 
+        // When a stream-scoped assessment is selected the Stream filter appears (before the
+        // Subject filter) so the user can choose which stream of the paper they are marking.
+        [ObservableProperty] private bool _isStreamFilterVisible = false;
+        private bool _suppressStreamReload;
+
+        public Microsoft.UI.Xaml.Visibility StreamFilterVisibility =>
+            IsStreamFilterVisible ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        partial void OnIsStreamFilterVisibleChanged(bool value) => OnPropertyChanged(nameof(StreamFilterVisibility));
+
         partial void OnSelectedClassChanged(string value) => _ = ReloadForFiltersAsync();
         partial void OnSelectedSubjectChanged(string value)
         {
@@ -61,6 +74,11 @@ namespace AutoTable.ViewModels
             if (IsSubjectFilterVisible) _ = LoadMarks();
         }
         partial void OnSelectedAssessmentChanged(string value) => _ = OnAssessmentSelectionChangedAsync();
+        partial void OnSelectedStreamChanged(string value)
+        {
+            if (_suppressStreamReload) return;
+            if (IsStreamFilterVisible) _ = LoadMarks();
+        }
 
         /// <summary>
         /// When the selected assessment changes: multi-subject assessments reveal the
@@ -75,6 +93,28 @@ namespace AutoTable.ViewModels
             var match = FindAssessment();
             bool isMulti = match != null && match.SubjectNames.Count > 0;
             IsSubjectFilterVisible = isMulti;
+
+            // Stream-scoped assessment: reveal the Stream filter (before Subject) populated
+            // with the paper's target streams so the user can pick which stream to mark.
+            bool isStreamScoped = match != null && match.Scope == AssessmentScope.Stream;
+            if (isStreamScoped)
+            {
+                var prevStream = SelectedStream;
+                Streams.Clear();
+                Streams.Add("All");
+                foreach (var sn in match!.StreamNames) Streams.Add(sn);
+                IsStreamFilterVisible = true;
+                _suppressStreamReload = true;
+                SelectedStream = (Streams.Contains(prevStream) ? prevStream : (Streams.Count > 0 ? Streams[0] : "All"));
+                _suppressStreamReload = false;
+            }
+            else
+            {
+                IsStreamFilterVisible = false;
+                _suppressStreamReload = true;
+                SelectedStream = "All";
+                _suppressStreamReload = false;
+            }
 
             if (isMulti)
             {
@@ -193,7 +233,7 @@ namespace AutoTable.ViewModels
                 return;
             }
 
-            var rows = await _dataService.GetStudentMarksAsync(SelectedClass, SelectedSubject, SelectedAssessment);
+            var rows = await _dataService.GetStudentMarksAsync(SelectedClass, SelectedSubject, SelectedAssessment, IsStreamFilterVisible ? SelectedStream : null);
             StudentMarks.Clear();
             foreach (var row in rows)
             {

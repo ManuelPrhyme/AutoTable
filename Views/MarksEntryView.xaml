@@ -18,6 +18,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -27,13 +28,19 @@
                     <ComboBox Grid.Column="1" Header="Assessment" MinWidth="170"
                               ItemsSource="{Binding Assessments}"
                               SelectedItem="{Binding SelectedAssessment, Mode=TwoWay}" />
+                    <!-- Stream filter: appears before the Subject filter when the selected
+                         assessment is stream-scoped, to pick the stream being marked. -->
+                    <ComboBox Grid.Column="2" Header="Stream" MinWidth="130"
+                              ItemsSource="{Binding Streams}"
+                              SelectedItem="{Binding SelectedStream, Mode=TwoWay}"
+                              Visibility="{x:Bind ViewModel.StreamFilterVisibility, Mode=OneWay}" />
                     <!-- Subject filter: only visible (spins up) when the selected assessment
                          is a multi-subject paper, to pick the subject being marked. -->
-                    <ComboBox Grid.Column="2" Header="Subject" MinWidth="160"
+                    <ComboBox Grid.Column="3" Header="Subject" MinWidth="160"
                               ItemsSource="{Binding Subjects}"
                               SelectedItem="{Binding SelectedSubject, Mode=TwoWay}"
                               Visibility="{x:Bind ViewModel.SubjectFilterVisibility, Mode=OneWay}" />
-                    <Button Grid.Column="4" VerticalAlignment="Bottom"
+                    <Button Grid.Column="5" VerticalAlignment="Bottom"
                             Content="Load Marks" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding LoadMarksCommand}" />
                 </Grid>

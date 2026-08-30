@@ -7,7 +7,125 @@
 
 ---
 
-## Current Session: 28 Aug 2026
+## Current Session: 30 Aug 2026
+
+**Branch:** `sql_rec`
+**Build:** 0 errors (full solution)
+**Working tree:** Active session (30+ files, commit pending)
+
+---
+
+### Multi-Subject Creation Error Fix — `Assessments.SubjectId` NOT NULL ✅ DONE
+
+The runtime error "create a multi-subject assessment failed" was caused by legacy DBs where
+`Assessments.SubjectId` was created `INTEGER NOT NULL` (SQLite can't drop a NOT NULL via
+ALTER). Fix = full table-rebuild patch.
+
+| File | Change |
+|------|--------|
+| `AutoTable/Data/SchemaPatches.cs` | `PatchAssessmentsNullableSubject` — PRAGMA-driven detection, `Assessments_new` with nullable SubjectId + identical FKs, copy rows, drop/rename, recreate indexes (now includes StreamId in the unique name index), restore AUTOINCREMENT sequence |
+| `AutoTable/Data/SchemaPatches.cs` | `PatchAssessmentsCreatedAt` — adds `Assessments.CreatedAt` (back-fills from DueDate proxy) |
+| `AutoTable/Data/SchemaPatches.cs` | `PatchAssessmentsStreamIds` — adds `Assessments.StreamIds` (CSV of target stream ids for stream-scoped papers) |
+
+---
+
+### Stream-Granularity Assessments — Stream / Class / Whole School ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Models/AssessmentItem.cs` | `AssessmentScope.Stream` (value 4); `StreamIds`, `StreamNames` lists |
+| `Views/AssessmentsView.xaml.cs` | Creation dialog: "For a Specific Stream" scope, stream picker, `IsClassWide=false` + `StreamName` |
+| `AutoTable/Services/DatabaseDataService.cs` | `CreateAssessmentAsync` validates stream + forces `IsClassWide=false`; `GetAssessmentsAsync`/`GetAssessmentAsync` map Stream scope/names; report card excluded for students not in a target stream |
+
+Multi-stream note: an assessment can now target **any subset of a class's streams** (paper for 2 of 4 streams). Stream ids persist as `StreamId` (first) + `StreamIdsCsv` (all); marks entry, completion, and report cards roster students across all target streams.
+
+---
+
+### Marks Entry — Stream Filter Before Subject ✅ DONE
+
+| File | Change |
+|------|--------|
+| `ViewModels/MarksEntryViewModel.cs` | Stream filter appears when the selected assessment is stream-scoped; populated with target streams + "All"; saves pass the chosen stream |
+| `Views/MarksEntryView.xaml` | Stream combo inserted before Subject in the filter bar |
+| `AutoTable/Services/DatabaseDataService.cs` | `GetStudentMarksAsync(className, subject, assessmentName, streamName = null)` narrows roster to the selected stream |
+| `AutoTable/Services/IDataService.cs`, `Demo/MockDataServiceAdapter.cs` | New signature |
+
+Root-cause note from the field: an assessment ("red") targeted the **Blue stream**, but all P2 students are in **Pink** — so marks entry returned 0 rows. Not a roster bug; the stream filter now makes this visible immediately.
+
+---
+
+### Assessments Page — Class-Restricted Subjects + Stream Filter ✅ DONE
+
+| File | Change |
+|------|--------|
+| `ViewModels/AssessmentsViewModel.cs` | Subject combo populates from `GetSubjectsForClassAsync(classId)` (falls back to all subjects on "All classes"); conditional `StreamFilterVisibility` (Stream combo shown only when the selected class has stream-scoped assessments) |
+| `Views/AssessmentsView.xaml` | Stream filter column inserted before Subject |
+
+---
+
+### Expandable + Scrollable Create-Assessment Modal ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Views/AssessmentsView.xaml.cs` | Initial display = 3 scope radio checkboxes (Entire School / Class / Stream). Selecting one expands the `detailsPanel` with the expected setup fields. Class scope → Class dropdown; Stream scope → Class + Stream pickers side by side; Entire School → no class/stream/subject tools. Subjects granularity combo (Single / All / Specific) drives which subject control appears. ScrollViewer wraps content (`MaxHeight=460`, Auto vertical scrollbar); `ContentDialog MaxHeight=620`; `CalendarDatePicker` replaces the 3-list `DatePicker`; weight left-aligned |
+
+---
+
+### Students List — Status, Terminate, View, Edit, Shift ✅ DONE
+
+| File | Change |
+|------|--------|
+| `AutoTable/Models/Student.cs` | `StatusText`, `InactiveCauseText`, `StatusDotSource`, `StatusLabel`, `TerminationYear` |
+| `Converters/FormatConverters.cs` | `StatusColorConverter` maps Active/Inactive → green/red dot |
+| `AutoTable/Views/StudentsView.xaml` | Status column (dot + cause), column headers, removed 3rd (Class) column, buttons Shift → View → Edit → Terminate (red, last) |
+| `AutoTable/Views/StudentsView.xaml.cs` | `TerminateStudent_Click` (reason modal: Completed / Expelled / ChangedSchool / Other), `ViewStudent_Click` (read-only full record modal), `EditStudent_Click` (editable fields modal), existing `ShiftEnrollment_Click` |
+| `AutoTable/ViewModels/StudentsViewModel.cs` | Class+stream options loader, `ShiftEnrollmentAsync` |
+| `Resources/DesignTokens.xaml` | `DangerButtonStyle`, `DangerGhostButtonStyle` |
+
+Inactive students keep full records (audit / historical report cards) but are excluded from all active-student operations (marks rosters, completion, report cards, fees, performance, dashboard counts).
+
+---
+
+### Sidebar Branding + Misc UI ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Views/ShellView.xaml(.cs)` | Brand block now shows School Name (from settings) instead of "AutoTable", school motto as subtitle, and the configured logo image in the blue shape |
+| `AutoTable/Models/GradingSystemModels.cs` | `BandsSummary` renders `A - 90-100` (hyphen between designation and range) |
+| `Resources/DesignTokens.xaml` | Grading-system Delete uses `DangerGhostButtonStyle` (red on hover, white text on focus/pressed) |
+| `Views/ReportCardsView.xaml` | Search bar widened (~80%) |
+
+---
+
+### Students Tab Crash — Runtime Resource Scope Fix ✅ DONE
+
+Status-dot `Ellipse.Fill` was bound with `{StaticResource StatusColor}` — a converter declared
+at the page's `StackPanel` scope. WinUI 3 **DataTemplates cannot see Page/StackPanel-scoped
+resources**, so the lookup returned null at runtime and crashed the tab. Bound to the global
+`StatusColorConverter` (registered in `App.xaml`) instead.
+
+| File | Change |
+|------|--------|
+| `AutoTable/Views/StudentsView.xaml` | `Ellipse.Fill` binding now uses `{StaticResource StatusColorConverter}` |
+
+---
+
+### Toast Infrastructure — Added, Then Disabled (Dev Mode) 🔶
+
+`ToastService` / `NotificationStore` created and wired into `AppServices.Toasts` with call sites
+across views/viewmodels (settings save, enrollment, teacher register, class create, payment,
+print, student updates). All call sites commented out during development after a build issue was
+reported; infra remains as dead types for re-enabling later.
+
+| File | Change |
+|------|--------|
+| `AutoTable/Services/ToastService.cs`, `NotificationStore.cs` | New toast infra |
+| `AutoTable/AppServices.cs` | `Toasts` property commented out |
+| 9 call sites (StudentsView, Enrollment, SchoolSettings, Teachers, Classes, FeeCollection, ReportCards) | `// AppServices.Toasts.Show(...)` commented |
+
+---
+
+## Session: 28 Aug 2026
 
 **Branch:** `sql_rec`
 **Build:** 0 errors (full solution)

@@ -137,7 +137,35 @@ namespace AutoTable.Converters
                 "Pending"   => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // pending
                 "Approved"  => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // approved
                 "Rejected"  => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // rejected
+                "Active"        => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // active → green dot
+                "Inactive"      => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // inactive → red dot (fallback)
+                // StatusDotSource values (from Student model)
+                "Completed"     => ThemeResourceHelper.GetThemeBrush("InfoBlueBrush"),      // completed course → blue dot
+                "ChangedSchool" => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"), // changed school → orange dot
+                "Expelled"      => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),     // expelled → red dot
+                "Other"         => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),     // other termination → red dot
                 _ => ThemeResourceHelper.GetThemeBrush("TextMutedBrush")                 // muted
+            };
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Converts a Student.StatusDotSource string to a human-readable status label.
+    /// Used by the status badge to display "Active", "Completed", "Expelled", etc.
+    /// </summary>
+    public class StatusLabelConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return value?.ToString() switch
+            {
+                "Active"        => "Active",
+                "Completed"     => "Completed",
+                "ChangedSchool" => "Changed School",
+                "Expelled"      => "Expelled",
+                _                => "Terminated"
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)

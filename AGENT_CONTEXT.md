@@ -24,7 +24,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 
 ---
 
-## Current State (28 Aug 2026)
+## Current State (30 Aug 2026)
 
 ### Build: 0 errors, clean
 
@@ -51,8 +51,20 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - **Fee Collection per-student amounts** — Expected/Paid/Balance per student/class/term
 - **Record Payment modal white text** — all text on dark dialog
 - **LIN uniqueness gap fix** — 3-layer defense against orphaned enrollment records
+- **Multi-subject NOT NULL constraint fix** — SQLite table-rebuild patch (`PatchAssessmentsNullableSubject`) makes `Assessments.SubjectId` nullable on legacy DBs (the "create multi-subject assessment" runtime error); stream IDs added via `PatchAssessmentsStreamIds` (StreamIdsCsv)
+- **Stream-granularity assessments** — new `AssessmentScope.Stream` (value 4) + `AssessmentItem.StreamIds`/`StreamNames`; stream papers target 1-N streams, persist StreamId (first) + StreamIdsCsv (all); marks entry rosters all target streams
+- **Expandable create-assessment modal** — initial display = 3 scope radio checkboxes (Entire School / Class / Stream); selecting a scope expands the details panel (name, class picker, Stream picker for stream scope, subject granularity, promotion role, weight, due date); entire modal scrollable (`ScrollViewer MaxHeight=460`, `ContentDialog MaxHeight=620`); `CalendarDatePicker` replaces the 3-list date picker; weight left-aligned
+- **Class-restricted subject filter** — Assessment page filter's Subject combo now populates from `GetSubjectsForClassAsync(classId)` (falls back to all subjects on "All classes"); a Stream filter appears before Subject only when the class has stream-scoped assessments
+- **Marks Entry stream filter** — stream-scoped assessment shows a Stream dropdown (target streams + All) before Subject; `GetStudentMarksAsync` gained optional `streamName`
+- **Assessments sorted by creation date** — `AssessmentEntity.CreatedAt` + `PatchAssessmentsCreatedAt` (back-fills due-date proxy); `GetAssessmentsAsync` orders `OrderByDescending(CreatedAt).ThenByDescending(Id)`
+- **Students list overhaul** — status column (green dot Active / red dot Inactive with cause), Terminate button (red, white text, last) with reason modal (Completed / Expelled / ChangedSchool / Other -> "Terminated"), View button (read-only full-info modal), Edit button (editable modal), Shift button (class + stream change); column headers added; third column (Class) removed; `Student` gains `StatusText`, `InactiveCauseText`, `StatusDotSource`, `StatusLabel`, `TerminationYear`
+- **Sidebar branding** — title shows the configured School Name, subtitle shows the school motto, blue shape hosts the logo image from Settings LogoBytes (falls back to blue glyph)
+- **Grading system UI** — Delete becomes `DangerGhostButtonStyle` (stays red on hover, white on focus/pressed); `BandsSummary` renders `A - 90-100` (hyphen between designation and marks range)
+- **Toast infrastructure added then disabled (dev)** — `ToastService`/`NotificationStore` created + `AppServices.Toasts` wired, then every call site commented out (dev mode); infra left as dead types for later re-enable
+- **Students tab crash fix** — status-dot `Ellipse.Fill` was bound with `{StaticResource StatusColor}`; DataTemplates can't see Page/StackPanel-scoped resources, so it now binds the global `StatusColorConverter` (registered in App.xaml)
+- **ReportCards Search bar widened** — `MinWidth=280`/`MinHeight=32`, container `MinWidth=320` (extended ~80%)
 
-### What's In Progress (uncommitted, 25+ files)
+### What's In Progress (uncommitted, 40+ files)
 | Feature | Status |
 |---------|--------|
 | Grade resolution via grading systems (P5.3) | ✅ Code complete |
@@ -69,6 +81,14 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 | Financial Dashboard merge | ✅ Done |
 | Fee Collection per-student amounts | ✅ Done |
 | LIN uniqueness gap fix | ✅ Done |
+| Multi-subject assessments (NOT NULL fix + stream scope) | ✅ Done |
+| Stream-granularity assessments (single + multi-stream) | ✅ Done |
+| Expandable/scrollable create-assessment modal | ✅ Done |
+| Assessment creation-date sorting | ✅ Done |
+| Students list (status, terminate, view, edit, shift) | ✅ Done |
+| Sidebar branding (school name/motto/logo) | ✅ Done |
+| Grading-system delete button styling + hyphen | ✅ Done |
+| Toast infra (added then disabled for dev) | 🔶 Disabled (dev) |
 
 ### What's Next (P5 backlog)
 | # | Feature | Status |
@@ -90,7 +110,8 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 ### Services
 - `AutoTable/Services/IDataService.cs` — full async interface (students, assessments, marks, grades, fees, teachers, budget, grading systems, promotion, report cards, class updates)
 - `AutoTable/Services/DatabaseDataService.cs` — EF Core implementation (~2000 lines)
-- `AutoTable/AppServices.cs` — global static IDataService holder
+- `AutoTable/AppServices.cs` — global static IDataService holder (`Toasts` property commented out in dev)
+- `AutoTable/Services/ToastService.cs` / `NotificationStore.cs` — dead types (toast infra, all call sites commented for dev)
 
 ### Models
 - `Models/AssessmentItem.cs` — `AssessmentScope` enum, `AssessmentPromotionRole` enum, `AssessmentItem` DTO
@@ -102,11 +123,16 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 
 ### Views & ViewModels
 - `Views/ClassesView.xaml.cs` — class management (single-modal create, edit modal with name/teacher/grading/streams/subjects, white chip UI with ✕ buttons)
-- `Views/AssessmentsView.xaml.cs` — assessment creation dialog (4 scope options + promotion role selector)
+- `Views/AssessmentsView.xaml.cs` — expandable/scrollable assessment creation dialog (scope checkboxes Entire School / Class / Stream; class + stream pickers; subject granularity; promotion-role selector; CalendarDatePicker)
+- `ViewModels/AssessmentsViewModel.cs` — assessment page filters (Subject restricted to the selected class's subjects; conditional Stream filter before Subject)
+- `Views/MarksEntryView.xaml` / `ViewModels/MarksEntryViewModel.cs` — marks entry with Class → Assessment → Subject ordering + conditional Stream filter (stream-scoped papers)
+- `AutoTable/Views/StudentsView.xaml(.cs)` — student list with status dots, headers, Shift / View / Edit / Terminate buttons + modals
 - `Views/FeeCollectionView.xaml.cs` — fee collection with Record Payment modal (searchable typeahead, white text)
 - `Views/ReportCardsView.xaml.cs` — A4 report card preview + PrintManager printing
 - `Views/Controls/ReportCardSheetView.xaml` — A4 report card sheet control
-- `Views/ShellView.xaml.cs` — navigation shell with role-gated sidebar
+- `Views/ShellView.xaml(.cs)` — navigation shell with role-gated sidebar; loads School Name/Motto/Logo into the brand block
+- `Resources/DesignTokens.xaml` — theme resources incl. `DangerButtonStyle`, `DangerGhostButtonStyle`, `DangerProgressBarStyle`
+- `Converters/FormatConverters.cs` — converters incl. `StatusColorConverter` (Active/Inactive → green/red), `GradeColorConverter`
 
 ### Startup
 - `App.xaml.cs` — DB init, connection string, schema patches (ALTER TABLE for legacy DBs, TermFees table creation), ForeignKeyInterceptor registration
@@ -171,4 +197,4 @@ See **IMPLEMENTATION_LOG.md** for a detailed, up-to-date log of what's being imp
 
 ---
 
-*Last updated: 28 Aug 2026 — Cline (autonomous agent)*
+*Last updated: 30 Aug 2026 — Cline (autonomous agent)*

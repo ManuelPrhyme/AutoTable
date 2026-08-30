@@ -32,6 +32,9 @@ namespace AutoTable.Data
             PatchHeadTeacherComments(connection);
             PatchMarks(connection);
             PatchAssessmentSubjects(connection);
+            PatchAssessmentsNullableSubject(connection);
+            PatchAssessmentsCreatedAt(connection);
+            PatchAssessmentsStreamIds(connection);
         }
 
         // ── Terms ──────────────────────────────────────────────────────────
@@ -327,6 +330,130 @@ namespace AutoTable.Data
         }
 
         // ── Helpers ────────────────────────────────────────────────────────
+
+        // ── Assessments.SubjectId nullable (multi-subject assessments) ────────────────
+        // SQLite cannot drop a NOT NULL constraint via ALTER TABLE, so legacy databases
+        // created before multi-subject assessments keep "SubjectId INTEGER NOT NULL".
+        // Writing a multi-subject assessment (SubjectId = NULL) then fails with
+        // "NOT NULL constraint failed: Assessments.SubjectId". The standard SQLite fix
+        // is a full table rebuild: create the new schema, copy the rows, swap names.
+        private static void PatchAssessmentsNullableSubject(SqliteConnection conn)
+        {
+            // Already nullable (fresh DB created from the current model)? Nothing to do.
+            bool subjectIdNotNull = false;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA table_info('Assessments');";
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    if (string.Equals(reader.GetString(1), "SubjectId", StringComparison.OrdinalIgnoreCase))
+                        subjectIdNotNull = reader.GetInt64(3) != 0; // "notnull" flag
+                }
+            }
+            if (!subjectIdNotNull) return;
+
+            using (var fkOff = conn.CreateCommand())
+                fkOff.CommandText = "PRAGMA foreign_keys = OFF;";
+
+            using (var tx = (SqliteTransaction)conn.BeginTransaction())
+            {
+                try
+                {
+                    Exec(conn, tx, @"
+                        CREATE TABLE Assessments_new (
+                            Id INTEGER NOT NULL CONSTRAINT PK_Assessments PRIMARY KEY AUTOINCREMENT,
+                            Name TEXT NOT NULL,
+                            ClassId INTEGER NOT NULL,
+                            SubjectId INTEGER NULL,
+                            AcademicYearId INTEGER NOT NULL,
+                            TermId INTEGER NOT NULL,
+                            WeightPercent INTEGER NOT NULL,
+                            DueDate TEXT NULL,
+                            IsVerified INTEGER NOT NULL,
+                            IsPublished INTEGER NOT NULL,
+                            MarksEnteredPercent INTEGER NOT NULL,
+                            StreamId INTEGER NULL,
+                            IsClassWide INTEGER NOT NULL DEFAULT 1,
+                            PromotionRole INTEGER NOT NULL DEFAULT 0,
+                            AuthorUserId INTEGER NULL,
+                            AuthorName TEXT NULL,
+                            IsSchoolWide INTEGER NOT NULL DEFAULT 0,
+                            CONSTRAINT FK_Assessments_AcademicYears_AcademicYearId FOREIGN KEY (AcademicYearId) REFERENCES AcademicYears (Id) ON DELETE CASCADE,
+                            CONSTRAINT FK_Assessments_Classes_ClassId FOREIGN KEY (ClassId) REFERENCES Classes (Id) ON DELETE CASCADE,
+                            CONSTRAINT FK_Assessments_Subjects_SubjectId FOREIGN KEY (SubjectId) REFERENCES Subjects (Id) ON DELETE CASCADE,
+                            CONSTRAINT FK_Assessments_Terms_TermId FOREIGN KEY (TermId) REFERENCES Terms (Id) ON DELETE CASCADE
+                        );");
+                    Exec(conn, tx, @"
+                        INSERT INTO Assessments_new
+                            (Id, Name, ClassId, SubjectId, AcademicYearId, TermId, WeightPercent, DueDate,
+                             IsVerified, IsPublished, MarksEnteredPercent, StreamId, IsClassWide,
+                             PromotionRole, AuthorUserId, AuthorName, IsSchoolWide)
+                        SELECT
+                            Id, Name, ClassId, SubjectId, AcademicYearId, TermId, WeightPercent, DueDate,
+                            IsVerified, IsPublished, MarksEnteredPercent, StreamId, IsClassWide,
+                            PromotionRole, AuthorUserId, AuthorName, IsSchoolWide
+                        FROM Assessments;");
+                    Exec(conn, tx, "DROP TABLE Assessments;");
+                    Exec(conn, tx, "ALTER TABLE Assessments_new RENAME TO Assessments;");
+                    // Indexes are dropped together with the old table — recreate them.
+                    Exec(conn, tx, "CREATE INDEX IF NOT EXISTS IX_Assessments_AcademicYearId ON Assessments (AcademicYearId);");
+                    Exec(conn, tx, "CREATE INDEX IF NOT EXISTS IX_Assessments_ClassId ON Assessments (ClassId);");
+                    Exec(conn, tx, "CREATE UNIQUE INDEX IF NOT EXISTS IX_Assessments_Name_ClassId_SubjectId_StreamId_TermId_AcademicYearId ON Assessments (Name, ClassId, SubjectId, StreamId, TermId, AcademicYearId);");
+                    // AUTOINCREMENT sequence: the old sqlite_sequence row died with the table.
+                    Exec(conn, tx, "UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(Id), 0) FROM Assessments) WHERE name = 'Assessments';");
+                    Exec(conn, tx, @"
+                        INSERT INTO sqlite_sequence (name, seq)
+                            SELECT 'Assessments', (SELECT COALESCE(MAX(Id), 0) FROM Assessments)
+                            WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = 'Assessments');");
+                    tx.Commit();
+                }
+                catch
+                {
+                    try { tx.Rollback(); } catch { }
+                    throw;
+                }
+            }
+
+            using (var fkOn = conn.CreateCommand())
+                fkOn.CommandText = "PRAGMA foreign_keys = ON;";
+        }
+
+        private static void Exec(SqliteConnection conn, SqliteTransaction tx, string sql)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = sql;
+            cmd.ExecuteNonQuery();
+        }
+
+        // ── Assessments.CreatedAt (creation-date sorting) ─────────────────────────────
+        // Existing DBs (and DBs rebuilt by PatchAssessmentsNullableSubject) have no
+        // CreatedAt column. Add it and back-fill existing rows — best available proxy is
+        // each row's DueDate; rows without a due date get a conservative old timestamp so
+        // they sort as the oldest (which they are, being created before this feature).
+        private static void PatchAssessmentsCreatedAt(SqliteConnection conn)
+        {
+            AddColumnIfMissing(conn, "Assessments", "CreatedAt", "ALTER TABLE Assessments ADD COLUMN CreatedAt TEXT;");
+            using (var backfill = conn.CreateCommand())
+            {
+                backfill.CommandText = @"
+                    UPDATE Assessments SET CreatedAt = DueDate
+                    WHERE CreatedAt IS NULL AND DueDate IS NOT NULL;
+                    UPDATE Assessments SET CreatedAt = '2000-01-01T00:00:00'
+                    WHERE CreatedAt IS NULL;";
+                backfill.ExecuteNonQuery();
+            }
+        }
+
+        // ── Assessments.StreamIdsCsv (multi-stream assessments) ───────────────────────
+        // Adds the column used to persist multiple target streams ("1,2,3") on a single
+        // assessment. Existing single-stream rows keep using StreamId (which stays set
+        // to the first stream), so no back-fill is needed.
+        private static void PatchAssessmentsStreamIds(SqliteConnection conn)
+        {
+            AddColumnIfMissing(conn, "Assessments", "StreamIdsCsv", "ALTER TABLE Assessments ADD COLUMN StreamIdsCsv TEXT;");
+        }
 
         private static bool TableExists(SqliteConnection conn, string tableName)
         {

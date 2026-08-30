@@ -21,7 +21,7 @@ namespace AutoTable.Views
 
         private async void NewAssessment_Click(object sender, RoutedEventArgs e)
         {
-            // ── Active-term enforcement: block if no term is active ──
+            // â”€â”€ Active-term enforcement: block if no term is active â”€â”€
             var activeTerm = await AppServices.DataService!.GetActiveTermAsync();
             if (activeTerm == null)
             {
@@ -36,28 +36,45 @@ namespace AutoTable.Views
                 return;
             }
 
-            // ── Scope selector ── // Selector
-            var scopeBox = new ComboBox //Redial in the table using the propertychanged option
+// â”€â”€ Top-level scope choice: Entire School / Class / Stream â”€â”€
+            var scopePanel = new StackPanel { Spacing = 6 };
+            scopePanel.Children.Add(new TextBlock
             {
-                Header = "Subject scope",
+                Text = "Assessment scope",
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+            var entireSchoolCheck = new CheckBox { Content = "Entire School", FontSize = 13 };
+            var classCheck = new CheckBox { Content = "Class", FontSize = 13 };
+            var streamCheck = new CheckBox { Content = "Stream", FontSize = 13 };
+            var scopeChecks = new[] { entireSchoolCheck, classCheck, streamCheck };
+            foreach (var sck in scopeChecks) scopePanel.Children.Add(sck);
+
+            // Secondary subject granularity (single / all / specific) shown for Class or Stream.
+            var subjectScopeBox = new ComboBox
+            {
+                Header = "Subjects",
                 Width = 300,
-                ItemsSource = new[]
-                {
-                    "Single Subject",
-                    "All Subjects in Class",
-                    "Specific Subjects (custom)",
-                    "All Subjects in School (general exam)"
-                },
+                ItemsSource = new[] { "Single Subject", "All Subjects in Class", "Specific Subjects (custom)" },
                 SelectedIndex = 0
             };
 
-            // ── Standard fields ──
+            // â”€â”€ Standard fields â”€â”€
             var nameBox = new TextBox { Header = "Assessment name", Width = 320 };
             var classPicker = new ComboBox { Header = "Class", Width = 240, DisplayMemberPath = "Name", SelectedIndex = -1 };
-            var weightBox = new TextBox { Header = "Weight (%)", Width = 120, Text = "20" };
-            var duePicker = new DatePicker { Header = "Due date", Date = DateTime.Today };
+            var weightBox = new TextBox { Header = "Weight (%)", Width = 120, Text = "20", TextAlignment = TextAlignment.Left, HorizontalAlignment = HorizontalAlignment.Left };
+            // Calendar-style picker: a month grid with day cells and next/previous month
+            // navigation (clicking the header switches to year/decade views).
+            var duePicker = new CalendarDatePicker
+            {
+                Header = "Due date",
+                Date = DateTime.Today,
+                PlaceholderText = "Pick a date",
+                Description = "Tap to open the calendar",
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
 
-            // ── Promotion role selector ──
+            // â”€â”€ Promotion role selector â”€â”€
             var promoRoleBox = new ComboBox
             {
                 Header = "Promotion role",
@@ -65,19 +82,25 @@ namespace AutoTable.Views
                 ItemsSource = new[]
                 {
                     "Just an assessment",
-                    "Counts toward promotion",
-                    "Promotion exam (Term 3 / end-of-year)"
+                    "Contributory (End of Year / Promotional)",
+                    "End of Year (Promotional)",
+                    "End of Term",
+                    "Contributory (End of Term)"
                 },
                 SelectedIndex = 0
             };
-            var promoRoleHint = new TextBlock
+var promoRoleHint = new TextBlock
             {
                 FontSize = 11,
                 Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextSecondaryBrush"],
-                Text = "Select 'Counts toward promotion' for papers that contribute to the promotion average, or 'Promotion exam' for the end-of-term paper that decides promotion."
+                Text = "End-of-Year / End-of-Term papers and their contributors appear on the report card. End of Year (Promotional) is the deciding exam; 'Just an assessment' is excluded from report cards."
             };
 
-            // ── Subject pickers (shown/hidden based on scope) ──
+            // â”€â”€ Expandable details panel (hidden until a scope is chosen) â”€â”€
+            var detailsPanel = new StackPanel { Spacing = 10, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 6, 0, 0) };
+            var classStreamRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+
+            // â”€â”€ Subject pickers â”€â”€
             var singleSubjectPicker = new ComboBox { Header = "Subject", Width = 240, SelectedIndex = -1 };
             var multiSubjectPanel = new StackPanel { Spacing = 4, Visibility = Visibility.Collapsed };
             var multiSubjectHeader = new TextBlock { Text = "Select subjects", FontSize = 12, Margin = new Thickness(0, 0, 0, 2) };
@@ -87,6 +110,15 @@ namespace AutoTable.Views
             multiSubjectPanel.Children.Add(multiSubjectHeader);
             multiSubjectPanel.Children.Add(multiSubjectScroll);
 
+            // ── Stream multi-select (Stream scope: a paper can target several streams) ──
+            var streamMultiPanel = new StackPanel { Spacing = 4, Visibility = Visibility.Collapsed };
+            var streamMultiHeader = new TextBlock { Text = "Select streams", FontSize = 12, Margin = new Thickness(0, 0, 0, 2) };
+            var streamMultiScroll = new ScrollViewer { MaxHeight = 160, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            var streamItems = new StackPanel { Spacing = 2 };
+            streamMultiScroll.Content = streamItems;
+            streamMultiPanel.Children.Add(streamMultiHeader);
+            streamMultiPanel.Children.Add(streamMultiScroll);
+
             var scopeHint = new TextBlock
             {
                 FontSize = 11,
@@ -94,23 +126,21 @@ namespace AutoTable.Views
                 Visibility = Visibility.Collapsed
             };
 
-            // Track subjects for the selected class
             var allClassSubjects = new List<AutoTable.Models.SimpleLookup>();
-            // Track ALL subjects across all classes (for AllInSchool scope)
             var allSchoolSubjects = new List<string>();
 
-            // ── Load classes ──
+            // â”€â”€ Load classes â”€â”€
             var classes = await AppServices.DataService!.GetClassesAsync();
             classPicker.ItemsSource = classes;
 
-            // ── When class changes, reload streams + subjects ──
-            // (must be attached BEFORE setting SelectedIndex so the initial load fires)
+            // â”€â”€ When class changes, reload streams + subjects â”€â”€
             classPicker.SelectionChanged += async (s, ev) =>
             {
-  singleSubjectPicker.ItemsSource = null;
+                singleSubjectPicker.ItemsSource = null;
                 singleSubjectPicker.SelectedIndex = -1;
                 allClassSubjects.Clear();
                 multiSubjectItems.Children.Clear();
+                streamItems.Children.Clear();
 
                 if (classPicker.SelectedItem is AutoTable.Models.SimpleLookup cls)
                 {
@@ -118,13 +148,23 @@ namespace AutoTable.Views
                     singleSubjectPicker.ItemsSource = allClassSubjects.Select(x => x.Name).ToList();
                     if (singleSubjectPicker.Items.Count > 0) singleSubjectPicker.SelectedIndex = 0;
 
-                    // Build multi-select checkboxes
                     foreach (var subj in allClassSubjects)
                     {
                         multiSubjectItems.Children.Add(new CheckBox
                         {
                             Content = subj.Name,
                             Tag = subj.Id,
+                            IsChecked = true,
+                            FontSize = 13
+                        });
+                    }
+                    var streams = await AppServices.DataService!.GetStreamsForClassAsync(cls.Id);
+                    foreach (var st in streams)
+                    {
+                        streamItems.Children.Add(new CheckBox
+                        {
+                            Content = st.Name,
+                            Tag = st.Id,
                             IsChecked = true,
                             FontSize = 13
                         });
@@ -141,63 +181,105 @@ namespace AutoTable.Views
             // Preload all school subjects
             allSchoolSubjects.AddRange(allClassSubjects.Select(s => s.Name));
 
-            // ── Scope change: show/hide appropriate controls ──
-            void UpdateScopeVisuals()
+// â”€â”€ Expandable scope logic â”€â”€
+            AssessmentScope? chosenScope = null;
+
+            void UpdateScopeDetails()
             {
-                var scope = scopeBox.SelectedIndex;
-                bool isSingle = scope == 0;
-                bool isAllInClass = scope == 1;
-                bool isSpecific = scope == 2;
-                bool isAllInSchool = scope == 3;
+                bool isSchool = chosenScope == AssessmentScope.AllInSchool;
+                bool isStream = chosenScope == AssessmentScope.Stream;
+                bool isClass = chosenScope == AssessmentScope.AllInClass;
+                bool chosen = chosenScope.HasValue;
 
-                // Show/hide class picker (hidden for school-wide)
-                classPicker.Visibility = isAllInSchool ? Visibility.Collapsed : Visibility.Visible;
+                detailsPanel.Visibility = chosen ? Visibility.Visible : Visibility.Collapsed;
+                classPicker.Visibility = (isClass || isStream) ? Visibility.Visible : Visibility.Collapsed;
+                streamMultiPanel.Visibility = isStream ? Visibility.Visible : Visibility.Collapsed;
 
-                // Show/hide subject controls
-                singleSubjectPicker.Visibility = isSingle ? Visibility.Visible : Visibility.Collapsed;
-                multiSubjectPanel.Visibility = isSpecific ? Visibility.Visible : Visibility.Collapsed;
+                // Secondary subject granularity applies only to Class / Stream
+                subjectScopeBox.Visibility = (isClass || isStream) ? Visibility.Visible : Visibility.Collapsed;
+                int sub = subjectScopeBox.SelectedIndex; // 0 single, 1 all, 2 specific
+                bool showSubjectTools = (isClass || isStream);
+                singleSubjectPicker.Visibility = (showSubjectTools && sub == 0) ? Visibility.Visible : Visibility.Collapsed;
+                multiSubjectPanel.Visibility = (showSubjectTools && sub == 2) ? Visibility.Visible : Visibility.Collapsed;
 
                 // Hint text
-                scopeHint.Visibility = Visibility.Visible;
-                if (isAllInClass)
-                {
-                    var clsName = (classPicker.SelectedItem as AutoTable.Models.SimpleLookup)?.Name ?? "the class";
-                    scopeHint.Text = $"Creates ONE assessment covering all subjects in {clsName}. Pick the subject at marks entry.";
-                }
-                else if (isSpecific)
-                    scopeHint.Text = "Check the subjects below. ONE assessment is created covering the selected subjects; pick the subject at marks entry.";
-                else if (isAllInSchool)
+                scopeHint.Visibility = chosen ? Visibility.Visible : Visibility.Collapsed;
+                var clsName = (classPicker.SelectedItem as AutoTable.Models.SimpleLookup)?.Name ?? "the class";
+                if (isSchool)
                     scopeHint.Text = "Creates ONE school-wide assessment covering every subject taught; pick the subject at marks entry.";
-                else
-                    scopeHint.Visibility = Visibility.Collapsed;
+                else if (isStream)
+                {
+                    int checkedStreams = streamItems.Children.OfType<CheckBox>().Count(cb => cb.IsChecked == true);
+                    scopeHint.Text = checkedStreams == 0
+                        ? $"Creates an assessment for {clsName}; check at least one stream below."
+                        : $"ONE assessment covering all subjects for {checkedStreams} selected stream(s) in {clsName}. Only those streams' students are listed at marks entry.";
+                }
+                else if (isClass)
+                {
+                    scopeHint.Text = sub switch
+                    {
+                        0 => $"Creates an assessment for one subject in {clsName}.",
+                        1 => $"Creates ONE assessment covering all subjects in {clsName}. Pick the subject at marks entry.",
+                        _ => "Check the subjects below. ONE assessment is created covering the selected subjects; pick the subject at marks entry."
+                    };
+                }
             }
 
-            scopeBox.SelectionChanged += (s, ev) => UpdateScopeVisuals();
+            void SetScope(CheckBox sender, AssessmentScope scope)
+            {
+                chosenScope = scope;
+                foreach (var sck in scopeChecks)
+                    if (sck != sender) sck.IsChecked = false;
+                UpdateScopeDetails();
+            }
 
-            // Initial state
-            UpdateScopeVisuals();
+            entireSchoolCheck.Checked += (s, e) => SetScope(entireSchoolCheck, AssessmentScope.AllInSchool);
+            classCheck.Checked += (s, e) => SetScope(classCheck, AssessmentScope.AllInClass);
+            streamCheck.Checked += (s, e) => SetScope(streamCheck, AssessmentScope.Stream);
+            subjectScopeBox.SelectionChanged += (s, e) => UpdateScopeDetails();
 
-            // ── Assemble form ──
+            // Initial state: nothing chosen â†’ details collapsed
+            UpdateScopeDetails();
+
+            // â”€â”€ Assemble form â”€â”€
             var panel = new StackPanel { Spacing = 10 };
-            panel.Children.Add(nameBox);
-            panel.Children.Add(classPicker);
-            panel.Children.Add(scopeBox);
-            panel.Children.Add(singleSubjectPicker);
-            panel.Children.Add(multiSubjectPanel);
-            panel.Children.Add(scopeHint);
-            panel.Children.Add(promoRoleBox);
-            panel.Children.Add(promoRoleHint);
-            panel.Children.Add(weightBox);
-            panel.Children.Add(duePicker);
+            panel.Children.Add(scopePanel);
+            panel.Children.Add(detailsPanel);
+
+            classStreamRow.Children.Add(classPicker);
+
+            detailsPanel.Children.Add(nameBox);
+            detailsPanel.Children.Add(classStreamRow);
+            detailsPanel.Children.Add(streamMultiPanel);
+            detailsPanel.Children.Add(subjectScopeBox);
+            detailsPanel.Children.Add(singleSubjectPicker);
+            detailsPanel.Children.Add(multiSubjectPanel);
+            detailsPanel.Children.Add(scopeHint);
+            detailsPanel.Children.Add(promoRoleBox);
+            detailsPanel.Children.Add(promoRoleHint);
+            detailsPanel.Children.Add(weightBox);
+            detailsPanel.Children.Add(duePicker);
 
             var dialog = new ContentDialog
             {
                 Title = "Create Assessment",
-                Content = panel,
+                // Scrollable content: the modal grows when the scope is chosen, so the
+                // form scrolls instead of overflowing the dialog on short screens.
+                // MaxHeight must stay BELOW the ContentDialog's internal height cap
+                // (~548px) — otherwise the dialog clips the extra height before the
+                // ScrollViewer ever gets a chance to show its scrollbar.
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 460,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    Content = panel
+                },
                 PrimaryButtonText = "Create",
                 CloseButtonText = "Cancel",
                 XamlRoot = this.XamlRoot,
-                Width = 580
+                Width = 580,
+                MaxHeight = 620
             };
 
             var result = await dialog.ShowAsync();
@@ -206,10 +288,26 @@ namespace AutoTable.Views
                 try
                 {
                     var selectedClass = classPicker.SelectedItem as AutoTable.Models.SimpleLookup;
-                    var scope = (AutoTable.Models.AssessmentScope)scopeBox.SelectedIndex;
+                    if (!chosenScope.HasValue)
+                    {
+                        var err = new ContentDialog { Title = "Select a scope", Content = "Choose Entire School, Class, or Stream to continue.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                        await err.ShowAsync();
+                        return;
+                    }
+                    var scope = chosenScope == AutoTable.Models.AssessmentScope.AllInSchool
+                        ? AutoTable.Models.AssessmentScope.AllInSchool
+                        : chosenScope == AutoTable.Models.AssessmentScope.Stream
+                            ? AutoTable.Models.AssessmentScope.Stream
+                            : (AutoTable.Models.AssessmentScope)subjectScopeBox.SelectedIndex; // 0 Single, 1 AllInClass, 2 SpecificSubjects
+                    var selectedStreamIds = scope == AutoTable.Models.AssessmentScope.Stream
+                        ? streamItems.Children.OfType<CheckBox>()
+                            .Where(cb => cb.IsChecked == true && cb.Tag is int)
+                            .Select(cb => (int)cb.Tag!)
+                            .ToList()
+                        : new List<int>();
                     var weight = int.TryParse(weightBox.Text, out var w) ? w : 0;
                     var assessmentName = nameBox.Text?.Trim() ?? string.Empty;
-                    var dueDate = duePicker.Date.DateTime;
+                    var dueDate = duePicker.Date?.DateTime ?? DateTime.Today;
 
                     if (string.IsNullOrWhiteSpace(assessmentName))
                     {
@@ -218,10 +316,10 @@ namespace AutoTable.Views
                         return;
                     }
 
-                    // ── Resolve promotion role ──
+                    // â”€â”€ Resolve promotion role â”€â”€
                     var promoRole = (AutoTable.Models.AssessmentPromotionRole)promoRoleBox.SelectedIndex;
 
-                    // ── Resolve subjects covered by this assessment ──
+                    // â”€â”€ Resolve subjects covered by this assessment â”€â”€
                     // Every non-single scope creates ONE assessment linked to multiple
                     // subjects (no per-subject duplicates).
                     var coveredSubjects = new List<string>();
@@ -301,13 +399,49 @@ namespace AutoTable.Views
                         }
                     }
 
-                    // ── Create the SINGLE assessment (subject links resolve server-side) ──
+                    else if (scope == AutoTable.Models.AssessmentScope.Stream)
+                    {
+                        if (selectedClass == null)
+                        {
+                            var err = new ContentDialog { Title = "No class selected", Content = "Please select a class.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                            await err.ShowAsync();
+                            return;
+                        }
+                        if (selectedStreamIds.Count == 0)
+                        {
+                            var err = new ContentDialog { Title = "No stream selected", Content = "Check at least one stream below. Streams are configured under Classes Management.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                            await err.ShowAsync();
+                            return;
+                        }
+                        // ONE assessment per stream covering all subjects in the class.
+                        coveredSubjects.AddRange(
+                            (await AppServices.DataService!.GetSubjectsForClassAsync(selectedClass.Id)).Select(s => s.Name));
+                        if (coveredSubjects.Count == 0)
+                        {
+                            var err = new ContentDialog { Title = "No subjects", Content = $"No subjects assigned to {selectedClass.Name}. Add subjects under Classes Management first.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                            await err.ShowAsync();
+                            return;
+                        }
+                    }
+
+                    // â”€â”€ Create the SINGLE assessment (subject links resolve server-side) â”€â”€
                     var primarySubject = coveredSubjects.Count == 1 ? coveredSubjects[0] : coveredSubjects.First();
                     var classNameForItem = scope == AutoTable.Models.AssessmentScope.AllInSchool
                         ? "All Classes"
                         : selectedClass!.Name;
-                    var item = BuildAssessmentItem(assessmentName, classNameForItem, primarySubject, scope, weight, dueDate, null, promoRole);
+                    var item = BuildAssessmentItem(assessmentName, classNameForItem, primarySubject, scope, weight, dueDate, selectedStreamIds.Count > 0 ? selectedStreamIds[0] : (int?)null, promoRole);
                     item.SubjectNames = coveredSubjects;
+                    if (scope == AutoTable.Models.AssessmentScope.Stream)
+                    {
+                        // A stream assessment is class-anchored but NOT class-wide; only the
+                        // checked streams' students are rosters at marks entry.
+                        item.IsClassWide = false;
+                        item.StreamIds = selectedStreamIds;
+                        item.StreamName = streamItems.Children.OfType<CheckBox>()
+                            .Where(cb => cb.IsChecked == true)
+                            .Select(cb => cb.Content?.ToString() ?? "")
+                            .FirstOrDefault() ?? string.Empty;
+                    }
                     var created = await AppServices.DataService!.CreateAssessmentAsync(item);
                     var createdItems = new List<AutoTable.Models.AssessmentItem>();
                     if (created != null) createdItems.Add(created);
@@ -339,18 +473,10 @@ namespace AutoTable.Views
         {
             // Set the author to the current logged-in user
             var currentUser = Services.SessionService.Instance.CurrentUser;
-            int? authorId = null;
             string? authorName = null;
             if (currentUser != null)
             {
-                // Try to resolve the user's DB ID from the users table
-                try
-                {
-                    var users = AppServices.DataService?.GetTeachersAsync().Result;
-                    // For now, use the session user info; DB ID resolution happens server-side
-                    authorName = currentUser.FullName;
-                }
-                catch { }
+                authorName = currentUser.FullName;
             }
 
             return new AssessmentItem

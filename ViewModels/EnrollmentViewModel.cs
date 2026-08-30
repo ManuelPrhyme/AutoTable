@@ -198,6 +198,7 @@ namespace AutoTable.ViewModels
                 }
 
                 StatusMessage = "Enrollment submitted successfully.";
+                // AppServices.Toasts.Show("Enrollment", $"Enrollment submitted for {data.FullName ?? "student"}.");
 
                 if (OnSubmittedAsync != null) await OnSubmittedAsync.Invoke(createdStudent);
                 ResetForm();

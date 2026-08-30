@@ -9,7 +9,7 @@ namespace AutoTable.Services
     {
         Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync();
         Task<IReadOnlyList<Models.GradebookRow>> GetGradebookAsync(string? className, string? subject, string? academicYear = null, string? term = null, string? stream = null, string? studentName = null);
-        Task<IReadOnlyList<Models.StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName);
+        Task<IReadOnlyList<Models.StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName, string? streamName = null);
 
         // Lookup lists for filters
         Task<IReadOnlyList<string>> GetTermsAsync();
@@ -52,9 +52,9 @@ namespace AutoTable.Services
         Task<Models.ReportCardSheetModel?> GetReportCardSheetAsync(string studentName, string className, string term);
         /// <summary>Returns all active students in a class with overall average across all subjects for a given term.
         /// Used by the Report Cards list view.</summary>
-        Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string className, string? term, string? stream);
+        Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string? className, string? term, string? stream);
         /// <summary>Returns mid-term slip data for all students in a class for a given term.</summary>
-        Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string className, string? term, string? stream);
+        Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string? className, string? term, string? stream);
 
         Task<IReadOnlyList<Student>> GetStudentsAsync();
         Task<Student?> GetStudentByIdAsync(int id);

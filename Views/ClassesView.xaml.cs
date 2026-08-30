@@ -179,6 +179,8 @@ namespace AutoTable.Views
                     await _vm.AssignSubjectToClassAsync(createdClass.Id, item.Id);
                 }
 
+                // AppServices.Toasts.Show("Class Created", $"Class '{createdClass.Name}' created.");
+
                 await _vm.LoadAsync();
             }
             catch (Exception ex)

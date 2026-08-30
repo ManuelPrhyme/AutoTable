@@ -30,12 +30,21 @@
             <Border Grid.Row="0" Padding="20,24,20,16" BorderBrush="{ThemeResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
                 <StackPanel Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Border Width="32" Height="32" CornerRadius="8" Background="{ThemeResource PrimaryBlueBrush}">
-                            <FontIcon Glyph="&#xE8A5;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel VerticalAlignment="Center" Spacing="1">
-                            <TextBlock Text="AutoTable" FontSize="15" FontWeight="Bold" Foreground="{ThemeResource TextOnDarkBrush}" />
-                            <TextBlock x:Name="SchoolNameText" Text="AutoTable Academy" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
+                        <!-- School Logo: shows the settings logo when set, otherwise the blue fallback glyph.
+                             Both are clipped into a perfect circle for a profile/avatar look. -->
+                        <Grid Width="36" Height="36">
+                            <Border x:Name="LogoFallbackBorder" Width="36" Height="36" CornerRadius="18" Background="{ThemeResource PrimaryBlueBrush}">
+                                <FontIcon Glyph="&#xE8A5;" FontSize="18" Foreground="{ThemeResource TextOnDarkBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <!-- Circular Border clips its child into a circle (WinUI only allows
+                                 RectangleGeometry on Clip, so a full-circle CornerRadius is used). -->
+                            <Border Width="36" Height="36" CornerRadius="18" IsHitTestVisible="False">
+                                <Image x:Name="SchoolLogoImage" Width="36" Height="36" Stretch="UniformToFill" Visibility="Collapsed" />
+                            </Border>
+                        </Grid>
+                        <StackPanel VerticalAlignment="Center" Spacing="1" MaxWidth="150">
+                            <TextBlock x:Name="SchoolNameText" Text="AutoTable Academy" FontSize="15" FontWeight="Bold" Foreground="{ThemeResource TextOnDarkBrush}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="SchoolMottoText" Text="Knowledge is Power" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

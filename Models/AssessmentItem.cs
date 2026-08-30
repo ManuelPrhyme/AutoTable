@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace AutoTable.Models
 {
@@ -14,7 +15,9 @@ namespace AutoTable.Models
         /// <summary>Assessment applies to a user-selected set of subjects in the class.</summary>
         SpecificSubjects,
         /// <summary>Assessment applies to all subjects across all classes (general/school-wide exam).</summary>
-        AllInSchool
+        AllInSchool,
+        /// <summary>Assessment targets a single stream of a class (covers that stream's class subjects; marks are only entered for students in that stream).</summary>
+        Stream
     }
 
     /// <summary>
@@ -47,6 +50,10 @@ namespace AutoTable.Models
         // Optional: target a specific stream (null means whole class unless IsClassWide=false and StreamId set)
         public int? StreamId { get; set; }
         public string? StreamName { get; set; }
+        /// <summary>When the assessment targets streams, the full set of stream ids the paper applies to (multi-stream).</summary>
+        public List<int> StreamIds { get; set; } = new();
+        /// <summary>Stream names corresponding to <see cref="StreamIds"/> (display + filtering).</summary>
+        public List<string> StreamNames { get; set; } = new();
         public bool IsClassWide { get; set; } = true;
         public int WeightPercent { get; set; }
         public DateTime DueDate { get; set; }

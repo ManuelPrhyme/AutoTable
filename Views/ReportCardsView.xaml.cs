@@ -91,6 +91,10 @@ namespace AutoTable.Views
                     XamlRoot = this.XamlRoot
                 }.ShowAsync();
             }
+            else
+            {
+                // AppServices.Toasts.Show("Print", "The print dialog is ready. Choose a printer or \"Microsoft Print to PDF\" to finish.");
+            }
         }
 
         private void PrintDocument_Paginate(object? sender, PaginateEventArgs e)

@@ -204,6 +204,14 @@ namespace AutoTable.Services
             var assess = await db.Assessments.Include(a => a.Marks).FirstOrDefaultAsync(a => a.Id == assessmentId);
             if (assess == null) return;
             var studentsInClass = await db.Students.Where(s => s.ClassId == assess.ClassId && s.IsActive).CountAsync();
+            // Stream-scoped assessments only expect marks from their target streams.
+            if (!assess.IsClassWide && (assess.StreamId != null || !string.IsNullOrEmpty(assess.StreamIdsCsv)))
+            {
+                var targetStreams = ParseStreamIds(assess);
+                if (targetStreams.Count > 0)
+                    studentsInClass = await db.Students.CountAsync(s =>
+                        s.ClassId == assess.ClassId && s.IsActive && s.StreamId.HasValue && targetStreams.Contains(s.StreamId.Value));
+            }
             // Completion reflects the ENTIRE assessment: a multi-subject paper expects one
             // mark per student per linked subject (denominator = students × subjects),
             // while a single-subject paper expects one mark per student.
@@ -565,6 +573,7 @@ namespace AutoTable.Services
             // different casing still resolves instead of failing with "not found".
             var a = await db.Assessments
                 .Include(x => x.AuthorUser)
+                .Include(x => x.Stream)
                 .FirstOrDefaultAsync(x =>
                 (x.ClassId == cls.Id || x.IsSchoolWide) &&
                 (x.SubjectId == subj.Id ||
@@ -579,6 +588,12 @@ namespace AutoTable.Services
                 Name = a.Name,
                 ClassName = cls.Name,
                 Subject = subj.Name,
+                Scope = a.IsSchoolWide ? AssessmentScope.AllInSchool
+                    : (a.StreamId != null && !a.IsClassWide ? AssessmentScope.Stream
+                    : (a.SubjectId == null ? AssessmentScope.AllInClass : AssessmentScope.Single)),
+                StreamId = a.StreamId,
+                StreamName = a.Stream?.Name,
+                IsClassWide = a.IsClassWide,
                 WeightPercent = a.WeightPercent,
                 DueDate = a.DueDate ?? DateTime.MinValue,
                 MarksEnteredPercent = a.MarksEnteredPercent,
@@ -680,15 +695,52 @@ namespace AutoTable.Services
 
         private AppDbContext CreateContext() => new AppDbContext(_options);
 
+        /// <summary>
+        /// Resolves every stream id an assessment targets: prefers the multi-stream
+        /// CSV column and merges in the legacy single <see cref="AssessmentEntity.StreamId"/>.
+        /// </summary>
+        private static HashSet<int> ParseStreamIds(AssessmentEntity a)
+        {
+            var ids = new HashSet<int>();
+            if (!string.IsNullOrWhiteSpace(a.StreamIdsCsv))
+            {
+                foreach (var part in a.StreamIdsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (int.TryParse(part, out var id)) ids.Add(id);
+                }
+            }
+            if (a.StreamId.HasValue && a.StreamId.Value != 0) ids.Add(a.StreamId.Value);
+            return ids;
+        }
+
+        /// <summary>
+        /// True when a stream-scoped assessment should be shown on the given student's
+        /// report card (the student belongs to one of the assessment's target streams).
+        /// Class-wide / school-wide / legacy assessments always pass.
+        /// </summary>
+        private static bool AssessmentForStudent(AssessmentEntity a, StudentEntity? student)
+        {
+            if (student?.StreamId == null) return true;
+            if (a.IsSchoolWide || a.IsClassWide) return true;
+            if (a.StreamId == null && string.IsNullOrWhiteSpace(a.StreamIdsCsv)) return true;
+            return ParseStreamIds(a).Contains(student.StreamId.Value);
+        }
+
         public async Task<IReadOnlyList<AssessmentItem>> GetAssessmentsAsync()
         {
             using var db = CreateContext();
+            // Preload stream name lookup for resolving an assessment's target stream names.
+            var streamNamesById = await db.Streams.ToDictionaryAsync(s => s.Id, s => s.Name);
             var list = await db.Assessments
                 .Include(a => a.Class)
                 .Include(a => a.Subject)
+                .Include(a => a.Stream)
                 .Include(a => a.AssessmentSubjects).ThenInclude(ass => ass.Subject)
                 .Include(a => a.AuthorUser)
-                .OrderBy(a => a.DueDate)
+                // Sort by creation date (newest first); Id breaks the tie for assessments
+                // created in the same instant.
+                .OrderByDescending(a => a.CreatedAt)
+                .ThenByDescending(a => a.Id)
                 .ToListAsync();
 
             return list.Select(a =>
@@ -697,13 +749,23 @@ namespace AutoTable.Services
                     ? a.AssessmentSubjects.Where(ass => ass.Subject != null).Select(ass => ass.Subject!.Name).ToList()
                     : new List<string>();
                 var singleName = a.Subject?.Name ?? string.Empty;
+                var streamIds = ParseStreamIds(a);
                 return new AssessmentItem
                 {
                     Id = a.Id.ToString(),
                     Name = a.Name,
                     ClassName = a.IsSchoolWide ? "All Classes" : (a.Class?.Name ?? string.Empty),
                     Subject = a.SubjectId == null && multiNames.Count > 0 ? string.Join(", ", multiNames) : singleName,
-                    Scope = a.IsSchoolWide ? AssessmentScope.AllInSchool : (a.SubjectId == null ? AssessmentScope.AllInClass : AssessmentScope.Single),
+                    Scope = a.IsSchoolWide ? AssessmentScope.AllInSchool
+                          : (a.StreamId != null && !a.IsClassWide ? AssessmentScope.Stream
+                          : (a.SubjectId == null ? AssessmentScope.AllInClass : AssessmentScope.Single)),
+                    StreamId = a.StreamId,
+                    StreamName = a.Stream?.Name,
+                    StreamIds = streamIds.ToList(),
+                    StreamNames = streamIds
+                        .Select(id => streamNamesById.TryGetValue(id, out var n) ? n : id.ToString())
+                        .ToList(),
+                    IsClassWide = a.IsClassWide,
                     SubjectNames = multiNames,
                     IsSchoolWide = a.IsSchoolWide,
                     WeightPercent = a.WeightPercent,
@@ -819,7 +881,7 @@ namespace AutoTable.Services
             _ => "F"
         };
 
-        public async Task<IReadOnlyList<StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName)
+        public async Task<IReadOnlyList<StudentMarkRow>> GetStudentMarksAsync(string className, string subject, string assessmentName, string? streamName = null)
         {
             using var db = CreateContext();
             // Trim + case-insensitive resolution; NO silent fallback to an arbitrary
@@ -855,13 +917,18 @@ namespace AutoTable.Services
 
             // Determine eligible students based on assessment scope
             List<StudentEntity> students;
-            if (assess.IsClassWide || assess.StreamId == null)
+            if (assess.IsClassWide || (assess.StreamId == null && string.IsNullOrEmpty(assess.StreamIdsCsv)))
             {
                 students = await db.Students.Where(s => s.ClassId == cls.Id && s.IsActive).ToListAsync();
             }
             else
             {
-                students = await db.Students.Where(s => s.ClassId == cls.Id && s.StreamId == assess.StreamId && s.IsActive).ToListAsync();
+                // Stream-scoped: the paper applies to every stream listed on the assessment
+                // (StreamIdsCsv, falling back to the legacy single StreamId).
+                var targetStreams = ParseStreamIds(assess);
+                students = (await db.Students.Where(s => s.ClassId == cls.Id && s.IsActive).ToListAsync())
+                    .Where(s => s.StreamId.HasValue && targetStreams.Contains(s.StreamId.Value))
+                    .ToList();
             }
 
             // Resolve the subject: multi-subject assessments require the chosen subject;
@@ -898,6 +965,21 @@ namespace AutoTable.Services
                 marks = await db.Marks.Include(m => m.Student)
                     .Where(m => m.AssessmentId == assess.Id)
                     .ToListAsync();
+
+            // Optional per-stream narrowing: when a stream name is chosen (and the paper is
+            // stream-scoped), show only that stream's students. "All"/empty shows every
+            // eligible student.
+            if (assess.IsClassWide == false && (assess.StreamId != null || !string.IsNullOrEmpty(assess.StreamIdsCsv))
+                && !string.IsNullOrWhiteSpace(streamName)
+                && !string.Equals(streamName.Trim(), "All", StringComparison.OrdinalIgnoreCase))
+            {
+                var streamByName = await db.Streams
+                    .Where(s => s.Name.ToLower() == streamName.Trim().ToLower())
+                    .Select(s => (int?)s.Id)
+                    .FirstOrDefaultAsync();
+                if (streamByName.HasValue)
+                    students = students.Where(s => s.StreamId == streamByName.Value).ToList();
+            }
 
             var result = students.Select(s =>
             {
@@ -1227,12 +1309,16 @@ namespace AutoTable.Services
                 .FirstOrDefaultAsync(s => s.FullName == studentName && s.IsActive);
             if (student == null) return null;
 
-            var assessments = await db.Assessments
+            var assessments = (await db.Assessments
                 .Include(a => a.Subject)
                 .Include(a => a.AssessmentSubjects).ThenInclude(ass => ass.Subject)
                 .Where(a => (a.ClassId == cls.Id || a.IsSchoolWide) && a.TermId == termEntity.Id)
                 .OrderBy(a => a.DueDate).ThenByDescending(a => a.WeightPercent)
-                .ToListAsync();
+                .ToListAsync())
+                // A stream-scoped assessment only appears on the report card when the student
+                // is in one of its target streams (multi-stream safe).
+                .Where(a => AssessmentForStudent(a, student))
+                .ToList();
 
             var marks = await db.Marks
                 .Where(m => m.StudentId == student.Id)
@@ -1411,7 +1497,7 @@ namespace AutoTable.Services
         /// for a given term. Used by the Report Cards list view.
         /// </summary>
         public async Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(
-            string className, string? term, string? stream)
+            string? className, string? term, string? stream)
         {
             using var db = CreateContext();
 
@@ -1549,7 +1635,7 @@ namespace AutoTable.Services
         /// Returns mid-term slip data for all active students in a class.
         /// </summary>
         public async Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(
-            string className, string? term, string? stream)
+            string? className, string? term, string? stream)
         {
             using var db = CreateContext();
             var clsName = (className ?? string.Empty).Trim().ToLower();
@@ -2372,6 +2458,9 @@ namespace AutoTable.Services
                 throw new InvalidOperationException("No class exists yet. Create a class under Administration → Classes Management first.");
             if (term == null)
                 throw new InvalidOperationException("No term exists yet. Create a term under Administration → Term Management first.");
+            if (item.Scope == AutoTable.Models.AssessmentScope.Stream
+                && item.StreamIds.Count == 0 && (!item.StreamId.HasValue || item.StreamId.Value == 0))
+                throw new InvalidOperationException("Select at least one stream for this assessment.");
 
             var entity = new AssessmentEntity
             {
@@ -2382,12 +2471,18 @@ namespace AutoTable.Services
                 TermId = term.Id,
                 WeightPercent = item.WeightPercent,
                 DueDate = item.DueDate,
-                StreamId = item.StreamId,
-                IsClassWide = item.IsClassWide,
+                StreamId = item.Scope == AutoTable.Models.AssessmentScope.Stream
+                            ? (item.StreamIds.Count > 0 ? item.StreamIds[0] : item.StreamId)
+                            : item.StreamId,
+                StreamIdsCsv = item.Scope == AutoTable.Models.AssessmentScope.Stream && item.StreamIds.Count > 0
+                            ? string.Join(",", item.StreamIds)
+                            : null,
+                IsClassWide = item.Scope == AutoTable.Models.AssessmentScope.Stream ? false : item.IsClassWide,
                 IsSchoolWide = item.Scope == AutoTable.Models.AssessmentScope.AllInSchool,
                 IsVerified = false,
                 IsPublished = false,
                 MarksEnteredPercent = 0,
+                CreatedAt = DateTime.UtcNow,
                 PromotionRole = (int)item.PromotionRole,
                 AuthorUserId = item.AuthorId,
                 AuthorName = item.AuthorName
@@ -2527,8 +2622,8 @@ namespace AutoTable.Services
             var marks = await db.Marks
                 .Where(m => m.StudentId == studentId && m.Mark.HasValue)
                 .Include(m => m.Subject)
-                .Include(m => m.Assessment).ThenInclude(a => a.Subject)
-                .Include(m => m.Assessment).ThenInclude(a => a.Term)
+                .Include(m => m.Assessment).ThenInclude(a => a!.Subject)
+                .Include(m => m.Assessment).ThenInclude(a => a!.Term)
                 .ToListAsync();
 
             // Assessment is a required FK loaded via Include (guarded below), so the
