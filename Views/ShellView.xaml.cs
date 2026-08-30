@@ -35,6 +35,7 @@ namespace AutoTable.Views
             ["Classes"]            = ("Classes & Subjects", "Manage classes, subjects, and subject assignments."),
             ["Promotion"]          = ("Promotion / Repeat", "End-of-year (Term 3) promote or repeat decisions per student."),
             ["AuditLog"]           = ("Termination / Audit Log", "View termination history and anonymization records."),
+            ["TermManagement"]     = ("Term Management", "Manage academic terms, set term fees, and activate/deactivate terms."),
             ["FinDashboard"]       = ("Financial Dashboard", "Overview of fee collection, budget, and expenditure."),
             ["FeeCollection"]      = ("Fee Collection", "Track and manage student fee payments."),
             ["Budget"]             = ("Budget & Expenditure", "School budget planning and expenditure tracking."),

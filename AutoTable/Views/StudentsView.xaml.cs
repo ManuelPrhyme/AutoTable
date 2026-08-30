@@ -246,7 +246,8 @@ namespace AutoTable.Views
             var student = _vm.Students.FirstOrDefault(s => s.Id == studentId);
             if (student == null) return;
 
-            await _vm.LoadClassAndStreamOptionsAsync();
+            // Load classes first
+            await _vm.LoadClassOptionsAsync();
 
             var classBox = new ComboBox
             {
@@ -261,8 +262,24 @@ namespace AutoTable.Views
                 Header = "Stream",
                 ItemsSource = _vm.Streams,
                 DisplayMemberPath = "Name",
-                SelectedItem = _vm.Streams.FirstOrDefault(st => st.Id == student.StreamId),
                 Width = 260
+            };
+
+            // Load streams for the student's current class
+            if (student.ClassId.HasValue)
+            {
+                await _vm.LoadStreamsForClassAsync(student.ClassId.Value);
+                streamBox.SelectedItem = _vm.Streams.FirstOrDefault(st => st.Id == student.StreamId);
+            }
+
+            // When class selection changes, reload streams for that class
+            classBox.SelectionChanged += async (_, _) =>
+            {
+                if (classBox.SelectedItem is SimpleLookup selectedClass)
+                {
+                    await _vm.LoadStreamsForClassAsync(selectedClass.Id);
+                    streamBox.SelectedItem = null;
+                }
             };
 
             var panel = new StackPanel { Spacing = 12, MinWidth = 320 };
@@ -306,8 +323,6 @@ namespace AutoTable.Views
                 await _vm.ShiftEnrollmentAsync(student, selClass.Id, selStreamId);
                 _vm.StatusMessage = $"Shifted {student.FullName} to {selClass.Name}" +
                                     (selStreamId.HasValue ? $" / {(streamBox.SelectedItem as SimpleLookup)?.Name}" : "") + ".";
-                // AppServices.Toasts.Show("Enrollment Shifted", $"Shifted {student.FullName} to {selClass.Name}" +
-                //                     (selStreamId.HasValue ? $" / {(streamBox.SelectedItem as SimpleLookup)?.Name}" : "") + ".");
             }
             catch (Exception ex)
             {

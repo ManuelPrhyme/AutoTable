@@ -170,14 +170,18 @@ namespace AutoTable.ViewModels
             ApplyFilters();
         }
 
-        /// <summary>Loads the class + stream options used by the shift-enrollment editor.</summary>
-        public async Task LoadClassAndStreamOptionsAsync()
+        /// <summary>Loads the class options used by the shift-enrollment editor.</summary>
+        public async Task LoadClassOptionsAsync()
         {
             var classes = await _dataService.GetClassesAsync();
             Classes.Clear();
             foreach (var c in classes) Classes.Add(c);
+        }
 
-            var streams = await _dataService.GetAllStreamsAsync();
+        /// <summary>Loads streams for a specific class, used by the shift-enrollment editor.</summary>
+        public async Task LoadStreamsForClassAsync(int classId)
+        {
+            var streams = await _dataService.GetStreamsForClassAsync(classId);
             Streams.Clear();
             foreach (var st in streams) Streams.Add(st);
         }

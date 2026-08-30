@@ -123,28 +123,35 @@ namespace AutoTable.Converters
 
     public class StatusColorConverter : IValueConverter
     {
+        // Direct color constants so the converter never depends on theme dictionary lookups.
+        private static readonly SolidColorBrush GreenBrush  = new(Windows.UI.Color.FromArgb(255, 39, 174, 96));   // #27AE60
+        private static readonly SolidColorBrush BlueBrush   = new(Windows.UI.Color.FromArgb(255, 41, 128, 185));  // #2980B9
+        private static readonly SolidColorBrush RedBrush    = new(Windows.UI.Color.FromArgb(255, 231, 76, 60));   // #E74C3C
+        private static readonly SolidColorBrush OrangeBrush = new(Windows.UI.Color.FromArgb(255, 243, 156, 18));  // #F39C12
+        private static readonly SolidColorBrush MutedBrush  = new(Windows.UI.Color.FromArgb(255, 158, 158, 158)); // #9E9E9E
+
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             var status = value?.ToString() ?? string.Empty;
             return status switch
             {
-                "Excellent" => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // good
-                "On Track"  => ThemeResourceHelper.GetThemeBrush("PrimaryBlueBrush"),    // informational
-                "At Risk"   => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // error
-                "Present"   => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // present
-                "Late"      => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // late
-                "Absent"    => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // absent
-                "Pending"   => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // pending
-                "Approved"  => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // approved
-                "Rejected"  => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // rejected
-                "Active"        => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // active → green dot
-                "Inactive"      => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // inactive → red dot (fallback)
                 // StatusDotSource values (from Student model)
-                "Completed"     => ThemeResourceHelper.GetThemeBrush("InfoBlueBrush"),      // completed course → blue dot
-                "ChangedSchool" => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"), // changed school → orange dot
-                "Expelled"      => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),     // expelled → red dot
-                "Other"         => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),     // other termination → red dot
-                _ => ThemeResourceHelper.GetThemeBrush("TextMutedBrush")                 // muted
+                "Active"        => GreenBrush,   // active → green dot
+                "Completed"     => BlueBrush,    // completed course → blue dot
+                "ChangedSchool" => OrangeBrush,  // changed school → orange dot
+                "Expelled"      => RedBrush,     // expelled → red dot
+                "Other"         => RedBrush,     // other termination → red dot
+                // Legacy / other statuses
+                "Excellent"     => GreenBrush,
+                "On Track"      => BlueBrush,
+                "At Risk"       => RedBrush,
+                "Present"       => GreenBrush,
+                "Late"          => OrangeBrush,
+                "Absent"        => RedBrush,
+                "Pending"       => OrangeBrush,
+                "Approved"      => GreenBrush,
+                "Rejected"      => RedBrush,
+                _                => MutedBrush,
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)
@@ -153,7 +160,8 @@ namespace AutoTable.Converters
 
     /// <summary>
     /// Converts a Student.StatusDotSource string to a human-readable status label.
-    /// Used by the status badge to display "Active", "Completed", "Expelled", etc.
+    /// Active students show "Active"; all terminated students show "Inactive"
+    /// with the specific cause displayed separately below.
     /// </summary>
     public class StatusLabelConverter : IValueConverter
     {
@@ -162,10 +170,7 @@ namespace AutoTable.Converters
             return value?.ToString() switch
             {
                 "Active"        => "Active",
-                "Completed"     => "Completed",
-                "ChangedSchool" => "Changed School",
-                "Expelled"      => "Expelled",
-                _                => "Terminated"
+                _                => "Inactive"  // all terminated reasons show as Inactive
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)

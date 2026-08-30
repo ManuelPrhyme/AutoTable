@@ -22,6 +22,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="24" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
@@ -37,11 +38,12 @@
                     <ComboBox x:Name="TermYearFilterBox" Header="Termination Year" MinWidth="110"
                               Grid.Column="3" SelectionChanged="TermYearFilter_Changed"
                               HorizontalAlignment="Left" Visibility="Collapsed" />
+                    <!-- spacer column 4 (24px) separates filters from search -->
                     <TextBox x:Name="SearchBox" Header="Search" PlaceholderText="Name or LIN"
                              TextChanged="SearchBox_TextChanged"
-                             Grid.Column="4" MinWidth="220"
+                             Grid.Column="5" MinWidth="220"
                              VerticalAlignment="Bottom" />
-                    <Button Grid.Column="5" VerticalAlignment="Bottom"
+                    <Button Grid.Column="6" VerticalAlignment="Bottom"
                             HorizontalAlignment="Right"
                             Content="Add Student" Click="AddStudent_Click"
                             Style="{ThemeResource PrimaryButtonStyle}" />
@@ -121,15 +123,17 @@
                                     <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
                                                Text="{x:Bind StreamName}"
                                                HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
-                                    <!-- Status: colored dot + label -->
-                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6"
+                                    <!-- Status: colored dot + label + cause (cause shown below for inactive) -->
+                                    <StackPanel Grid.Column="4" Spacing="1"
                                                 HorizontalAlignment="Left" VerticalAlignment="Center">
-                                        <Ellipse Width="10" Height="10" VerticalAlignment="Center"
-                                                 Fill="{x:Bind StatusDotSource, Converter={StaticResource StatusColor}}" />
-                                        <TextBlock Text="{x:Bind StatusDotSource, Converter={StaticResource StatusLabelConv}}"
-                                                   FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <Ellipse Width="10" Height="10" VerticalAlignment="Center"
+                                                     Fill="{x:Bind StatusDotSource, Converter={StaticResource StatusColor}}" />
+                                            <TextBlock Text="{x:Bind StatusDotSource, Converter={StaticResource StatusLabelConv}}"
+                                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        </StackPanel>
                                         <TextBlock Text="{x:Bind InactiveCauseText}" FontSize="10"
-                                                   Foreground="{ThemeResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                                                   Foreground="{ThemeResource TextSecondaryBrush}" Margin="16,0,0,0" />
                                     </StackPanel>
                                     <!-- Actions: all buttons in one cell -->
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4"

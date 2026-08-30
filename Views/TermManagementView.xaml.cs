@@ -134,6 +134,7 @@ namespace AutoTable.Views
                 TermEnd.Date = System.DateTime.Now;
                 var dlg = new ContentDialog { Title = "Term created", Content = $"Term '{name}' created successfully.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                 await dlg.ShowAsync();
+                UpdateActiveIndicators();
             }
             catch (System.Exception ex)
             {
@@ -232,25 +233,42 @@ namespace AutoTable.Views
             }
         }
 
-        /// <summary>Walks the visual tree of TermsList and colors the indicator dot green for the active term.</summary>
+        /// <summary>Walks the visual tree of TermsList and updates indicator dot + button visibility for each term.</summary>
         private void UpdateActiveIndicators()
         {
             var activeId = _vm.ActiveTermId;
+            var now = DateTime.UtcNow;
             foreach (var item in TermsList.Items)
             {
                 if (item is AutoTable.Models.SimpleLookup term)
                 {
                     var container = TermsList.ContainerFromItem(term) as ListViewItem;
                     if (container == null) continue;
-                    // The XAML root of the DataTemplate contains the indicator Border named "ActiveIndicator"
                     var root = container.ContentTemplateRoot as FrameworkElement;
-                    var indicator = root?.FindName("ActiveIndicator") as Border;
+                    if (root == null) continue;
+
+                    // Active indicator dot: green for active, muted otherwise
+                    var indicator = root.FindName("ActiveIndicator") as Border;
                     if (indicator != null)
                     {
                         indicator.Background = (term.Id == activeId)
                             ? (Brush)Application.Current.Resources["SuccessGreenBrush"]
                             : (Brush)Application.Current.Resources["TextMutedBrush"];
                     }
+
+                    // Button visibility:
+                    //   - Active term: hide "Set Active", show "Deactivate"
+                    //   - Inactive & not ended: show "Set Active", hide "Deactivate"
+                    //   - Ended term: hide both
+                    var activateBtn = root.FindName("ActivateBtn") as Button;
+                    var deactivateBtn = root.FindName("DeactivateBtn") as Button;
+                    bool isActive = term.Id == activeId;
+                    bool hasEnded = term.EndDate.HasValue && term.EndDate.Value < now;
+
+                    if (activateBtn != null)
+                        activateBtn.Visibility = (!isActive && !hasEnded) ? Visibility.Visible : Visibility.Collapsed;
+                    if (deactivateBtn != null)
+                        deactivateBtn.Visibility = (isActive && !hasEnded) ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
         }

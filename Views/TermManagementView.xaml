@@ -93,9 +93,9 @@
                                                 Background="{ThemeResource TextMutedBrush}" />
                                         <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" />
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                                            <Button Content="Set Active" Padding="8,2" FontSize="11"
+                                            <Button x:Name="ActivateBtn" Content="Set Active" Padding="8,2" FontSize="11"
                                                     Click="ActivateTerm_Click" Tag="{x:Bind Id}" />
-                                            <Button Content="Deactivate" Padding="8,2" FontSize="11"
+                                            <Button x:Name="DeactivateBtn" Content="Deactivate" Padding="8,2" FontSize="11"
                                                     Style="{ThemeResource SecondaryButtonStyle}"
                                                     Click="DeactivateTerm_Click" Tag="{x:Bind Id}" />
                                         </StackPanel>

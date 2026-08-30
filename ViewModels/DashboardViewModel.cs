@@ -67,7 +67,7 @@ namespace AutoTable.ViewModels
             {
                 var students = await _dataService.GetStudentsAsync();
                 var assessments = await _dataService.GetAssessmentsAsync();
-                studentCount = students?.Count ?? 0;
+                studentCount = students?.Count(s => s.IsActive) ?? 0;
                 assessmentCount = assessments?.Count ?? 0;
 
                 // Compute average score across all classes and subjects

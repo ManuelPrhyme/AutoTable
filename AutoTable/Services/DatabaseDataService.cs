@@ -1010,7 +1010,7 @@ namespace AutoTable.Services
         {
             using var db = CreateContext();
             var list = await db.Terms.OrderBy(t => t.Name).ToListAsync();
-            return list.Select(t => new SimpleLookup { Id = t.Id, Name = t.Name }).ToList();
+            return list.Select(t => new SimpleLookup { Id = t.Id, Name = t.Name, IsActive = t.IsActive, EndDate = t.EndDate }).ToList();
         }
 
         public async Task<SimpleLookup?> GetActiveTermAsync()
