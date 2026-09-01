@@ -45,6 +45,7 @@ namespace AutoTable.ViewModels
         [ObservableProperty] private string emergencyRelationship = string.Empty;
         [ObservableProperty] private string emergencyPhone = string.Empty;
         [ObservableProperty] private string authorizedPickupPerson = string.Empty;
+        [ObservableProperty] private byte[]? photoBytes;
 
         [ObservableProperty] private bool isSubmitting;
         [ObservableProperty] private string statusMessage = string.Empty;
@@ -147,6 +148,7 @@ namespace AutoTable.ViewModels
                     EmergencyRelationship = EmergencyRelationship,
                     EmergencyPhone = EmergencyPhone,
                     AuthorizedPickupPerson = AuthorizedPickupPerson,
+                    PhotoBytes = photoBytes
                 };
 
                 // Auto-generate LIN when left blank (form hint: "leave blank to auto-generate")

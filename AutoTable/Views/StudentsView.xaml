@@ -90,8 +90,8 @@
                         ItemsSource="{x:Bind FilteredStudents}"
                         SelectionMode="None"
                         IsItemClickEnabled="False"
-                        MaxHeight="480"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0" />
@@ -113,16 +113,19 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}"
                                                Text="{x:Bind LIN}" FontWeight="SemiBold"
-                                               HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+                                               HorizontalAlignment="Left" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
                                     <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
                                                Text="{x:Bind FullName}"
-                                               HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+                                               HorizontalAlignment="Left" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
                                     <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
                                                Text="{x:Bind ClassName}"
-                                               HorizontalAlignment="Left" />
+                                               HorizontalAlignment="Left" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
                                                Text="{x:Bind StreamName}"
-                                               HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" />
+                                               HorizontalAlignment="Left" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
                                     <!-- Status: colored dot + label + cause (cause shown below for inactive) -->
                                     <StackPanel Grid.Column="4" Spacing="1"
                                                 HorizontalAlignment="Left" VerticalAlignment="Center">
@@ -135,21 +138,32 @@
                                         <TextBlock Text="{x:Bind InactiveCauseText}" FontSize="10"
                                                    Foreground="{ThemeResource TextSecondaryBrush}" Margin="16,0,0,0" />
                                     </StackPanel>
-                                    <!-- Actions: all buttons in one cell -->
+                                    <!-- Actions: active students get Shift/View/Edit/Terminate; inactive get Restore -->
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4"
                                                 HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <!-- Active student buttons -->
                                         <Button Content="Shift" FontSize="11" Padding="8,3"
                                                 Style="{ThemeResource SecondaryButtonStyle}"
-                                                Click="ShiftEnrollment_Click" Tag="{x:Bind Id}" />
+                                                Click="ShiftEnrollment_Click" Tag="{x:Bind Id}"
+                                                Visibility="{x:Bind IsActive, Converter={StaticResource BoolToVisibility}}" />
                                         <Button Content="View" FontSize="11" Padding="8,3"
                                                 Style="{ThemeResource SecondaryButtonStyle}"
-                                                Click="ViewStudent_Click" Tag="{x:Bind Id}" />
+                                                Click="ViewStudent_Click" Tag="{x:Bind Id}"
+                                                Visibility="{x:Bind IsActive, Converter={StaticResource BoolToVisibility}}" />
                                         <Button Content="Edit" FontSize="11" Padding="8,3"
                                                 Style="{ThemeResource SecondaryButtonStyle}"
-                                                Click="EditStudent_Click" Tag="{x:Bind Id}" />
+                                                Click="EditStudent_Click" Tag="{x:Bind Id}"
+                                                Visibility="{x:Bind IsActive, Converter={StaticResource BoolToVisibility}}" />
                                         <Button Content="Terminate" FontSize="11" Padding="8,3"
                                                 Style="{ThemeResource DangerButtonStyle}"
-                                                Click="TerminateStudent_Click" Tag="{x:Bind Id}" />
+                                                Click="TerminateStudent_Click" Tag="{x:Bind Id}"
+                                                Visibility="{x:Bind IsActive, Converter={StaticResource BoolToVisibility}}" />
+                                        <!-- Inactive student: Restore button (blue) -->
+                                        <Button Content="Restore" FontSize="11" Padding="8,3"
+                                                Style="{ThemeResource PrimaryButtonStyle}"
+                                                Tag="{x:Bind Id}"
+                                                Click="RestoreStudent_Click"
+                                                Visibility="{x:Bind IsActive, Converter={StaticResource BoolToVisibilityNegate}}" />
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>

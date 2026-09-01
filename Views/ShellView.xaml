@@ -117,14 +117,6 @@
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavModeration" Tag="Moderation" Style="{ThemeResource IconButtonStyle}"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                            Click="NavItem_Click" Padding="10,9" Visibility="Collapsed">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE72E;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
-                            <TextBlock Text="Moderation" Style="{ThemeResource SidebarItemTextStyle}" />
-                        </StackPanel>
-                    </Button>
 
                     <Button x:Name="NavReportCards" Tag="ReportCards" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"

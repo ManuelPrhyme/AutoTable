@@ -28,7 +28,6 @@ namespace AutoTable.Views
             ["Gradebook"]          = ("Gradebook", "View consolidated marks, averages, ranks, and grades by class."),
             ["StudentPerformance"] = ("Student Performance", "Individual student performance summaries and trends."),
             ["Analytics"]          = ("Analytics", "Hierarchical performance analytics across classes and time."),
-            ["Moderation"]         = ("Moderation", "Review and approve marks before publishing."),
             ["ReportCards"]        = ("Report Cards", "Generate and print student report cards."),
             ["Teachers"]           = ("Teachers", "Register and manage teachers."),
             ["Students"]           = ("Students", "Manage student records, LIN identifiers, and termination."),
@@ -50,7 +49,6 @@ namespace AutoTable.Views
             ["Gradebook"]          = typeof(GradebookView),
             ["StudentPerformance"] = typeof(StudentPerformanceView),
             ["Analytics"]          = typeof(AnalyticsView),
-            ["Moderation"]         = typeof(ModerationView),
             ["ReportCards"]        = typeof(ReportCardsView),
             ["Teachers"]           = typeof(TeachersView),
             ["Students"]           = typeof(StudentsView),
@@ -116,7 +114,6 @@ namespace AutoTable.Views
             //     ? Visibility.Visible : Visibility.Collapsed;
 
             // DEV MODE: all pages visible to all roles
-            NavModeration.Visibility = Visibility.Visible;
             NavTermManagement.Visibility = Visibility.Visible;
             NavClasses.Visibility = Visibility.Visible;
             NavBudget.Visibility = Visibility.Visible;
@@ -294,11 +291,17 @@ namespace AutoTable.Views
             {
                 _activeNavButton.Background = new SolidColorBrush(Colors.Transparent);
                 _activeNavButton.Foreground = GetThemeBrush("TextOnDarkBrush");
+                _activeNavButton.BorderBrush = new SolidColorBrush(Colors.Transparent);
+                _activeNavButton.BorderThickness = new Thickness(0);
+                _activeNavButton.CornerRadius = new CornerRadius(8);
             }
 
-            // Set new active: slightly gray background highlight to mark the current tab
+            // Set new active: slightly gray background highlight with white bottom border to mark the current tab
             active.Background = GetThemeBrush("SidebarActiveBrush");
             active.Foreground = GetThemeBrush("TextOnDarkBrush");
+            active.BorderBrush = new SolidColorBrush(Colors.White);
+            active.BorderThickness = new Thickness(0, 0, 0, 2);
+            active.CornerRadius = new CornerRadius(0);
             _activeNavButton = active;
         }
 

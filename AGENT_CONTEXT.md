@@ -24,7 +24,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 
 ---
 
-## Current State (30 Aug 2026)
+## Current State (31 Aug 2026)
 
 ### Build: 0 errors, clean
 
@@ -34,6 +34,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - Full CRUD: Students, Teachers, Classes, Subjects, Terms, Assessments, Marks, Fees, Budget
 - All ViewModels use `AppServices.DataService` (no mock fallback)
 - A4 report-card printing (native Windows PrintManager)
+- **Report Cards PDF export** — per-student and batch PDF generation via QuestPDF (modular components); Export PDF saves all to one file, Print All saves each student as a separate PDF, Print opens Windows Print dialog
 - Grading systems domain (named scales with promotion/repeat bands)
 - Class creation single-modal rework (teacher + grading system + streams/subjects)
 - **Class edit modal** with full metadata editing (name, teacher, grading system) + streams/subjects
@@ -45,6 +46,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - **P5.3: Grade resolution via grading systems** — `GradeFromBands` replaces `GradeFromAverage`
 - **Multi-subject assessments** — ONE assessment per scope (Single/AllInClass/SpecificSubjects/AllInSchool); marks keyed per subject via Marks.SubjectId + AssessmentSubject link table; marks entry filters Class → Assessment → Subject (subject filter appears only for multi-subject papers); completion = students x linked subjects; idempotent patches + one-time mark back-fill
 - **Print hardening** — system print dialog (all installed printers + Microsoft Print to PDF), A4 portrait/color defaults, failure guard with clear message
+- **Print modal printer picker** — modal detects configured printers (`PrinterService` via GDI `PrinterSettings.InstalledPrinters`), lets the user choose one for single or batch print; prints directly to that printer via GDI `PrintDocument` (2x-rendered pages), or falls back to the OS dialog
 - **Term lifecycle fix** — IsActive is purely user-controlled; no end-date auto-deactivation (App.xaml.cs startup + UpdateTermAsync)
 - **TermFees table fix** — schema migration for existing DBs
 - **Financial Dashboard KPI merge** — term selector + merged KPI cards
@@ -54,41 +56,21 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - **Multi-subject NOT NULL constraint fix** — SQLite table-rebuild patch (`PatchAssessmentsNullableSubject`) makes `Assessments.SubjectId` nullable on legacy DBs (the "create multi-subject assessment" runtime error); stream IDs added via `PatchAssessmentsStreamIds` (StreamIdsCsv)
 - **Stream-granularity assessments** — new `AssessmentScope.Stream` (value 4) + `AssessmentItem.StreamIds`/`StreamNames`; stream papers target 1-N streams, persist StreamId (first) + StreamIdsCsv (all); marks entry rosters all target streams
 - **Expandable create-assessment modal** — initial display = 3 scope radio checkboxes (Entire School / Class / Stream); selecting a scope expands the details panel (name, class picker, Stream picker for stream scope, subject granularity, promotion role, weight, due date); entire modal scrollable (`ScrollViewer MaxHeight=460`, `ContentDialog MaxHeight=620`); `CalendarDatePicker` replaces the 3-list date picker; weight left-aligned
-- **Class-restricted subject filter** — Assessment page filter's Subject combo now populates from `GetSubjectsForClassAsync(classId)` (falls back to all subjects on "All classes"); a Stream filter appears before Subject only when the class has stream-scoped assessments
+- **Assessments — independent Stream/Subject filters** — changing Subject no longer resets Stream and vice versa; only Class changes reload option lists
 - **Marks Entry stream filter** — stream-scoped assessment shows a Stream dropdown (target streams + All) before Subject; `GetStudentMarksAsync` gained optional `streamName`
 - **Assessments sorted by creation date** — `AssessmentEntity.CreatedAt` + `PatchAssessmentsCreatedAt` (back-fills due-date proxy); `GetAssessmentsAsync` orders `OrderByDescending(CreatedAt).ThenByDescending(Id)`
-- **Students list overhaul** — status column (green dot Active / red dot Inactive with cause), Terminate button (red, white text, last) with reason modal (Completed / Expelled / ChangedSchool / Other -> "Terminated"), View button (read-only full-info modal), Edit button (editable modal), Shift button (class + stream change); column headers added; third column (Class) removed; `Student` gains `StatusText`, `InactiveCauseText`, `StatusDotSource`, `StatusLabel`, `TerminationYear`
+- **Students list overhaul** — status column (green dot Active / red/orange/blue dot Inactive with cause below "Inactive"), Terminate button (red, white text, last) with reason modal (Completed course / Expelled / Left school / Other), View button (read-only full-info modal), Edit button (editable modal), Shift button (class + stream change); column headers added; third column (Class) removed; `Student` gains `StatusText`, `InactiveCauseText`, `StatusDotSource`, `StatusLabel`, `TerminationYear`
+- **Marks Entry table header** — Changed "ADM NO." to "LIN" in the column header
+- **Student Restore** — Inactive students show Restore button (blue) instead of Shift/View/Edit; Restore sets IsActive=true on existing record, clears termination state
+- **Active student counts** — all counts filtered by `.IsActive` (Dashboard fixed; marks, fees, report cards, performance already correct)
+- **Student filter bar layout** — Search bar between filters and Add Student button (24px spacer); Add Student pushed to absolute right; Search bar widened (MinWidth=220)
 - **Sidebar branding** — title shows the configured School Name, subtitle shows the school motto, blue shape hosts the logo image from Settings LogoBytes (falls back to blue glyph)
 - **Grading system UI** — Delete becomes `DangerGhostButtonStyle` (stays red on hover, white on focus/pressed); `BandsSummary` renders `A - 90-100` (hyphen between designation and marks range)
 - **Toast infrastructure added then disabled (dev)** — `ToastService`/`NotificationStore` created + `AppServices.Toasts` wired, then every call site commented out (dev mode); infra left as dead types for later re-enable
-- **Students tab crash fix** — status-dot `Ellipse.Fill` was bound with `{StaticResource StatusColor}`; DataTemplates can't see Page/StackPanel-scoped resources, so it now binds the global `StatusColorConverter` (registered in App.xaml)
-- **ReportCards Search bar widened** — `MinWidth=280`/`MinHeight=32`, container `MinWidth=320` (extended ~80%)
-
-### What's In Progress (uncommitted, 40+ files)
-| Feature | Status |
-|---------|--------|
-| Grade resolution via grading systems (P5.3) | ✅ Code complete |
-| Assessment promotion role (P5.1) | ✅ Done |
-| Promotion/repeat flow (P5.2) | ✅ Done |
-| Analytics view/ViewModel | ✅ Code complete |
-| FeeCollection real data | ✅ Code complete |
-| Stream teacher assignment | ✅ Code complete |
-| Dashboard/ClassesView improvements | ✅ Code complete |
-| Class edit modal (name/teacher/grading system) | ✅ Done |
-| Immediate subject/stream persistence | ✅ Done |
-| Streams Add button fix | ✅ Done |
-| TermFees migration + KPI cards | ✅ Done |
-| Financial Dashboard merge | ✅ Done |
-| Fee Collection per-student amounts | ✅ Done |
-| LIN uniqueness gap fix | ✅ Done |
-| Multi-subject assessments (NOT NULL fix + stream scope) | ✅ Done |
-| Stream-granularity assessments (single + multi-stream) | ✅ Done |
-| Expandable/scrollable create-assessment modal | ✅ Done |
-| Assessment creation-date sorting | ✅ Done |
-| Students list (status, terminate, view, edit, shift) | ✅ Done |
-| Sidebar branding (school name/motto/logo) | ✅ Done |
-| Grading-system delete button styling + hyphen | ✅ Done |
-| Toast infra (added then disabled for dev) | 🔶 Disabled (dev) |
+- **Term Management header** — shell header updates to "Term Management" when navigating to term management page
+- **Term activeness persistence** — Set Active button hidden when term is active (Deactivate remains); both hidden when term has ended; button visibility controlled by `UpdateActiveIndicators()`
+- **Teachers table layout** — Applied Table.md spec: column widths (2*/1.5*/1.5*/1.5*/2*/1.2*), header padding 16,10, row padding 16,8, headers left-aligned, MaxHeight=480
+- **Status dot colors hardcoded** — Direct `SolidColorBrush` construction (Green=#27AE60, Blue=#2980B9, Orange=#F39C12, Red=#E74C3C) instead of ThemeResourceHelper lookup
 
 ### What's Next (P5 backlog)
 | # | Feature | Status |
@@ -118,21 +100,22 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - `AutoTable/Models/GradingSystemModels.cs` — `GradingSystemInfo`, `GradeBandInfo`
 - `Models/ReportCardModels.cs` — `ReportCardSheetModel`, `ReportCardAssessmentRow`
 - `AutoTable/Models/ClassInfo.cs` — ClassInfo DTO with `ClassTeacherId` and `GradingSystemId`
-- `AutoTable/Models/Student.cs` — Student DTO with enrollment fields
-- `AutoTable/Models/SimpleLookup.cs` — Id/Name DTO for lists
+- `AutoTable/Models/Student.cs` — Student DTO with enrollment fields, `StatusText`, `InactiveCauseText`, `StatusDotSource`, `StatusLabel`
+- `AutoTable/Models/SimpleLookup.cs` — Id/Name DTO for lists (now includes optional `IsActive` and `EndDate` for term lookups)
 
 ### Views & ViewModels
 - `Views/ClassesView.xaml.cs` — class management (single-modal create, edit modal with name/teacher/grading/streams/subjects, white chip UI with ✕ buttons)
 - `Views/AssessmentsView.xaml.cs` — expandable/scrollable assessment creation dialog (scope checkboxes Entire School / Class / Stream; class + stream pickers; subject granularity; promotion-role selector; CalendarDatePicker)
-- `ViewModels/AssessmentsViewModel.cs` — assessment page filters (Subject restricted to the selected class's subjects; conditional Stream filter before Subject)
+- `ViewModels/AssessmentsViewModel.cs` — assessment page filters (independent Stream + Subject; Subject restricted to the selected class's subjects; Stream filter always visible)
 - `Views/MarksEntryView.xaml` / `ViewModels/MarksEntryViewModel.cs` — marks entry with Class → Assessment → Subject ordering + conditional Stream filter (stream-scoped papers)
-- `AutoTable/Views/StudentsView.xaml(.cs)` — student list with status dots, headers, Shift / View / Edit / Terminate buttons + modals
+- `AutoTable/Views/StudentsView.xaml(.cs)` — student list with status dots (color-coded by cause), column headers, Restore (blue) / Shift / View / Edit / Terminate (red) buttons + modals; FilteredStudents exposed via code-behind for x:Bind
 - `Views/FeeCollectionView.xaml.cs` — fee collection with Record Payment modal (searchable typeahead, white text)
-- `Views/ReportCardsView.xaml.cs` — A4 report card preview + PrintManager printing
+- `Views/ReportCardsView.xaml.cs` — A4 report card preview + PrintManager printing + QuestPDF PDF generation via `ReportCardPdfGenerator`; Print per-student opens Print dialog; Print All saves individual PDFs via FolderPicker; Export PDF saves combined PDF via FileSavePicker
 - `Views/Controls/ReportCardSheetView.xaml` — A4 report card sheet control
-- `Views/ShellView.xaml(.cs)` — navigation shell with role-gated sidebar; loads School Name/Motto/Logo into the brand block
+- `Views/ShellView.xaml(.cs)` — navigation shell with role-gated sidebar; loads School Name/Motto/Logo into the brand block; includes TermManagement in PageMeta
+- `Views/TermManagementView.xaml(.cs)` — term management with active/ended button visibility logic
 - `Resources/DesignTokens.xaml` — theme resources incl. `DangerButtonStyle`, `DangerGhostButtonStyle`, `DangerProgressBarStyle`
-- `Converters/FormatConverters.cs` — converters incl. `StatusColorConverter` (Active/Inactive → green/red), `GradeColorConverter`
+- `Converters/FormatConverters.cs` — converters incl. `StatusColorConverter` (hardcoded colors: Active=Green, Completed=Blue, Expelled=Red, ChangedSchool=Orange), `StatusLabelConverter` (all terminated → "Inactive"), `GradeColorConverter`, `BoolToVisibilityConverter`, `BoolToVisibilityNegateConverter`
 
 ### Startup
 - `App.xaml.cs` — DB init, connection string, schema patches (ALTER TABLE for legacy DBs, TermFees table creation), ForeignKeyInterceptor registration
@@ -177,6 +160,28 @@ Admin role-gating (P5.4): gates are coded on all promotion commands but COMMENTE
 OUT (dev mode). Uncomment `SessionService.IsAdministrator` checks in
 `PromotionViewModel` + `ShellView.xaml.cs` before production.
 
+---
+
+## Student Status System
+
+| Status | Dot Color | Label | Cause Display |
+|--------|-----------|-------|---------------|
+| Active | 🟢 Green (#27AE60) | "Active" | — |
+| Inactive (Completed course) | 🔵 Blue (#2980B9) | "Inactive" | "Completed course" below |
+| Inactive (Expelled) | 🔴 Red (#E74C3C) | "Inactive" | "Expelled" below |
+| Inactive (Left school) | 🟠 Orange (#F39C12) | "Inactive" | "Left School" below |
+| Inactive (Other) | 🔴 Red (#E74C3C) | "Inactive" | "Other" below |
+
+- All terminated students show "Inactive" (not their specific status)
+- Specific cause displayed below the word "Inactive" in the table
+- Status dot colors are hardcoded `SolidColorBrush` values (not theme-dependent)
+- Inactive students excluded from all active-student operations (marks, fees, report cards, performance, dashboard counts)
+- Historical records (marks, fees, performance) remain intact for inactive students
+- Inactive students show Restore button (blue) instead of Shift/View/Edit/Terminate
+- Restore sets `IsActive=true` on existing record — no new student created
+
+---
+
 ## How to Run
 
 1. Build: `dotnet build AutoTable.csproj -p:Platform=x64`
@@ -197,4 +202,4 @@ See **IMPLEMENTATION_LOG.md** for a detailed, up-to-date log of what's being imp
 
 ---
 
-*Last updated: 30 Aug 2026 — Cline (autonomous agent)*
+*Last updated: 30 Aug 2026 — Buffy (Codebuff agent)*

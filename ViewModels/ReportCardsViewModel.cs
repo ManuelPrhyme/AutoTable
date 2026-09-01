@@ -29,6 +29,7 @@ namespace AutoTable.ViewModels
 
         // --- KPI metrics ---
         public int TotalStudents => ReportCards.Count;
+        public string TotalStudentsLabel => $"Total Students: {ReportCards.Count}";
         public int GeneratedCount => ReportCards.Count;
         public int PrintedCount { get; private set; }
 
@@ -175,6 +176,9 @@ namespace AutoTable.ViewModels
 
             foreach (var row in filtered)
                 ReportCards.Add(row);
+
+            OnPropertyChanged(nameof(TotalStudents));
+            OnPropertyChanged(nameof(TotalStudentsLabel));
         }
     }
 }

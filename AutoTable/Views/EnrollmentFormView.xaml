@@ -97,6 +97,19 @@
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
                 <StackPanel Spacing="12">
 
+                    <!-- Photo upload / preview -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                        <Border Width="110" Height="140" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6">
+                            <Image x:Name="PhotoPreview" Width="110" Height="140" Stretch="UniformToFill" />
+                        </Border>
+                        <StackPanel Spacing="6" VerticalAlignment="Top">
+                            <Button Content="Pick Photo" Click="PickPhoto_Click" Width="120" />
+                            <Button Content="Clear Photo" Click="ClearPhoto_Click" Width="120" />
+                            <TextBlock Text="Recommended: JPG/PNG, max 2 MB" FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" Width="120" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+
+
                     <TextBlock Text="RESIDENCY VERIFICATION"
                                FontSize="11" FontWeight="SemiBold"
                                Foreground="{ThemeResource TextSecondaryBrush}" />

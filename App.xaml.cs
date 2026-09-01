@@ -20,6 +20,7 @@ using AutoTable.Demo;
 using AutoTable.Services;
 using Microsoft.EntityFrameworkCore;
 using Velopack;
+using QuestPDF.Infrastructure;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -42,6 +43,10 @@ namespace AutoTable
         public App()
         {
             InitializeComponent();
+
+            // QuestPDF community licence — must be set before any PDF generation.
+            QuestPDF.Settings.License = LicenseType.Community;
+
             // Global exception handlers to capture runtime errors during startup and at runtime
             this.UnhandledException += App_UnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;

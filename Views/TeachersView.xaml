@@ -23,24 +23,26 @@
                         </Grid>
                     </Border>
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
-                        <Grid ColumnSpacing="16" Padding="16,0">
+                        <Grid ColumnSpacing="16" Padding="16,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*" />
                                 <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="1.2*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="NAME" />
-                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CONTACT" />
-                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECTS" />
-                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASSES" />
-                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="NEXT OF KIN" />
-                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="NAME" HorizontalAlignment="Left" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CONTACT" HorizontalAlignment="Left" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECTS" HorizontalAlignment="Left" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASSES" HorizontalAlignment="Left" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="NEXT OF KIN" HorizontalAlignment="Left" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" HorizontalAlignment="Left" />
                         </Grid>
                     </Border>
-                    <ListView ItemsSource="{Binding Teachers}" SelectionMode="None">
+                    <ListView ItemsSource="{Binding Teachers}" SelectionMode="None"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0" />
@@ -51,14 +53,14 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="models:Teacher">
-                                <Grid Padding="16,6" ColumnSpacing="16">
+                                <Grid Padding="16,8" ColumnSpacing="16">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="2*" />
                                         <ColumnDefinition Width="1.5*" />
                                         <ColumnDefinition Width="1.5*" />
                                         <ColumnDefinition Width="1.5*" />
                                         <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="1.2*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                                         <TextBlock Text="{x:Bind FullName}" FontWeight="SemiBold" TextWrapping="Wrap" />
@@ -80,8 +82,12 @@
                                         <TextBlock FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" Text="{x:Bind NextOfKinPhone}" TextWrapping="Wrap" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                        <Button Content="Edit" Click="EditTeacher_Click" Tag="{x:Bind Id}" />
-                                        <Button Content="Delete" Click="DeleteTeacher_Click" Tag="{x:Bind Id}" />
+                                        <Button Content="Edit" Style="{ThemeResource SecondaryButtonStyle}"
+                                                Padding="8,3" FontSize="12"
+                                                Click="EditTeacher_Click" Tag="{x:Bind Id}" />
+                                        <Button Content="Delete" Style="{ThemeResource DangerGhostButtonStyle}"
+                                                Padding="8,3" FontSize="12"
+                                                Click="DeleteTeacher_Click" Tag="{x:Bind Id}" />
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>

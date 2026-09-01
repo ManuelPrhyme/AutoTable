@@ -12,18 +12,6 @@ namespace AutoTable.Models
         public string Trend { get; set; } = string.Empty;
     }
 
-    public class ModerationItem
-    {
-        // Numeric DB id of the assessment (0 when unknown) — used by verify/publish actions
-        public int AssessmentId { get; set; }
-        public string AssessmentName { get; set; } = string.Empty;
-        public string ClassName { get; set; } = string.Empty;
-        public string Subject { get; set; } = string.Empty;
-        public int EntryCount { get; set; }
-        public string SubmittedBy { get; set; } = string.Empty;
-        public string Status { get; set; } = "Pending";
-    }
-
     public class ReportCardRow
     {
         public int Rank { get; set; }

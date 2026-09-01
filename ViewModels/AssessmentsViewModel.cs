@@ -45,7 +45,13 @@ namespace AutoTable.ViewModels
             _ = LoadAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => _ = ApplyFilterAsync();
+        partial void OnSelectedClassChanged(string value)
+        {
+            // Class change: reload both subject and stream options for the new class,
+            // then reapply the filter. Stream and Subject selections are preserved
+            // when they still exist in the new option lists.
+            _ = OnClassChangedAsync();
+        }
         partial void OnSelectedSubjectChanged(string value) => _ = ApplyFilterAsync();
         partial void OnSelectedStreamChanged(string value) => _ = ApplyFilterAsync();
 
@@ -102,45 +108,47 @@ namespace AutoTable.ViewModels
         }
 
         /// <summary>
-        /// Shows the Stream filter only when the selected class actually has stream-scoped
-        /// assessments; populates it with the class's streams (all streams when "All").
+        /// Populates the Stream filter with the selected class's streams (all streams when "All").
+        /// Stream and Subject filters are independent — both are always available.
         /// </summary>
         private async Task ReloadStreamOptionsAsync()
         {
-            var all = await _dataService.GetAssessmentsAsync();
-            var hasStreamScoped = all.Any(a => a.Scope == AssessmentScope.Stream &&
-                (SelectedClass == "All" || a.ClassName == SelectedClass));
-
             Streams.Clear();
             Streams.Add("All");
+            StreamFilterVisibility = Visibility.Visible;
 
-            if (hasStreamScoped)
+            if (SelectedClass != "All" && _classIds.TryGetValue(SelectedClass, out var classId))
             {
-                StreamFilterVisibility = Visibility.Visible;
-                if (SelectedClass != "All" && _classIds.TryGetValue(SelectedClass, out var classId))
-                {
-                    var streams = await _dataService.GetStreamsForClassAsync(classId);
-                    foreach (var st in streams) Streams.Add(st.Name);
-                }
-                else
-                {
-                    var allStreams = await _dataService.GetAllStreamsAsync();
-                    foreach (var st in allStreams) Streams.Add(st.Name);
-                }
+                var streams = await _dataService.GetStreamsForClassAsync(classId);
+                foreach (var st in streams) Streams.Add(st.Name);
             }
             else
             {
-                StreamFilterVisibility = Visibility.Collapsed;
-                if (SelectedStream != "All") SelectedStream = "All";
+                var allStreams = await _dataService.GetAllStreamsAsync();
+                foreach (var st in allStreams) Streams.Add(st.Name);
             }
+        }
+
+        /// <summary>Called when the Class filter changes: reloads subjects + streams, then filters.</summary>
+        private async Task OnClassChangedAsync()
+        {
+            var prevSubject = SelectedSubject;
+            var prevStream = SelectedStream;
+
+            await ReloadSubjectOptionsAsync();
+            await ReloadStreamOptionsAsync();
+
+            // Preserve previous selections if they still exist in the new option lists.
+            if (prevSubject != "All" && !Subjects.Contains(prevSubject))
+                SelectedSubject = "All";
+            if (prevStream != "All" && !Streams.Contains(prevStream))
+                SelectedStream = "All";
+
+            await ApplyFilterAsync();
         }
 
         private async Task ApplyFilterAsync()
         {
-            // Restrict subjects to the selected class's assigned subjects.
-            await ReloadSubjectOptionsAsync();
-            await ReloadStreamOptionsAsync();
-
             var all = await _dataService.GetAssessmentsAsync();
             var filtered = all.Where(a =>
                 (SelectedClass == "All" || a.ClassName == SelectedClass) &&

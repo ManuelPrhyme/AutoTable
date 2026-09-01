@@ -112,8 +112,8 @@
                         ItemsSource="{Binding Assessments}"
                         SelectionMode="None"
                         IsItemClickEnabled="False"
-                        MaxHeight="480"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0" />

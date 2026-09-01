@@ -6,9 +6,28 @@ using AutoTable.Models;
 using AutoTable.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 
 namespace AutoTable.Views
 {
+    /// <summary>Converts a bool to Visibility for x:Bind in DataTemplates.</summary>
+    public sealed class BoolToVisibilityConverter : Microsoft.UI.Xaml.Data.IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+            => value is true ? Visibility.Visible : Visibility.Collapsed;
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>Converts a bool to the opposite Visibility (true → Collapsed).</summary>
+    public sealed class BoolToVisibilityNegateConverter : Microsoft.UI.Xaml.Data.IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+            => value is true ? Visibility.Collapsed : Visibility.Visible;
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
     public sealed partial class StudentsView : Page
     {
         private readonly StudentsViewModel _vm;
@@ -20,6 +39,8 @@ namespace AutoTable.Views
         {
             _vm = new StudentsViewModel();
             DataContext = _vm;
+            Resources["BoolToVisibility"] = new BoolToVisibilityConverter();
+            Resources["BoolToVisibilityNegate"] = new BoolToVisibilityNegateConverter();
             InitializeComponent();
             Loaded += StudentsView_Loaded;
         }
@@ -93,7 +114,14 @@ namespace AutoTable.Views
                     await _vm.LoadAsync();
                 }
                 _vm.ApplyFilters();
+
+                // Close enrollment dialog first, then show the generated report card preview
                 dialog?.Hide();
+                try
+                {
+                    await form.ShowPreviewForStudentAsync(createdStudent!);
+                }
+                catch { }
             };
 
             // Modal-size.md standard: 1040 x 577 dialog. WinUI clamps ContentDialog width
@@ -182,9 +210,9 @@ namespace AutoTable.Views
                 ItemsSource = new List<KeyValuePair<StudentTerminationReason, string>>
                 {
                     new(StudentTerminationReason.Completed, "Completed course"),
-                    new(StudentTerminationReason.Expelled, "Terminated (expelled)"),
-                    new(StudentTerminationReason.ChangedSchool, "Terminated (left school)"),
-                    new(StudentTerminationReason.Other, "Terminated (other)")
+                    new(StudentTerminationReason.Expelled, "Expelled"),
+                    new(StudentTerminationReason.ChangedSchool, "Left school"),
+                    new(StudentTerminationReason.Other, "Other")
                 },
                 DisplayMemberPath = "Value",
                 SelectedIndex = 0
@@ -463,6 +491,83 @@ namespace AutoTable.Views
             }
         }
 
+
+        /// <summary>
+        /// Restores an inactive student: shows their existing info in a read-only dialog,
+        /// then reactivates them on confirmation.
+        /// </summary>
+        private async void RestoreStudent_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is not int studentId) return;
+            var student = _vm.Students.FirstOrDefault(s => s.Id == studentId);
+            if (student == null) return;
+            if (student.IsActive)
+            {
+                await ShowMessageAsync("Already active", $"{student.FullName} is already active.");
+                return;
+            }
+
+            // Build a summary of the student's existing data
+            var panel = new StackPanel { Spacing = 10, MinWidth = 400 };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Restoring this student will set them back to Active status.", FontSize = 12,
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextSecondaryBrush"],
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            var fields = new (string, string)[]
+            {
+                ("Name", student.FullName),
+                ("LIN", student.LIN),
+                ("Class", student.ClassName ?? "—"),
+                ("Stream", student.StreamName ?? "—"),
+                ("Gender", student.Gender ?? "—"),
+                ("Guardian", student.GuardianName ?? "—"),
+                ("Guardian Phone", student.GuardianPhone ?? "—"),
+                ("Inactive Cause", student.InactiveCauseText),
+            };
+
+            foreach (var (label, val) in fields)
+            {
+                var row = new Grid { ColumnSpacing = 12 };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.Children.Add(new TextBlock { Text = label, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextSecondaryBrush"] });
+                var valBlock = new TextBlock { Text = val };
+                Grid.SetColumn(valBlock, 1);
+                row.Children.Add(valBlock);
+                panel.Children.Add(row);
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Restore {student.FullName}?",
+                Content = panel,
+                PrimaryButtonText = "Restore",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                student.IsActive = true;
+                student.TerminationReason = StudentTerminationReason.None;
+                student.TerminationDate = null;
+                await AppServices.DataService!.UpdateStudentAsync(student);
+                _vm.ApplyFilters();
+                _vm.StatusMessage = $"{student.FullName} has been restored to active status.";
+            }
+            catch (Exception ex)
+            {
+                await ShowMessageAsync("Unable to restore student", ex.Message);
+            }
+        }
 
         private async Task ShowMessageAsync(string title, string content)
         {

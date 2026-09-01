@@ -7,7 +7,163 @@
 
 ---
 
-## Current Session: 30 Aug 2026
+## Current Session: 31 Aug 2026
+
+**Branch:** `sql_rec`
+**Build:** 0 errors (full solution)
+**Working tree:** Active session
+
+---
+
+### Marks Entry Table Header Update ✅ DONE
+
+Changed "ADM NO." to "LIN" in the Marks Entry table column header.
+
+| File | Change |
+|------|--------|
+| `Views/MarksEntryView.xaml` | Updated column header text from "ADM NO." to "LIN" |
+
+---
+
+### Previous Session: 30 Aug 2026 (Session 2)
+
+**Branch:** `sql_rec`
+**Build:** 0 errors (full solution)
+**Working tree:** Active session (30+ files, commit pending)
+
+---
+
+### Print Modal — Configured Printer Detection & Direct Printing ✅ DONE
+
+The Report Cards print modal now detects every configured printer on the machine and lets
+the user pick which one to print with — for a single student or a whole batch — without
+needing the OS print dialog.
+
+| File | Change |
+|------|--------|
+| `AutoTable.csproj` | Added `System.Drawing.Common 8.0.11` (GDI printing + printer enumeration) |
+| `AutoTable/Services/PrinterService.cs` | **New.** `GetInstalledPrinters()` via `PrinterSettings.InstalledPrinters` (lists local + network printers, incl. "Microsoft Print to PDF"); `GetDefaultPrinterName()` via `new PrinterSettings().PrinterName`; `PrintBitmaps(printerName, copies, pages, out error)` — spools one GDI `PrintDocument` job to the chosen printer (A4 preferred, copies passed to driver); `BitmapFromBgraPixels()` converts WinUI BGRA8 pixels to a GDI bitmap |
+| `Views/ReportCardsView.xaml` | Added off-screen `RenderHost` grid (`Opacity=0`, parked at -5000,-5000) so report-card sheets can be rasterized for direct printing |
+| `Views/ReportCardsView.xaml.cs` | Modal printer combo populated with detected printers (default marked "(Default)") + a "System print dialog…" fallback; copies NumberBox wired; sheets rasterized at 2x via `RenderTargetBitmap.RenderAsync(element, w, h)` and sent straight to the selected printer; live status text updates during render/send; Print path keeps the modal open while working, closes it on completion |
+
+How it works:
+1. User opens the print modal (single row **Print** or **Print All**).
+2. Combo shows every configured printer, default preselected — no hard-coded "Default Printer".
+3. Choosing a real printer prints **directly to it** (GDI `PrintDocument`, no OS dialog).
+4. Choosing "System print dialog…" keeps the old WinUI PrintManager flow.
+5. Copies are honored for both paths.
+
+Notes / verification:
+- ContentDialog content is capturable-free (Popup) — sheets are parked in the page's
+  `RenderHost` before `RenderTargetBitmap.RenderAsync` (which supports scaled rendering).
+- Tuning: `renderScale = 2` (≈196 DPI on A4) keeps memory low for big batches.
+- Verified on this dev box: enumeration returns "Microsoft XPS Document Writer",
+  "Microsoft Print to PDF" (default), "Fax", "ALPDF"; `PrintBitmaps("Microsoft Print to PDF", 1, page)` → success.
+- Build: 0 errors. App launches cleanly.
+
+---
+
+### Build & Crash Fixes ✅ DONE
+
+| Fix | Root Cause | Solution |
+|-----|-----------|----------|
+| WMC9999 XAML compiler error | Stale obj/ folder from ARM64 build | `rm -rf bin obj` + clean rebuild |
+| WMC0601 missing App.xaml in obj | Same stale cache | Resolved by clean rebuild |
+| `FilteredStudents` binding error | `{x:Bind}` targets code-behind, not ViewModel | Added forwarding property on `StudentsView.xaml.cs`; moved `_vm` before `InitializeComponent()` |
+| Students tab crash | `StatusColor` converter in `StackPanel.Resources`; `x:Bind` looks up at Page scope | Moved converters to `Page.Resources` |
+
+### Nullable/Unused Variable Warnings ✅ DONE
+
+| File | Warning | Fix |
+|------|---------|-----|
+| `IDataService.cs` | CS8604 — nullable `className` mismatch | Made `className` parameter `string?` in `GetReportCardListAsync` / `GetMidTermSlipsAsync` |
+| `DatabaseDataService.cs` | Same (implementation) | Updated implementations to match `string?` |
+| `MockDataServiceAdapter.cs` | CS8767 — nullability mismatch | Updated to match interface |
+| `DatabaseDataService.cs:2625-2626` | CS8602 — possible null dereference | Added null-forgiving operator on `ThenInclude` lambdas |
+| `AssessmentsView.xaml.cs:476` | CS0219 — `authorId` unused | Removed unused variable and dead code block |
+
+### Student Status System ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Converters/FormatConverters.cs` | `StatusLabelConverter` — all terminated students show "Inactive"; `StatusColorConverter` — hardcoded colors (Green #27AE60, Blue #2980B9, Orange #F39C12, Red #E74C3C) instead of ThemeResourceHelper |
+| `AutoTable/Models/Student.cs` | `InactiveCauseText` shows specific reason ("Completed course", "Expelled", "Left School", "Other") instead of generic "Terminated" |
+| `AutoTable/Views/StudentsView.xaml` | Status column restructured: vertical StackPanel with cause text below "Inactive" word; converters moved to `Page.Resources` |
+| `ViewModels/DashboardViewModel.cs` | Student count fixed to filter by `s.IsActive` (was counting ALL students) |
+
+Inactive students are excluded from all active-student operations (marks, fees, report cards, performance, dashboard counts). Historical records remain intact.
+
+### Student Filter Bar Layout ✅ DONE
+
+| File | Change |
+|------|--------|
+| `AutoTable/Views/StudentsView.xaml` | Search bar between filters and Add Student (24px spacer column 4); Add Student at absolute right (HorizontalAlignment="Right"); Search MinWidth=220 |
+
+### Student Restore ✅ DONE
+
+| File | Change |
+|------|--------|
+| `AutoTable/Views/StudentsView.xaml` | Action buttons conditionally visible: active → Shift/View/Edit/Terminate; inactive → Restore (blue PrimaryButtonStyle) |
+| `AutoTable/Views/StudentsView.xaml.cs` | `BoolToVisibilityConverter` + `BoolToVisibilityNegateConverter` registered; `RestoreStudent_Click` handler: confirmation dialog → sets `IsActive=true`, clears termination, calls `UpdateStudentAsync` |
+
+Restore sets `IsActive=true` on existing record — no new student created. All active-student operations automatically include restored students.
+
+### Term Management Enhancements ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Views/ShellView.xaml.cs` | Added "TermManagement" to `PageMeta` — header updates on navigation |
+| `AutoTable/Models/SimpleLookup.cs` | Added optional `IsActive` and `EndDate` properties |
+| `AutoTable/Services/DatabaseDataService.cs` | `GetTermLookupsAsync` populates `IsActive` and `EndDate` from DB |
+| `Views/TermManagementView.xaml` | Added `x:Name="ActivateBtn"` and `x:Name="DeactivateBtn"` to buttons |
+| `Views/TermManagementView.xaml.cs` | `UpdateActiveIndicators()` controls button visibility: Active → Deactivate only; Inactive (not ended) → Set Active only; Ended → both hidden |
+
+### Shift Modal — Stream Filtering ✅ DONE
+
+| File | Change |
+|------|--------|
+| `AutoTable/ViewModels/StudentsViewModel.cs` | Split `LoadClassAndStreamOptionsAsync()` into `LoadClassOptionsAsync()` + `LoadStreamsForClassAsync(int classId)` |
+| `AutoTable/Views/StudentsView.xaml.cs` | `ShiftEnrollment_Click` loads streams for current class; `classBox.SelectionChanged` dynamically reloads streams; stream ComboBox resets on class change |
+
+### Teachers Table — Table.md Layout ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Views/TeachersView.xaml` | Column widths (2*/1.5*/1.5*/1.5*/2*/1.2*), header padding 16,10, row padding 16,8, headers left-aligned, MaxHeight=480 |
+
+### Assessments — Independent Stream/Subject Filters ✅ DONE
+
+| File | Change |
+|------|--------|
+| `ViewModels/AssessmentsViewModel.cs` | `OnSelectedSubjectChanged` and `OnSelectedStreamChanged` only call `ApplyFilterAsync()` (no option reload); `OnClassChangedAsync` preserves previous selections when still valid |
+
+### Report Cards — PDF Export + Print ✅ DONE
+
+| File | Change |
+|------|--------|
+| `AutoTable.csproj` | QuestPDF NuGet package for PDF generation |
+| `Views/ReportCardsView.xaml.cs` | **Export PDF**: FileSavePicker → combined PDF via QuestPDF; **Print All**: FolderPicker → individual PDFs per student; **Print** (per-student): opens Windows Print dialog via PrintManager pipeline |
+
+### Moderation Removed ✅ DONE
+
+| File | Change |
+|------|--------|
+| `Views/ModerationView.xaml` | Deleted |
+| `Views/ModerationView.xaml.cs` | Deleted |
+| `ViewModels/ModerationViewModel.cs` | Deleted |
+| `Models/PerformanceModels.cs` | Removed `ModerationItem` class |
+| `Services/NavigationService.cs` | Removed "Moderation" route |
+| `Views/ShellView.xaml` | Removed `NavModeration` sidebar button |
+| `Views/ShellView.xaml.cs` | Removed from `PageMeta`, `Routes`, `NavModeration.Visibility` |
+| `AutoTable/Services/IDataService.cs` | Removed `VerifyAssessmentAsync`, `PublishAssessmentAsync` |
+| `AutoTable/Services/DatabaseDataService.cs` | Removed implementations |
+| `Demo/MockDataServiceAdapter.cs` | Removed mock moderation methods |
+| `ViewModels/DashboardViewModel.cs` | Removed "ready for moderation" insight |
+| `ViewModels/AiInsightsViewModel.cs` | Removed "ready for moderation" recommendation |
+
+---
+
+## Previous Session: 30 Aug 2026
 
 **Branch:** `sql_rec`
 **Build:** 0 errors (full solution)
@@ -381,6 +537,8 @@ Three fixes to the Classes & Subjects page:
 | — | Report Cards: batch progress indicator | ✅ **DONE** |
 | — | Report Cards: filter bar redesign (2-row) | ✅ **DONE** |
 | — | Report Cards: assessment column balancing | ✅ **DONE** |
+| — | Report Cards: PDF export (combined + individual) | ✅ **DONE** |
+| — | Report Cards: Print All → individual PDFs | ✅ **DONE** |
 | — | Gradebook: "All" filter option | ✅ **DONE** |
 | — | Assessment donut progress | ✅ **DONE** |
 | — | Assessment author column | ✅ **DONE** |
@@ -398,6 +556,13 @@ Three fixes to the Classes & Subjects page:
 | — | Classes & Subjects layout fixes | ✅ **DONE** |
 | — | Delete buttons borderless | ✅ **DONE** |
 | — | Edit button clipping fix | ✅ **DONE** |
+| — | Student status system (inactive display, restore, colors) | ✅ **DONE** |
+| — | Student filter bar layout (search + add student) | ✅ **DONE** |
+| — | Term activeness persistence (button visibility) | ✅ **DONE** |
+| — | Shift modal stream filtering | ✅ **DONE** |
+| — | Assessments independent filters | ✅ **DONE** |
+| — | Moderation removed | ✅ **DONE** |
+| — | Build/crash fixes (XAML compiler, x:Bind, resources) | ✅ **DONE** |
 
 ---
 
@@ -459,6 +624,39 @@ Class.GradingSystem → GradingSystems.FirstOrDefault(IsDefault) → fallback to
 // DEV MODE: All users have full access during development.
 ```
 
+### Student Status System (30 Aug)
+```
+Active:        Green dot (#27AE60) + "Active" label
+Inactive:      Color dot by cause + "Inactive" label + cause below
+  Completed:   Blue (#2980B9)
+  Expelled:    Red (#E74C3C)
+  Left School: Orange (#F39C12)
+  Other:       Red (#E74C3C)
+Button logic:  Active → Shift/View/Edit/Terminate; Inactive → Restore (blue)
+Restore:       Sets IsActive=true on existing record, clears termination
+Counts:        All queries filter by .IsActive (Dashboard fixed 30 Aug)
+```
+
+### x:Bind Code-Behind Pattern (30 Aug)
+```csharp
+// When x:Bind targets a property not on the ViewModel:
+// Add forwarding property on code-behind, initialize VM BEFORE InitializeComponent()
+public ObservableCollection<Student> FilteredStudents => _vm.FilteredStudents;
+public ReportCardsView() {
+    _vm = new StudentsViewModel();  // BEFORE InitializeComponent
+    InitializeComponent();
+    DataContext = ViewModel;
+}
+```
+
+### PDF Export (30 Aug)
+```csharp
+// QuestPDF for report card PDF generation
+// Export PDF: FileSavePicker → combined PDF
+// Print All: FolderPicker → individual PDFs per student
+// Print: PrintManager pipeline → Windows Print dialog
+```
+
 ---
 
 ## Next Actions — Remaining Gaps
@@ -492,7 +690,8 @@ Class.GradingSystem → GradingSystems.FirstOrDefault(IsDefault) → fallback to
 | 27 Aug | School Settings + student ID fix + mid-term wiring | School Settings page, fixed head teacher comment student ID, mid-term slips read from settings |
 | 27 Aug | **Crash fixes + UI layout + schema consolidation** | Report Cards crash fix (3 root causes), schema patches consolidation, head teacher termId fix, batch progress indicator, filter bar redesign, assessment column balancing, term management layout, classes & subjects layout fixes |
 | 28 Aug | **5-state promotion roles + multi-subject assessments** | PromotionRole 5-state model, report-card/promotion classification rework, multi-subject assessments (link table, subject-aware marks, dynamic subject filter at marks entry), print hardening (PDF/any printer), active-term user control, UI polish |
+| 30 Aug | **Build fixes + Student status + PDF export + UI** | XAML compiler/Binding/crash fixes, nullable warnings, student status system (inactive display/restore/colors), filter bar layout, term management enhancements, shift stream filtering, teachers table spec, assessments independent filters, ReportCards PDF export (QuestPDF), Print All individual PDFs, moderation removed |
 
 ---
 
-*Last updated: 28 Aug 2026 — Buffy (Codebuff agent)*
+*Last updated: 30 Aug 2026 — Buffy (Codebuff agent)*

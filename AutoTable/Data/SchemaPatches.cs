@@ -85,6 +85,7 @@ namespace AutoTable.Data
             AddColumnIfMissing(conn, "Students", "EmergencyRelationship", "ALTER TABLE Students ADD COLUMN EmergencyRelationship TEXT;");
             AddColumnIfMissing(conn, "Students", "EmergencyPhone", "ALTER TABLE Students ADD COLUMN EmergencyPhone TEXT;");
             AddColumnIfMissing(conn, "Students", "AuthorizedPickupPerson", "ALTER TABLE Students ADD COLUMN AuthorizedPickupPerson TEXT;");
+            AddColumnIfMissing(conn, "Students", "PhotoBytes", "ALTER TABLE Students ADD COLUMN PhotoBytes BLOB;");
         }
 
         // ── Users (Teachers) ───────────────────────────────────────────────

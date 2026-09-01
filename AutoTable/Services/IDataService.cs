@@ -114,10 +114,6 @@ namespace AutoTable.Services
         Task DeleteMarkAsync(int assessmentId, int studentId, string? subjectName = null);
         Task UpdateAssessmentCompletionAsync(int assessmentId);
 
-        // Moderation lifecycle (Phase 4)
-        Task VerifyAssessmentAsync(int assessmentId, bool verified);
-        Task PublishAssessmentAsync(int assessmentId, bool published);
-
         // Fee payment reads (Phase 5)
         Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null);
 

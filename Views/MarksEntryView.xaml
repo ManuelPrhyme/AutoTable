@@ -110,7 +110,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT NAME" />
-                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="MARK (/100)" />
                             <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="GRADE" />

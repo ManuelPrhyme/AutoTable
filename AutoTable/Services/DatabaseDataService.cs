@@ -224,30 +224,6 @@ namespace AutoTable.Services
             await db.SaveChangesAsync();
         }
 
-        // Moderation lifecycle (Phase 4)
-        public async Task VerifyAssessmentAsync(int assessmentId, bool verified)
-        {
-            using var db = CreateContext();
-            var a = await db.Assessments.FindAsync(assessmentId);
-            if (a == null) throw new InvalidOperationException("Assessment not found.");
-            a.IsVerified = verified;
-            if (!verified) a.IsPublished = false; // un-verifying also unpublishes
-            db.Assessments.Update(a);
-            await db.SaveChangesAsync();
-        }
-
-        public async Task PublishAssessmentAsync(int assessmentId, bool published)
-        {
-            using var db = CreateContext();
-            var a = await db.Assessments.FindAsync(assessmentId);
-            if (a == null) throw new InvalidOperationException("Assessment not found.");
-            if (published && !a.IsVerified)
-                throw new InvalidOperationException("Assessment must be verified before it can be published.");
-            a.IsPublished = published;
-            db.Assessments.Update(a);
-            await db.SaveChangesAsync();
-        }
-
         // Fee payment reads (Phase 5)
         public async Task<IReadOnlyList<FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null)
         {
@@ -1440,6 +1416,37 @@ namespace AutoTable.Services
             // Resolve school settings
             var schoolSettings = await GetSchoolSettingsAsync();
 
+            // Build gradebook summary (per-subject Cat1/Cat2/Mid/End/Avg/Grade/Status)
+            var gradebookSummary = new List<Models.GradebookSummaryRow>();
+            var subjects = await GetSubjectsForClassAsync(cls.Id);
+            foreach (var subj in subjects)
+            {
+                var gbRows = await GetGradebookAsync(
+                    cls.Name, subj.Name,
+                    term: termEntity.Name,
+                    studentName: student.FullName);
+                foreach (var gb in gbRows)
+                {
+                    var gbAvg = gb.Average;
+                    var gbGrade = gbAvg > 0 ? GradeFromBands(gbAvg, bandInfos) : "-";
+                    var gbStatus = gbAvg < passMark ? "At Risk"
+                        : gbAvg >= 70 ? "Excellent"
+                        : gbAvg > 0 ? "On Track"
+                        : "No Data";
+                    gradebookSummary.Add(new Models.GradebookSummaryRow
+                    {
+                        Subject = gb.Subject,
+                        Cat1 = Math.Round(gb.Cat1, 1),
+                        Cat2 = Math.Round(gb.Cat2, 1),
+                        MidTerm = Math.Round(gb.MidTerm, 1),
+                        EndTerm = Math.Round(gb.EndTerm, 1),
+                        Average = Math.Round(gbAvg, 1),
+                        Grade = gbGrade,
+                        Status = gbStatus
+                    });
+                }
+            }
+
             return new Models.ReportCardSheetModel
             {
                 SchoolName = schoolSettings.SchoolName,
@@ -1458,6 +1465,7 @@ namespace AutoTable.Services
                 HeadTeacher = schoolSettings.HeadTeacherName,
                 HeadTeacherComment = await GetHeadTeacherCommentAsync(student.Id, termEntity.Id),
                 LogoBytes = schoolSettings.LogoBytes,
+                StudentPhotoBytes = student.PhotoBytes,
                 GradingSystemName = gradingSystem?.Name ?? string.Empty,
                 PassMark = passMark,
                 PromotionalAssessments = promotional,
@@ -1466,7 +1474,8 @@ namespace AutoTable.Services
                 OverallGrade = overallGrade,
                 Rank = rank,
                 Status = status,
-                TeacherComment = teacherComment
+                TeacherComment = teacherComment,
+                GradebookSummary = gradebookSummary
             };
         }
 
@@ -1817,6 +1826,10 @@ namespace AutoTable.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
+                // map photo bytes if provided
+                if (student.PhotoBytes != null && student.PhotoBytes.Length > 0)
+                    entity.PhotoBytes = student.PhotoBytes;
+
                 // map extended enrollment fields if provided on the model
                 entity.AdmissionNumber = student.AdmissionNumber ?? entity.AdmissionNumber;
                 entity.GuardianName = student.GuardianName;
@@ -1926,6 +1939,8 @@ namespace AutoTable.Services
             e.EmergencyRelationship = student.EmergencyRelationship;
             e.EmergencyPhone = student.EmergencyPhone;
             e.AuthorizedPickupPerson = student.AuthorizedPickupPerson;
+            // Persist photo bytes when updating
+            e.PhotoBytes = student.PhotoBytes;
             await db.SaveChangesAsync();
 
             return student;

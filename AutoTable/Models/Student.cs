@@ -19,12 +19,14 @@ namespace AutoTable.Models
         // ── Display helpers (plain strings so the model stays UI-framework agnostic) ──
         /// <summary>"Active" or "Inactive" — drives the status dot and its label.</summary>
         public string StatusText => IsActive ? "Active" : "Inactive";
-        /// <summary>Cause of inactivity: "Completed course" for Completed, otherwise "Terminated".</summary>
+        /// <summary>Specific cause of inactivity shown below the "Inactive" label.</summary>
         public string InactiveCauseText => !IsActive
             ? TerminationReason switch
             {
-                StudentTerminationReason.Completed => "Completed course",
-                _ => "Terminated"
+                StudentTerminationReason.Completed   => "Completed course",
+                StudentTerminationReason.Expelled     => "Expelled",
+                StudentTerminationReason.ChangedSchool => "Left School",
+                _                                     => "Other"
             }
             : string.Empty;
         /// <summary>
@@ -67,5 +69,7 @@ namespace AutoTable.Models
         public string? EmergencyRelationship { get; set; }
         public string? EmergencyPhone { get; set; }
         public string? AuthorizedPickupPerson { get; set; }
+        /// <summary>Raw photo bytes uploaded during enrollment (optional).</summary>
+        public byte[]? PhotoBytes { get; set; }
     }
 }

@@ -92,13 +92,6 @@ namespace AutoTable.Demo
             return Task.CompletedTask;
         }
 
-        // Moderation lifecycle (mock: no-op / passthrough)
-        public Task VerifyAssessmentAsync(int assessmentId, bool verified)
-            => Task.CompletedTask;
-
-        public Task PublishAssessmentAsync(int assessmentId, bool published)
-            => Task.CompletedTask;
-
         // Fee payment reads (mock: empty)
         public Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null)
             => Task.FromResult<IReadOnlyList<AutoTable.Models.FeePaymentSummary>>(Array.Empty<AutoTable.Models.FeePaymentSummary>());

@@ -26,6 +26,9 @@ namespace AutoTable.Data.Entities
         public DateTime? TerminationDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        /// <summary>Optional student photo (raw image bytes) stored at enrollment.</summary>
+        public byte[]? PhotoBytes { get; set; }
+
         // Extended enrollment fields
         public string? GuardianName { get; set; }
         public string? GuardianRelationship { get; set; }

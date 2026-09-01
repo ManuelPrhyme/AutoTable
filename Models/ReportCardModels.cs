@@ -85,7 +85,30 @@ namespace AutoTable.Models
         public bool HasPromotional => PromotionalAssessments.Count > 0;
         public bool HasContributory => ContributoryAssessments.Count > 0;
 
+        // Gradebook summary (per-subject Cat1/Cat2/Mid/End/Avg/Grade/Status)
+        public List<GradebookSummaryRow> GradebookSummary { get; set; } = new();
+        public bool HasGradebookSummary => GradebookSummary.Count > 0;
+
+        /// <summary>Student photo bytes for embedding on the report card (optional).</summary>
+        public byte[]? StudentPhotoBytes { get; set; }
+
         /// <summary>Logo image bytes — set from SchoolSettings.</summary>
         public byte[]? LogoBytes { get; set; }
+    }
+
+    /// <summary>
+    /// Per-subject gradebook summary row shown on the report card.
+    /// Shows Cat1, Cat2, MidTerm, EndTerm marks plus Average, Grade and Status.
+    /// </summary>
+    public class GradebookSummaryRow
+    {
+        public string Subject { get; set; } = string.Empty;
+        public double Cat1 { get; set; }
+        public double Cat2 { get; set; }
+        public double MidTerm { get; set; }
+        public double EndTerm { get; set; }
+        public double Average { get; set; }
+        public string Grade { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
     }
 }

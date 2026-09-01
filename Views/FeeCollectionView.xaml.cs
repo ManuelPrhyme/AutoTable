@@ -106,9 +106,14 @@ namespace AutoTable.Views
                 Visibility = Visibility.Collapsed
             };
 
+            // Declared BEFORE the local functions below that capture them
+            // (assigned once the "All classes"/"All streams" items are built).
+            SimpleLookup? classFilterSelection = null;
+            SimpleLookup? streamFilterSelection = null;
+
             void UpdateHint()
             {
-                var className = selectedStudent?.ClassName ?? ViewModel.SelectedClass;
+                var className = selectedStudent?.ClassName ?? classFilterSelection?.Name ?? ViewModel.SelectedClass;
                 hint.Text = $"Class: {(string.IsNullOrEmpty(className) ? "-" : className)}   |   Term: {termLabel}"
                           + (expected.HasValue ? $"   |   Expected: {expected.Value:N0}" : "");
                 amountBox.Header = expected.HasValue ? $"Amount (expected: {expected.Value:N0})" : "Amount";
@@ -126,10 +131,7 @@ namespace AutoTable.Views
                 }
                 catch { }
             }
-            // Declared BEFORE the local functions below that capture them
-            // (assigned once the "All classes"/"All streams" items are built).
-            SimpleLookup? classFilterSelection = null;
-            SimpleLookup? streamFilterSelection = null;
+
 
             async Task PopulateResultsAsync(string query)
             {
@@ -334,6 +336,21 @@ namespace AutoTable.Views
             };
 
             var filterRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            // Default the modal's class filter to the page-selected class when possible
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(ViewModel.SelectedClass) && ViewModel.SelectedClass != "All")
+                {
+                    var match = classFilterItems.OfType<SimpleLookup>().FirstOrDefault(c => string.Equals(c.Name, ViewModel.SelectedClass, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                    {
+                        classFilter.SelectedItem = match;
+                        classFilterSelection = match;
+                    }
+                }
+            }
+            catch { }
+
             filterRow.Children.Add(classFilter);
             filterRow.Children.Add(streamFilter);
 

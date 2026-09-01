@@ -21,7 +21,7 @@ namespace AutoTable.Services
             ["Gradebook"]          = typeof(Views.GradebookView),
             ["StudentPerformance"] = typeof(Views.StudentPerformanceView),
             ["Analytics"]          = typeof(Views.AnalyticsView),
-            ["Moderation"]         = typeof(Views.ModerationView),
+
             ["ReportCards"]        = typeof(Views.ReportCardsView),
             ["AiInsights"]         = typeof(Views.AiInsightsView),
             // Financials

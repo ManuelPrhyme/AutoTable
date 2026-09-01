@@ -33,7 +33,7 @@ this spec serves that single rule.
 | `{COLUMN_SPACING}` | Grid `ColumnSpacing` (both grids) | `4` |
 | `{HEADER_PADDING}` | Header border padding `left,top` | `16,10` |
 | `{ROW_PADDING}` | Row grid padding `left,top` | `16,8` |
-| `{ROW_MAX_HEIGHT}` | ListView scroll cap (px) | `480` |
+| `{ROW_MAX_HEIGHT}` | *(deprecated)* — no longer used | N/A |
 
 ---
 
@@ -159,21 +159,85 @@ Wire text styles from the shared design tokens (in `Resources\DesignTokens.xaml`
 | Cell text | `{CELL_STYLE}` | Segoe UI, 14px, `Regular`, `TextPrimaryBrush`, `VerticalAlignment=Center`, **`HorizontalAlignment=Left`** |
 | Numeric cell | `{NUMERIC_STYLE}` | Segoe UI, 14px, `SemiBold`, `VerticalAlignment=Center` |
 | Special cell | *(your overrides)* | e.g. secondary text: 11px + `TextSecondaryBrush` |
-| Row geometry | item container | `MinHeight=0`, cell padding `{ROW_PADDING}` → compact rows |
-
-The column-header band is a `Border` using `{COLUMN_HEADER_STYLE}` — typically a shaded
+| Row geometry | item container | `MinHeight=0`, cell padding `{ROW_PADDING}` → compact rows |The column-header band is a `Border` using `{COLUMN_HEADER_STYLE}` — typically a shaded
 `SurfaceGray2Brush` background with a `0,0,0,1` bottom border — a subtle band that
 visually separates labels from data while sharing their geometry.
 
 ---
 
+## 5b. Action buttons in table rows
+
+Every action button inside a table row uses a **compact, uniform size** so rows stay
+lean and buttons don't dominate the layout.
+
+| Property | Value | Notes |
+|----------|-------|-------|
+| `FontSize` | `11` or `12` | 11px for dense tables (Students), 12px for tables with more breathing room (Report Cards, Teachers) |
+| `Padding` | `8,3` | Horizontal 8px, vertical 3px — keeps buttons tight without clipping text |
+| `Style` | `{ThemeResource SecondaryButtonStyle}` | Default for neutral actions (View, Edit, Shift) |
+| `Style` | `{ThemeResource PrimaryButtonStyle}` | For the primary/affirmative action (Print) |
+| `Style` | `{ThemeResource DangerButtonStyle}` | For destructive actions (Terminate, Delete) |
+| `Style` | `{ThemeResource DangerGhostButtonStyle}` | Subtle destructive action (Delete in Teachers) |
+
+Example (dense row — Students):
+```xml
+<Button Content="Edit" FontSize="11" Padding="8,3"
+        Style="{ThemeResource SecondaryButtonStyle}"
+        Click="EditStudent_Click" Tag="{x:Bind Id}" />
+<Button Content="Terminate" FontSize="11" Padding="8,3"
+        Style="{ThemeResource DangerButtonStyle}"
+        Click="TerminateStudent_Click" Tag="{x:Bind Id}" />
+```
+
+Example (standard row — Report Cards / Teachers):
+```xml
+<Button Content="Edit" FontSize="12" Padding="8,3"
+        Style="{ThemeResource SecondaryButtonStyle}"
+        Click="EditTeacher_Click" Tag="{x:Bind Id}" />
+<Button Content="Print" FontSize="12" Padding="8,4"
+        Style="{ThemeResource PrimaryButtonStyle}"
+        Click="PrintReport_Click" />
+```
+
+Rules:
+- **Always** set explicit `Padding="8,3"` (or `8,4`) — do not rely on the style default, which is too generous for table rows.
+- **Always** set explicit `FontSize="11"` or `FontSize="12"` — match the cell text size.
+- Wrap action buttons in a `StackPanel Orientation="Horizontal" Spacing="4"` (or `6`) so they tile neatly.
+- Never use `FontSize="14"` or default padding on in-table buttons.
+
+---
+
 ## 6. Scrolling
 
-Cap the ListView at **`MaxHeight="{ROW_MAX_HEIGHT}"`** with
-**`ScrollViewer.VerticalScrollBarVisibility="Auto"`**:
-- Fewer rows → the list sizes to content (no scrollbar).
-- More rows → the list caps at {ROW_MAX_HEIGHT}px and a vertical scrollbar appears,
-  so the card never grows off-screen.
+**Do NOT cap the ListView with `MaxHeight`.** The table must expand to show all rows,
+and the **outer `ScrollViewer`** (wrapping the entire page `StackPanel`) handles
+all scrolling:
+
+```xml
+<ListView
+    x:Name="TableList"
+    ItemsSource="{x:Bind ...}"
+    SelectionMode="None"
+    IsItemClickEnabled="False"
+    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+```
+
+Rules:
+- Remove `MaxHeight` entirely — the ListView grows to fit every row.
+- Set **`ScrollViewer.VerticalScrollBarVisibility="Disabled"`** on the ListView so it
+  does not create its own inner scrollbar.
+- Set **`ScrollViewer.HorizontalScrollBarVisibility="Disabled"`** to prevent horizontal
+  scroll bleed.
+- The parent `ScrollViewer` on the page (wrapping the `StackPanel`) provides the
+  single scrollbar for the entire page, including filter bars, KPI strips, and
+  all table rows.
+- Fewer rows → the card is shorter; more rows → the card grows; the outer
+  scrollbar adjusts automatically.
+
+**Why:** An inner ListView scrollbar clips rows and creates a "table within a table"
+feel. Letting the page scroll over the full table length is more natural and
+consistent across the app.
 
 ---
 
@@ -182,7 +246,7 @@ Cap the ListView at **`MaxHeight="{ROW_MAX_HEIGHT}"`** with
 Instantiation of the template for `Views\AssessmentsView.xaml`:
 
 - `{TABLE_NAME}` = `All Assessments`, `{COLUMN_COUNT}` = `8`,
-  `{ITEMS_SOURCE}` = `Assessments`, `{ROW_MAX_HEIGHT}` = `480`.
+  `{ITEMS_SOURCE}` = `Assessments`, scrolling via outer `ScrollViewer` (no `MaxHeight`).
 
 | Col | Header label | Cell content / style |
 |-----|--------------|----------------------|
@@ -214,7 +278,7 @@ Concrete wiring that instantiates the contract:
 Instantiation of the template for `Views\StudentsView.xaml`:
 
 - `{TABLE_NAME}` = `Students`, `{COLUMN_COUNT}` = `6`,
-  `{ITEMS_SOURCE}` = `FilteredStudents`, `{ROW_MAX_HEIGHT}` = `480`.
+  `{ITEMS_SOURCE}` = `FilteredStudents`, scrolling via outer `ScrollViewer` (no `MaxHeight`).
 
 | Col | Header label | Cell content / style | Width |
 |-----|--------------|----------------------|-------|
@@ -248,8 +312,9 @@ Concrete wiring:
 - [ ] Header Border left-padding equals row Grid left-padding (both `{HEADER_PADDING}`/`{ROW_PADDING}` left = 16).
 - [ ] Set `HorizontalContentAlignment="Stretch"` on the `ListViewItem` style.
 - [ ] Leave a **blank header cell** for every icon/ring column.
-- [ ] Cap the `ListView` (`MaxHeight`) + `VerticalScrollBarVisibility="Auto"`.
+- [ ] **Scrolling:** Remove `MaxHeight` from the `ListView`. Set `ScrollViewer.VerticalScrollBarVisibility="Disabled"` and `ScrollViewer.HorizontalScrollBarVisibility="Disabled"` so the outer page `ScrollViewer` handles all scrolling. The table expands to show all rows.
 - [ ] Reuse `TableHeaderStyle` / `TableCellStyle` / `NumericCellStyle` tokens for typography.
 - [ ] **Headers:** Set `HorizontalAlignment="Left"` (mirroring the content alignment) on each header `TextBlock`.
 - [ ] **Data cells:** Set `HorizontalAlignment="Left"` on each data `TextBlock` or `StackPanel` (right-align numerics only if their headers are also right-aligned).
+- [ ] **Action buttons:** Set explicit `FontSize="11"` or `FontSize="12"` and `Padding="8,3"` on every button. Wrap in `StackPanel Orientation="Horizontal" Spacing="4"`.
 - [ ] Verify at 3 window widths (narrow / typical / wide) that header edges still align with row edges.

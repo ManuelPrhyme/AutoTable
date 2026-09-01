@@ -8,11 +8,11 @@
     mc:Ignorable="d"
     Background="{ThemeResource SurfaceGrayBrush}">
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid RowSpacing="12" Padding="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />  <!-- Filter bar -->
             <RowDefinition Height="Auto" />  <!-- Progress indicator -->
-            <RowDefinition Height="Auto" />  <!-- KPI cards -->
             <RowDefinition Height="*" />     <!-- Table -->
         </Grid.RowDefinitions>
 
@@ -63,6 +63,10 @@
                             Click="ExportPdf_Click" />
                     <Button x:Name="BtnMidTermSlips" Content="Mid-Term Slips" Style="{ThemeResource SecondaryButtonStyle}"
                             Click="MidTermSlips_Click" />
+                    <Button Content="Preview (Test)" Style="{ThemeResource SecondaryButtonStyle}"
+                            Click="PreviewFixture_Click" />
+                    <Button Content="Stress Test" Style="{ThemeResource SecondaryButtonStyle}"
+                            Click="StressTestPreview_Click" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -77,34 +81,8 @@
             </StackPanel>
         </Border>
 
-        <!-- KPI cards -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
-            <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
-                <StackPanel Spacing="4">
-                    <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Students" />
-                    <TextBlock Style="{ThemeResource KpiValueStyle}" Text="{Binding TotalStudents}" />
-                </StackPanel>
-            </Border>
-            <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
-                <StackPanel Spacing="4">
-                    <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Generated" />
-                    <TextBlock Style="{ThemeResource KpiValueStyle}"
-                               Foreground="{ThemeResource SuccessGreenBrush}"
-                               Text="{Binding GeneratedCount}" />
-                </StackPanel>
-            </Border>
-            <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
-                <StackPanel Spacing="4">
-                    <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Printed" />
-                    <TextBlock Style="{ThemeResource KpiValueStyle}"
-                               Foreground="{ThemeResource PrimaryBlueBrush}"
-                               Text="{Binding PrintedCount}" />
-                </StackPanel>
-            </Border>
-        </StackPanel>
-
         <!-- Table card -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -112,7 +90,12 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Style="{ThemeResource CardHeaderBorderStyle}">
-                <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Report Cards" />
+                <Grid>
+                    <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Report Cards" VerticalAlignment="Center" />
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Style="{ThemeResource SectionTitleStyle}" FontSize="14"
+                               Text="{Binding TotalStudentsLabel}" />
+                </Grid>
             </Border>
 
             <Border Grid.Row="1" Style="{ThemeResource TableHeaderRowStyle}">
@@ -139,7 +122,7 @@
             </Border>
 
             <ListView Grid.Row="2" ItemsSource="{Binding ReportCards}" SelectionMode="None"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
@@ -191,5 +174,15 @@
             </ListView>
         </Grid>
 
+        <!-- Off-screen render host: keeps report-card sheets in the XAML tree so they can
+             be rasterized with RenderTargetBitmap for direct-to-printer output. Invisible,
+             non-interactive, parked far outside the visible area. -->
+        <Grid x:Name="RenderHost"
+              Width="794" Height="1123"
+              HorizontalAlignment="Left" VerticalAlignment="Top"
+              Margin="-5000,-5000,0,0"
+              Opacity="0" IsHitTestVisible="False" />
+
     </Grid>
+    </ScrollViewer>
 </Page>

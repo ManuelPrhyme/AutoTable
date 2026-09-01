@@ -39,6 +39,9 @@ namespace AutoTable.Models
         public string EmergencyPhone { get; set; } = string.Empty;
         public string AuthorizedPickupPerson { get; set; } = string.Empty;
 
+        /// <summary>Optional photo bytes uploaded during enrollment.</summary>
+        public byte[]? PhotoBytes { get; set; }
+
         public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
         public string Status { get; set; } = "New";
     }

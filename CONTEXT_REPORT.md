@@ -1,4 +1,4 @@
-# AutoTable - Context Report (Updated 25 Aug 2026)
+# AutoTable - Context Report (Updated 30 Aug 2026)
 
 Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, the full codebase assessment, and the agreed implementation roadmap.
 
@@ -6,6 +6,72 @@ Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, th
 - Branch: sql_rec (origin: https://github.com/ManuelPrhyme/AutoTable.git)
 - Target: .NET 8 / WinUI 3 (Windows App SDK 2.3.0), build platform x64
 - Last known commit: 9a06c8b
+
+## 0. Session Enhancements (31 Aug 2026)
+
+### Marks Entry Table Header Update
+- Changed "ADM NO." to "LIN" in the Marks Entry table column header at `Views/MarksEntryView.xaml`
+
+### Build & Crash Fixes
+- **XAML compiler WMC9999 error** — Stale obj/ folder cache from ARM64 build. Fixed by `rm -rf bin obj` + rebuild
+- **StudentsView FilteredStudents binding error** — `{x:Bind}` targets code-behind, not ViewModel. Fixed by adding forwarding property on `StudentsView.xaml.cs` + moving `_vm` initialization before `InitializeComponent()`
+- **Students tab runtime crash** — `StatusColor` converter was in `StackPanel.Resources` but `x:Bind` code-behind bindings look up converters at Page scope. Moved converters to `Page.Resources`
+
+### Warnings Fixed
+- **CS8604** (`ReportCardsViewModel`) — Nullable `className` parameter; made `string?` in `IDataService.GetReportCardListAsync` / `GetMidTermSlipsAsync` + all implementations
+- **CS8767** (`MockDataServiceAdapter`) — Nullability mismatch with updated interface; aligned signature
+- **CS8602** (`DatabaseDataService:2625-2626`) — Possible null dereference on `ThenInclude` lambdas; added null-forgiving operator
+- **CS0219** (`AssessmentsView.xaml.cs:476`) — Unused `authorId` variable; removed with dead code block
+
+### Student Status System
+- **StatusLabelConverter** — All terminated students now show "Inactive" instead of their specific status (Completed/Expelled/etc.)
+- **InactiveCauseText** — Shows specific reason below "Inactive" word ("Completed course", "Expelled", "Left School", "Other")
+- **Status dot colors hardcoded** — Replaced `ThemeResourceHelper.GetThemeBrush()` with direct `SolidColorBrush` construction (Active=Green #27AE60, Completed=Blue #2980B9, Expelled=Red #E74C3C, ChangedSchool=Orange #F39C12)
+- **StudentsView XAML** — Status column restructured from horizontal to vertical layout; cause text appears below "Inactive" word
+
+### Active Student Counts
+- **DashboardViewModel** — Fixed student count to filter by `s.IsActive` (was counting ALL students)
+- **Verified** all other locations already filter by `.IsActive` (marks, fees, report cards, performance, gradebook, defaulters, assessments)
+
+### Student Filter Bar Layout
+- Search bar moved between filters and Add Student button (24px spacer column)
+- Add Student button pushed to absolute right (HorizontalAlignment="Right")
+- Search bar widened (MinWidth=220)
+
+### Student Restore
+- Inactive students show Restore button (blue, PrimaryButtonStyle) instead of Shift/View/Edit/Terminate
+- `BoolToVisibilityConverter` + `BoolToVisibilityNegateConverter` gate button visibility
+- Restore sets `IsActive=true` on existing record, clears termination state — no new student created
+- All active-student operations automatically include restored students
+
+### Term Management
+- **Shell header** — Added "TermManagement" to `PageMeta` dictionary; header updates on navigation
+- **Term activeness persistence** — Button visibility controlled by `UpdateActiveIndicators()`: Active → show Deactivate only; Inactive (not ended) → show Set Active only; Ended → hide both buttons
+- `SimpleLookup` model gained optional `IsActive` and `EndDate` properties for term lookups
+
+### Shift Modal
+- **Stream filtering** — Shift modal loads streams for the student's current class only; `classBox.SelectionChanged` dynamically reloads streams via `GetStreamsForClassAsync(classId)`
+
+### Teachers Table
+- Applied Table.md spec: column widths (2*/1.5*/1.5*/1.5*/2*/1.2*), header padding 16,10, row padding 16,8, headers left-aligned, MaxHeight=480
+
+### Assessments Filters
+- Stream and Subject filters made independent — changing one no longer resets the other
+- Only Class changes reload option lists
+
+### Report Cards PDF Export
+- **QuestPDF** NuGet package used for PDF generation (modular component architecture)
+- **Export PDF** — FileSavePicker → saves combined PDF (one page per student)
+- **Print All** — FolderPicker → saves each student as a separate PDF file
+- **Print** (per-student) — Opens Windows Print dialog (preview + printer selection)
+
+### Moderation Removed
+- Deleted `ModerationView.xaml`, `ModerationView.xaml.cs`, `ModerationViewModel.cs`
+- Removed `ModerationItem` from `PerformanceModels.cs`
+- Removed moderation route from `NavigationService`, `ShellView.xaml`, `ShellView.xaml.cs`
+- Removed `VerifyAssessmentAsync`, `PublishAssessmentAsync` from `IDataService` + implementations
+- Removed moderation references from `DashboardViewModel` + `AiInsightsViewModel`
+
 
 ## 1. The Operational Plan
 

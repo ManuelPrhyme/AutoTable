@@ -145,9 +145,6 @@ namespace AutoTable.ViewModels
                 }
 
                 // Assessment lifecycle recommendations
-                var pending = assessments.Count(a => !a.IsVerified && a.MarksEnteredPercent >= 100);
-                if (pending > 0)
-                    AiInsights.Add($"{pending} assessment(s) complete and ready for moderation.");
 
                 var incomplete = assessments.Count(a => a.MarksEnteredPercent < 100);
                 if (incomplete > 0)

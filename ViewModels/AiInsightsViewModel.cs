@@ -59,9 +59,7 @@ namespace AutoTable.ViewModels
                 var assessments = await _dataService.GetAssessmentsAsync();
                 foreach (var a in assessments.Where(a => !a.IsPublished))
                 {
-                    if (a.MarksEnteredPercent >= 100 && !a.IsVerified)
-                        Recommendations.Add($"'{a.Name}' ({a.ClassName} {a.Subject}) is complete — ready for moderation.");
-                    else if (a.MarksEnteredPercent < 100)
+                    if (a.MarksEnteredPercent < 100)
                         Recommendations.Add($"Marks entry for '{a.Name}' ({a.ClassName} {a.Subject}) is {a.MarksEnteredPercent}% — follow up with entrant.");
                 }
 
