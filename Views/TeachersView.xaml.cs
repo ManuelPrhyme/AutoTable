@@ -1,4 +1,5 @@
 using AutoTable.Models;
+using AutoTable.Services;
 using AutoTable.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -27,6 +28,19 @@ namespace AutoTable.Views
             InitializeComponent();
             _vm = new TeachersViewModel();
             DataContext = _vm;
+            Loaded += TeachersView_Loaded;
+        }
+
+        private void TeachersView_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Auto-open the create-teacher modal when the user chose "Add Teacher"
+            // from the "No teachers available" prompt in the class-creation flow.
+            // The flag is reset so the modal only opens once per prompt.
+            if (SessionService.Instance.ShouldAutoOpenTeacherCreation)
+            {
+                SessionService.Instance.ShouldAutoOpenTeacherCreation = false;
+                AddTeacher_Click(this, new RoutedEventArgs());
+            }
         }
 
         /// <summary>

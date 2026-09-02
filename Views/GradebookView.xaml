@@ -29,7 +29,7 @@
                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                         <Button Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}"
                                 Command="{Binding RefreshCommand}" />
-                        <Button Content="Export" Style="{ThemeResource PrimaryButtonStyle}"
+                        <Button x:Name="ExportGradebookBtn" Content="Export" Style="{ThemeResource PrimaryButtonStyle}"
                                 Command="{Binding ExportCommand}" />
                     </StackPanel>
                 </Grid>

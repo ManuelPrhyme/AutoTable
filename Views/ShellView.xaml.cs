@@ -128,6 +128,45 @@ namespace AutoTable.Views
             Unloaded += (_, _) => NavigationService.Instance.ShellNavigated -= OnExternalShellNavigated;
 
             NavigateTo("Dashboard", NavDashboard);
+
+            // ── AUTO-START USER TOUR ON NEW INSTALLATION ─────────
+            // The tour auto-starts when the database is empty (no classes
+            // AND no terms) — indicating a fresh install. It also starts
+            // if the user has never completed the tour on an existing DB.
+            bool shouldStartTour = false;
+            try
+            {
+                if (AppServices.DataService != null)
+                {
+                    var classes = await AppServices.DataService.GetClassesAsync();
+                    var terms = await AppServices.DataService.GetTermsAsync();
+                    // New installation: empty DB — always tour
+                    if (classes.Count == 0 && terms.Count == 0)
+                        shouldStartTour = true;
+                    // Existing DB but tour never completed — still tour
+                    else if (!UserTourService.Instance.HasCompletedTour)
+                        shouldStartTour = true;
+                }
+                else if (!UserTourService.Instance.HasCompletedTour)
+                {
+                    shouldStartTour = true;
+                }
+            }
+            catch { }
+
+            if (shouldStartTour)
+            {
+                // Small delay so the UI has time to render before
+                // we calculate spotlight positions.
+                await Task.Delay(600);
+                TourOverlay.StartTour(this);
+                // Don't run first-launch setup here — TourOverlay_TourFinished will do it.
+            }
+            else
+            {
+                // Tour already done — run first-launch setup immediately.
+                await RunFirstLaunchSetupIfNeeded();
+            }
         }
 
         /// <summary>
@@ -321,6 +360,70 @@ namespace AutoTable.Views
             {
                 ThemeService.SetTheme(ApplicationTheme.Light);
             }
+        }
+
+        // ── USER TOUR ──────────────────────────────────────────
+
+        private void TakeTour_Click(object sender, RoutedEventArgs e)
+        {
+            TourOverlay.StartTour(this);
+        }
+
+        /// <summary>
+        /// Navigates to a page by tag and waits for the layout to settle.
+        /// Used by the user tour overlay to navigate between pages.
+        /// </summary>
+        internal async Task NavigateToPageForTourAsync(string tag)
+        {
+            if (!Routes.TryGetValue(tag, out var pageType)) return;
+
+            if (PageMeta.TryGetValue(tag, out var meta))
+            {
+                PageTitleText.Text = meta.Title;
+                PageSubtitleText.Text = meta.Subtitle;
+            }
+
+            var btn = FindNavButtonByTag(tag);
+            if (btn != null) SetActiveButton(btn);
+
+            ContentFrame.Navigate(pageType);
+
+            // Give the page time to load its visual tree
+            await Task.Delay(400);
+        }
+
+        /// <summary>
+        /// Returns the content frame so the tour overlay can search
+        /// for named elements inside the currently loaded page.
+        /// </summary>
+        internal Frame GetContentFrame() => ContentFrame;
+
+        private async void TourOverlay_TourFinished()
+        {
+            // Tour completed or dismissed — now run the first-launch setup
+            // if no classes/grading systems exist yet.
+            await RunFirstLaunchSetupIfNeeded();
+        }
+
+        /// <summary>
+        /// Checks whether the school database is empty (no classes) and
+        /// kicks off the first-launch setup sequence: grading-system
+        /// creation → class creation → class teacher assignment.
+        /// Safe to call multiple times — only acts when there are zero classes.
+        /// </summary>
+        private async Task RunFirstLaunchSetupIfNeeded()
+        {
+            if (AppServices.DataService == null) return;
+            try
+            {
+                var classes = await AppServices.DataService.GetClassesAsync();
+                if (classes.Count == 0)
+                {
+                    SessionService.Instance.ShouldAutoOpenGradingSystemCreation = true;
+                    NavigateTo("Classes", NavClasses);
+                }
+            }
+            catch { }
         }
 
         // Simple search result model used by the AutoSuggestBox

@@ -1,9 +1,9 @@
-# AutoTable - Context Report (Updated 30 Aug 2026)
+# AutoTable - Context Report (Updated 2 Sep 2026)
 
 Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, the full codebase assessment, and the agreed implementation roadmap.
 
 - Repo root: c:\Users\manue\Desktop\Desktop_Apps\AutoTable
-- Branch: sql_rec (origin: https://github.com/ManuelPrhyme/AutoTable.git)
+- Branch: trans (origin: https://github.com/ManuelPrhyme/AutoTable.git)
 - Target: .NET 8 / WinUI 3 (Windows App SDK 2.3.0), build platform x64
 - Last known commit: 9a06c8b
 
@@ -64,6 +64,36 @@ Session report covering work performed against AutoTable/OPERATIONAL_PLAN.md, th
 - **Export PDF** — FileSavePicker → saves combined PDF (one page per student)
 - **Print All** — FolderPicker → saves each student as a separate PDF file
 - **Print** (per-student) — Opens Windows Print dialog (preview + printer selection)
+
+### User Interface Tour (2 Sep 2026)
+- **Interactive guided tour** — full-screen overlay walks new users through every major area of the app
+- **15 tour steps** covering: Dashboard, Assessments, Marks Entry, Gradebook, Students, Teachers, Classes, Term Management, Report Cards, Fee Collection, AI Insights, School Settings, Term Selector, Global Search, Theme Toggle
+- **Dimming overlay** — semi-transparent black background (#99000000) dims everything except the highlighted element
+- **Spotlight highlight** — blue-bordered (PrimaryBlueBrush, 2px) spotlight cutout with 6px padding reveals the target UI element
+- **Popup card** — contextually positioned (Right for sidebar items, Bottom for header controls) with:
+  - Step icon circle (BlueSubtleBrush background)
+  - Title + step counter ("Step 3 of 15")
+  - Close (X) button
+  - Description text (14px, TextSecondaryBrush)
+  - Progress dots (pill-shaped Rectangles, active = blue 16px wide, inactive = gray 8px)
+  - Navigation bar: Skip Tour (left, gray), progress text (center), Next/Finish button (right)
+- **Navigation buttons**:
+  - **Skip Tour** — dismisses and persists completion
+  - **Next** — advances to next step; becomes **Finish** (green checkmark) on last step
+  - **Close (X)** — same as Skip
+  - Tap dimmed background — advances to next step
+- **First-launch auto-start** — `UserTourService.HasCompletedTour` persisted via `Windows.Storage.ApplicationData.LocalSettings`; tour triggers on first app launch
+- **First-launch setup integration** — after tour finishes, `RunFirstLaunchSetupIfNeeded()` checks for empty DB and navigates to Classes page (grading system → class → term setup)
+- **Manual re-access** — "Take Tour" button added to sidebar below School Settings (blue, info-colored)
+- **Smooth entrance animation** — popup slides up 12px + opacity 0→1 over 250ms via Composition APIs (ElementCompositionPreview.GetElementVisual)
+- **New files**:
+  - `Models/TourStep.cs` — data model (TargetElementName, Title, Description, IconGlyph, PopupPosition enum)
+  - `Services/UserTourService.cs` — singleton with GetTourSteps(), HasCompletedTour persistence, CompleteTour/SkipTour
+  - `Views/Controls/UserTourOverlay.xaml` — XAML with dimming Grid, spotlight Border, popup card, buttons
+  - `Views/Controls/UserTourOverlay.xaml.cs` — code-behind with step navigation, FindElementByName visual tree search, TransformToVisual positioning, AnimatePopupEntrance
+- **Modified files**:
+  - `Views/ShellView.xaml` — added `<controls:UserTourOverlay>` (Grid.ColumnSpan=2, ZIndex=9999) + "Take Tour" sidebar button
+  - `Views/ShellView.xaml.cs` — auto-start in ShellView_Loaded, TakeTour_Click handler, TourOverlay_TourFinished → RunFirstLaunchSetupIfNeeded()
 
 ### Moderation Removed
 - Deleted `ModerationView.xaml`, `ModerationView.xaml.cs`, `ModerationViewModel.cs`

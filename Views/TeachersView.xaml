@@ -17,7 +17,7 @@
                     <Border Style="{ThemeResource CardHeaderBorderStyle}">
                         <Grid>
                             <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Registered Teachers" VerticalAlignment="Center" />
-                            <Button Content="+ Add Teacher" HorizontalAlignment="Right"
+                            <Button x:Name="AddTeacherBtn" Content="+ Add Teacher" HorizontalAlignment="Right"
                                     Style="{ThemeResource PrimaryButtonStyle}"
                                     Click="AddTeacher_Click" />
                         </Grid>

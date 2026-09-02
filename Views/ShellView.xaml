@@ -263,6 +263,20 @@
                         </StackPanel>
                     </Button>
 
+                    <!-- Separator before tour button -->
+                    <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
+
+                    <!-- Take Tour button -->
+                    <Button x:Name="TakeTourBtn" Click="TakeTour_Click"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Padding="10,9" CornerRadius="8"
+                            Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE77B;" FontSize="16" Foreground="{ThemeResource InfoBlueBrush}" />
+                            <TextBlock Text="Take Tour" Style="{ThemeResource SidebarItemTextStyle}" Foreground="{ThemeResource InfoBlueBrush}" />
+                        </StackPanel>
+                    </Button>
+
                 </StackPanel>
             </ScrollViewer>
 
@@ -352,6 +366,13 @@
             <!-- Status Footer -->
             <controls:StatusFooterBar Grid.Row="2" />
         </Grid>
+        <!-- ═══════════════════════════════════════════════════
+             USER TOUR OVERLAY (renders on top of everything)
+        ═══════════════════════════════════════════════════ -->
+        <controls:UserTourOverlay x:Name="TourOverlay"
+                                  Grid.ColumnSpan="2"
+                                  Canvas.ZIndex="9999"
+                                  TourFinished="TourOverlay_TourFinished" />
     </Grid>
 </Page>
 

@@ -42,6 +42,30 @@ namespace AutoTable.Views
 
             await _vm.LoadAsync();          // also loads grading systems
             await _vm.LoadAllStreamsAsync();
+
+            // First-launch setup sequence (flag set by ShellView when it
+            // detects zero classes):
+            //   1. grading-system creation modal — SKIPPED when at least one
+            //      grading system already exists
+            //   2. class-creation modal (the grading-system modal chains
+            //      straight into it, so a newly created system appears in the
+            //      class modal's picker)
+            //   3. class-teacher assignment (runs inside CreateClass_Click,
+            //      after the class exists)
+            if (_vm.ClassInfos.Count == 0 && SessionService.Instance.ShouldAutoOpenGradingSystemCreation)
+            {
+                SessionService.Instance.ShouldAutoOpenGradingSystemCreation = false;
+                if (_vm.GradingSystems.Count > 0)
+                {
+                    // At least one grading system exists — go straight to class creation.
+                    CreateClass_Click(null, null);
+                }
+                else
+                {
+                    await OpenCreateGradingSystemModalAsync();
+                    CreateClass_Click(null, null);
+                }
+            }
         }
 
         private const string NewGradingSystemOption = "➕ New grading system…";
@@ -59,9 +83,12 @@ namespace AutoTable.Views
 
         private readonly List<BandInputs> _bandRows = new();
 
-        // CREATE CLASS — single modal containing everything: name, class teacher
-        // (registered OR student teacher), grading system (pick existing or build
-        // new inline), streams and subjects (assign existing or create new inline).
+        // CREATE CLASS — modal contains: class name + grading system
+        // (pick existing or build new inline) + streams and subjects
+        // (assign existing or type names for new ones). Streams and
+        // subjects are REQUIRED — at least one of each must be added
+        // before the class can be created. The class teacher is assigned
+        // after the class is created (see end of this method).
         private async void CreateClass_Click(object sender, RoutedEventArgs e)
         {
             // ── ROLE-BASED GATING (dormant during development) ──────
@@ -71,28 +98,16 @@ namespace AutoTable.Views
             //     return;
             // }
 
-            // Any teacher qualifies — registered teachers AND student teachers.
-            var teachers = await AppServices.DataService!.GetTeachersAsync();
-            if (teachers.Count == 0)
-            {
-                await ShowErrorAsync("No teachers available.",
-                    "Add at least one teacher first under Administration → Teachers. Both registered and student teachers can be assigned.");
-                return;
-            }
-
+            // Setup order: class → then teachers → class teacher assignment.
+            // No teacher is required to create the class; the class teacher
+            // is assigned after the class exists.
             await _vm.LoadAllStreamsAsync();
             await _vm.LoadGradingSystemsAsync();
             var allSubjects = await AppServices.DataService.GetSubjectsAsync();
 
+            // Teachers are not needed to create the class — the list is only
+            // fetched after creation for the class-teacher assignment step.
             var nameBox = new TextBox { Header = "Class name", PlaceholderText = "e.g. P4", Width = 300 };
-            var teacherPicker = new ComboBox
-            {
-                Header = "Class teacher (registered or student teacher)",
-                Width = 300,
-                DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
-                ItemsSource = teachers,
-                Margin = new Thickness(0, 8, 0, 0)
-            };
 
             // Grading system: pick an existing one, or build a new one inline
             var gsItems = new List<object>();
@@ -116,20 +131,19 @@ namespace AutoTable.Views
 
             // Streams & subjects: assign existing or type names for new ones.
             // Pass creation callbacks so new items are persisted to the DB immediately,
-            // appearing in the master list for future use.
+            // appearing in the master list for future use. Both are REQUIRED —
+            // enforced by the dialog's Closing handler below.
             var pendingStreams = new ObservableCollection<SimpleLookup>();
             var pendingSubjects = new ObservableCollection<SimpleLookup>();
-            var pendingStreamTeachers = new List<int?>(); // tracks teacher Id per stream
-            var classTeacherId = teacherPicker.SelectedItem is AutoTable.Models.Teacher ct ? ct.Id : (int?)null;
-            var streamsSection = BuildStreamsSection("Streams (optional)", _vm.AllStreams,
-                pendingStreams, pendingStreamTeachers, teachers, classTeacherId,
+            var pendingStreamTeachers = new List<int?>(); // tracks teacher Id per stream (may be empty — no teachers yet)
+            var streamsSection = BuildStreamsSection("Streams", _vm.AllStreams,
+                pendingStreams, pendingStreamTeachers, new List<AutoTable.Models.Teacher>(), null,
                 createItemAsync: async name => await AppServices.DataService!.CreateStreamAsync(name));
-            var subjectsSection = BuildSubjectsSection("Subjects (optional)", allSubjects, pendingSubjects,
+            var subjectsSection = BuildSubjectsSection("Subjects", allSubjects, pendingSubjects,
                 createItemAsync: async name => await AppServices.DataService!.CreateSubjectAsync(name));
 
             var content = new StackPanel { Spacing = 12 };
             content.Children.Add(nameBox);
-            content.Children.Add(teacherPicker);
             content.Children.Add(gsPicker);
             content.Children.Add(newGsPanel);
             foreach (var c in streamsSection.Children.ToList()) { streamsSection.Children.Remove(c); content.Children.Add(c); }
@@ -144,6 +158,19 @@ namespace AutoTable.Views
                 XamlRoot = this.XamlRoot
             };
 
+            // Streams and subjects are required: block the Create button's
+            // default close when either list is empty.
+            dialog.Closing += (s, args) =>
+            {
+                if (args.Result == ContentDialogResult.Primary &&
+                    (pendingStreams.Count == 0 || pendingSubjects.Count == 0))
+                {
+                    args.Cancel = true;
+                    _ = ShowErrorAsync("Streams and subjects required.",
+                        "Add at least one stream and one subject before creating the class.");
+                }
+            };
+
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
 
             var name = nameBox.Text?.Trim();
@@ -155,7 +182,6 @@ namespace AutoTable.Views
 
             try
             {
-                int? teacherId = teacherPicker.SelectedItem is AutoTable.Models.Teacher t ? t.Id : null;
                 int? gradingSystemId = null;
 
                 if (gsPicker.SelectedItem is GradingSystemInfo existingGs)
@@ -164,20 +190,91 @@ namespace AutoTable.Views
                     gradingSystemId = (await CreateGradingSystemFromEditorAsync(gsNameBox.Text?.Trim(), gsDefaultChk.IsChecked == true,
                         double.TryParse(gsPassMarkBox.Text, out var pm) ? pm : null)).Id;
 
-                var createdClass = await _vm.CreateClassAsync(name, teacherId, gradingSystemId);
+                // Class is created WITHOUT a teacher — assignment happens below,
+                // after the class exists.
+                var createdClass = await _vm.CreateClassAsync(name, null, gradingSystemId);
 
                 // Attach pending streams/subjects to the freshly created class.
+                // Stream teachers default to the class teacher (none yet at this
+                // point — the class teacher is assigned below, after creation).
                 for (int i = 0; i < pendingStreams.Count; i++)
                 {
                     var item = pendingStreams[i];
                     var streamTeacherId = i < pendingStreamTeachers.Count ? pendingStreamTeachers[i] : null;
-                    if (streamTeacherId == null) streamTeacherId = classTeacherId; // default to class teacher
                     await _vm.AssignStreamToClassAsync(createdClass.Id, item.Id, streamTeacherId);
                 }
                 foreach (var item in pendingSubjects)
                 {
                     await _vm.AssignSubjectToClassAsync(createdClass.Id, item.Id);
                 }
+
+                // ── Class teacher assignment: only now that the class exists ──
+                // Teachers are fetched here (not before) since none are needed
+                // to create the class itself.
+                var teachers = await AppServices.DataService!.GetTeachersAsync();
+                if (teachers.Count == 0)
+                {
+                    // No teachers yet — offer to add one. Navigates to the Teachers
+                    // page with the create-teacher modal auto-opening on arrival.
+                    var goDialog = new ContentDialog
+                    {
+                        Title = "No teachers available.",
+                        Content = $"'{createdClass.Name}' was created. Add at least one teacher so one can be assigned as its class teacher. Both registered and student teachers qualify.",
+                        PrimaryButtonText = "Add Teacher",
+                        CloseButtonText = "Later",
+                        XamlRoot = this.XamlRoot
+                    };
+                    if (await goDialog.ShowAsync() == ContentDialogResult.Primary)
+                    {
+                        SessionService.Instance.ShouldAutoOpenTeacherCreation = true;
+                        NavigationService.Instance.NavigateToShellPage("Teachers");
+                    }
+                }
+                else
+                {
+                    // Teachers exist — offer to assign one as class teacher (skippable).
+                    var teacherPicker = new ComboBox
+                    {
+                        Header = "Class teacher (registered or student teacher)",
+                        Width = 300,
+                        DisplayMemberPath = nameof(AutoTable.Models.Teacher.FullName),
+                        ItemsSource = teachers,
+                        PlaceholderText = "Select a teacher…"
+                    };
+                    var assignDialog = new ContentDialog
+                    {
+                        Title = "Assign class teacher",
+                        Content = new StackPanel
+                        {
+                            Spacing = 8,
+                            Children =
+                            {
+                                new TextBlock
+                                {
+                                    Text = $"'{createdClass.Name}' was created. Choose its class teacher, or skip for now.",
+                                    TextWrapping = TextWrapping.Wrap
+                                },
+                                teacherPicker
+                            }
+                        },
+                        PrimaryButtonText = "Assign",
+                        CloseButtonText = "Skip for now",
+                        DefaultButton = ContentDialogButton.Primary,
+                        XamlRoot = this.XamlRoot
+                    };
+                    if (await assignDialog.ShowAsync() == ContentDialogResult.Primary &&
+                        teacherPicker.SelectedItem is AutoTable.Models.Teacher chosen)
+                    {
+                        await AppServices.DataService.UpdateClassAsync(createdClass.Id, name, chosen.Id, gradingSystemId);
+                    }
+                }
+
+                // ── Next setup step: term creation ──
+                // Navigate to Term Management with the create-term modal
+                // auto-opening on arrival (regardless of whether a class
+                // teacher was assigned, skipped, or deferred).
+                SessionService.Instance.ShouldAutoOpenTermCreation = true;
+                NavigationService.Instance.NavigateToShellPage("TermManagement");
 
                 // AppServices.Toasts.Show("Class Created", $"Class '{createdClass.Name}' created.");
 
@@ -420,6 +517,16 @@ namespace AutoTable.Views
             //     return;
             // }
 
+            await OpenCreateGradingSystemModalAsync();
+        }
+
+        /// <summary>
+        /// Opens the grading-system creation modal and returns once it closes.
+        /// Used both by the page's create button and by the first-launch setup
+        /// sequence (which chains straight into the class-creation modal).
+        /// </summary>
+        private async Task OpenCreateGradingSystemModalAsync()
+        {
             var (panel, nameBox, defaultChk, passMarkBox, _) = BuildGradingSystemEditor();
 
             var dialog = new ContentDialog
@@ -921,3 +1028,4 @@ namespace AutoTable.Views
         }
     }
 }
+

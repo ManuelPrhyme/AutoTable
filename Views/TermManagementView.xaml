@@ -17,12 +17,8 @@
             <Border x:Name="CreateTermCard" Style="{ThemeResource CardBorderStyle}">
                 <StackPanel Spacing="8" Padding="12">
                     <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Create Term" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBox x:Name="NewTermName" PlaceholderText="Term name e.g. Term 1, 2026" Width="300" />
-                        <DatePicker x:Name="TermStart" Header="Start" />
-                        <DatePicker x:Name="TermEnd" Header="End" />
-                        <Button Content="Create" Click="CreateTerm_Click" Style="{ThemeResource PrimaryButtonStyle}" />
-                    </StackPanel>
+                    <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Create an academic term with its start and end dates." />
+                    <Button Content="Create Term" Click="CreateTerm_Click" Style="{ThemeResource PrimaryButtonStyle}" HorizontalAlignment="Left" />
                 </StackPanel>
             </Border>
 

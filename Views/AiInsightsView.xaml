@@ -29,7 +29,7 @@
                         <TextBlock Style="{ThemeResource MutedTextStyle}"
                                    Text="Powered by AutoTable AI — updated automatically based on current marks data." />
                     </StackPanel>
-                    <Button Grid.Column="2" Content="Refresh Insights" VerticalAlignment="Center"
+                    <Button x:Name="RefreshInsightsBtn" Grid.Column="2" Content="Refresh Insights" VerticalAlignment="Center"
                             Style="{ThemeResource PrimaryButtonStyle}"
                             Command="{Binding RefreshCommand}" />
                 </Grid>

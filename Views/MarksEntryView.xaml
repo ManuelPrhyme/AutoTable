@@ -40,7 +40,7 @@
                               ItemsSource="{Binding Subjects}"
                               SelectedItem="{Binding SelectedSubject, Mode=TwoWay}"
                               Visibility="{x:Bind ViewModel.SubjectFilterVisibility, Mode=OneWay}" />
-                    <Button Grid.Column="5" VerticalAlignment="Bottom"
+                    <Button x:Name="LoadMarksBtn" Grid.Column="5" VerticalAlignment="Bottom"
                             Content="Load Marks" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding LoadMarksCommand}" />
                 </Grid>

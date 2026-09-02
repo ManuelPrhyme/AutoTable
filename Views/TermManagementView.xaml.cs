@@ -39,6 +39,14 @@ namespace AutoTable.Views
             // Update active indicators after terms are loaded
             UpdateActiveIndicators();
 
+            // First-launch setup: auto-open the create-term modal once when
+            // the class-creation flow finished and queued this step.
+            if (SessionService.Instance.ShouldAutoOpenTermCreation)
+            {
+                SessionService.Instance.ShouldAutoOpenTermCreation = false;
+                await OpenCreateTermModalAsync();
+            }
+
             // Write quick diagnostic snapshot of loaded terms to temp for troubleshooting
             try
             {
@@ -97,10 +105,67 @@ namespace AutoTable.Views
             //     await err.ShowAsync();
             //     return;
             // }
-            var name = NewTermName.Text?.Trim();
-            var start = TermStart.Date;
-            var end = TermEnd.Date;
-            if (string.IsNullOrWhiteSpace(name)) return;
+            await OpenCreateTermModalAsync();
+        }
+
+        /// <summary>
+        /// Opens the create-term modal (name + start/end dates). Used both by
+        /// the Create Term button on this page and by the first-launch setup
+        /// flow (auto-opened via ShouldAutoOpenTermCreation).
+        /// </summary>
+        private async Task OpenCreateTermModalAsync()
+        {
+            // ── ROLE-BASED GATING (dormant during development) ──────
+            // if (!_isAdmin)
+            // {
+            //     var err = new ContentDialog { Title = "Access Restricted", Content = "Only administrators can create terms.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+            //     await err.ShowAsync();
+            //     return;
+            // }
+            var nameBox = new TextBox { Header = "Term name", PlaceholderText = "e.g. Term 1, 2026", Width = 300 };
+            var startPicker = new CalendarDatePicker
+            {
+                Header = "Start date",
+                PlaceholderText = "Pick start date",
+                Description = "Tap to open the calendar",
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            var endPicker = new CalendarDatePicker
+            {
+                Header = "End date",
+                PlaceholderText = "Pick end date",
+                Description = "Tap to open the calendar",
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "New Term",
+                Content = new StackPanel { Spacing = 4, Children = { nameBox, startPicker, endPicker } },
+                PrimaryButtonText = "Create Term",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            var name = nameBox.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                var missing = new ContentDialog { Title = "Term name required.", Content = "Enter a name for the term.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                await missing.ShowAsync();
+                return;
+            }
+
+            if (startPicker.Date == null || endPicker.Date == null)
+            {
+                var err = new ContentDialog { Title = "Dates required", Content = "Please select both start and end dates for the term.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
+                await err.ShowAsync();
+                return;
+            }
+            var start = startPicker.Date.Value;
+            var end = endPicker.Date.Value;
 
             // ── Unusual-timing warning ──────────────────────────────────────────
             // Expected creation windows (by current calendar month):
@@ -129,9 +194,7 @@ namespace AutoTable.Views
             try
             {
                 await _vm.CreateTermAsync(name, start.DateTime, end.DateTime);
-                NewTermName.Text = string.Empty;
-                TermStart.Date = System.DateTime.Now;
-                TermEnd.Date = System.DateTime.Now;
+
                 var dlg = new ContentDialog { Title = "Term created", Content = $"Term '{name}' created successfully.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                 await dlg.ShowAsync();
                 UpdateActiveIndicators();
