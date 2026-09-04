@@ -90,9 +90,104 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- RIGHT COLUMN: Head Teacher -->
+            <!-- RIGHT COLUMN: Invite Codes + Head Teacher -->
             <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="16">
+
+                    <!-- Invite Code Generation (admin only) -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="InviteCodeCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="INVITE CODES" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Generate a one-time invite code for a data entrant to sign up."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <TextBox x:Name="InviteLabelBox"
+                                     Header="Label (optional)"
+                                     PlaceholderText="e.g. Term 2 marks entry" />
+
+                            <ComboBox x:Name="InviteAccessCombo" Header="Access Level" HorizontalAlignment="Stretch">
+                                <ComboBoxItem Content="Full access (all pages)" Tag="" IsSelected="True" />
+                                <ComboBoxItem Content="Marks entry only" Tag="MarksEntry" />
+                                <ComboBoxItem Content="Marks + Gradebook" Tag="MarksEntry,Gradebook" />
+                                <ComboBoxItem Content="Fee collection only" Tag="FeeCollection" />
+                            </ComboBox>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="GenerateCodeButton" Content="Generate Code"
+                                        Click="GenerateInviteCode_Click" Style="{ThemeResource PrimaryButtonStyle}" />
+                            </StackPanel>
+
+                            <Border x:Name="GeneratedCodeBorder" Visibility="Collapsed"
+                                    Background="#F0F9FF" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Code generated!" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock x:Name="GeneratedCodeText" FontSize="18" FontWeight="Bold"
+                                               Foreground="{ThemeResource AccentBrush}" FontFamily="Consolas" />
+                                    <TextBlock Text="Share this code with the data entrant. They will enter it during registration."
+                                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}"
+                                               TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Generated Invite Codes List -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="InviteCodeListCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="GENERATED CODES" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock x:Name="NoCodesText"
+                                       Text="No invite codes generated yet."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       Visibility="Collapsed" />
+
+                            <ListView x:Name="InviteCodesList"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="False">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,8" ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <FontIcon Grid.Column="0" Glyph="&#xE734;" FontSize="16"
+                                                      Foreground="{ThemeResource TextSecondaryBrush}" VerticalAlignment="Center" />
+
+                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Code}" FontSize="14" FontWeight="SemiBold"
+                                                           FontFamily="Consolas" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextMutedBrush}">
+                                                    <Run Text="{Binding Label}" />
+                                                    <Run Text=" • " />
+                                                    <Run Text="{Binding StatusText}" />
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="2"
+                                                    Content="Revoke"
+                                                    Tag="{Binding Id}"
+                                                    Click="RevokeInviteCode_Click"
+                                                    Visibility="{Binding RevokeVisibility}"
+                                                    Style="{ThemeResource GhostButtonStyle}" FontSize="12"
+                                                    Padding="8,4" MinWidth="60" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                        </StackPanel>
+                    </Border>
 
                     <Border Style="{ThemeResource TableCardStyle}">
                         <StackPanel Spacing="12" Padding="16">

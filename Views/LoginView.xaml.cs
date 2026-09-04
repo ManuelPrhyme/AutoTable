@@ -40,7 +40,7 @@ namespace AutoTable.Views
                 }
                 //NavigationService.Instance.Navigate(typeof(Views.AssessmentsView));
             };
-            SignUpLink.Click += (_, _) => ViewModel.GoToSignUpCommand.Execute(null);
+            SignUpLink.Click += (_, _) => NavigationService.Instance.Navigate(typeof(Views.DataEntrantRegistrationView));
         }
     }
 }

@@ -35,6 +35,8 @@ namespace AutoTable.Data
             PatchAssessmentsNullableSubject(connection);
             PatchAssessmentsCreatedAt(connection);
             PatchAssessmentsStreamIds(connection);
+            PatchInviteCodes(connection);
+            PatchUsersPasswordHash(connection);
         }
 
         // ── Terms ──────────────────────────────────────────────────────────
@@ -328,6 +330,41 @@ namespace AutoTable.Data
                     FOREIGN KEY (AssessmentId) REFERENCES Assessments(Id) ON DELETE CASCADE,
                     FOREIGN KEY (SubjectId) REFERENCES Subjects(Id)
                 );");
+        }
+
+        // ── InviteCodes ─────────────────────────────────────────────────────
+        private static void PatchInviteCodes(SqliteConnection conn)
+        {
+            if (!TableExists(conn, "InviteCodes"))
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS InviteCodes (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Code TEXT NOT NULL,
+                        Role TEXT NOT NULL DEFAULT 'DataEntrant',
+                        Label TEXT,
+                        AllowedPages TEXT,
+                        IsUsed INTEGER NOT NULL DEFAULT 0,
+                        CreatedByUserId INTEGER NOT NULL,
+                        CreatedAt TEXT NOT NULL DEFAULT '',
+                        ExpiresAt TEXT,
+                        FOREIGN KEY(CreatedByUserId) REFERENCES Users(Id)
+                    );";
+                cmd.ExecuteNonQuery();
+                try
+                {
+                    cmd.CommandText = "CREATE UNIQUE INDEX IX_InviteCodes_Code ON InviteCodes(Code);";
+                    cmd.ExecuteNonQuery();
+                }
+                catch { /* index may already exist */ }
+            }
+        }
+
+        // ── Users.PasswordHash (ensure column exists for older DBs) ────────
+        private static void PatchUsersPasswordHash(SqliteConnection conn)
+        {
+            AddColumnIfMissing(conn, "Users", "PasswordHash", "ALTER TABLE Users ADD COLUMN PasswordHash TEXT;");
         }
 
         // ── Helpers ────────────────────────────────────────────────────────

@@ -28,7 +28,7 @@ namespace AutoTable.ViewModels
 
         [RelayCommand]
         private void GoToSignUp() =>
-            NavigationService.Instance.Navigate(typeof(Views.SignUpView));
+            NavigationService.Instance.Navigate(typeof(Views.DataEntrantRegistrationView));
     }
 
 }

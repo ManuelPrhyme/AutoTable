@@ -10,9 +10,23 @@
     Visibility="Collapsed">
 
     <Grid x:Name="TourRoot" IsHitTestVisible="True">
+
         <!-- ══════════════════════════════════════════════════════════
-             SPOTLIGHT BORDER — rounded rect around the active element
-             (subtle highlight, no dimming overlay)
+             DIMMING SCrim — full-screen semi-transparent overlay
+             Dims the background so the spotlight stands out.
+             IsHitTestVisible=False so clicks pass through to the
+             underlying page (the sidebar handles its own clicks).
+        ══════════════════════════════════════════════════════════ -->
+        <Border x:Name="DimmingScrim"
+                Background="#66000000"
+                IsHitTestVisible="False"
+                Canvas.ZIndex="0"
+                Visibility="Collapsed" />
+
+        <!-- ══════════════════════════════════════════════════════════
+             SPOTLIGHT — sits above the scrim to "punch through"
+             the dimming. The glow is a soft outer halo; the inner
+             border is the crisp blue accent around the active element.
         ══════════════════════════════════════════════════════════ -->
         <Border x:Name="SpotlightGlow"
                 BorderBrush="#4D2979FF"
@@ -20,27 +34,32 @@
                 CornerRadius="12"
                 Background="Transparent"
                 IsHitTestVisible="False"
-                Visibility="Collapsed"
-                Canvas.ZIndex="1" />
+                Canvas.ZIndex="1"
+                Visibility="Collapsed" />
         <Border x:Name="SpotlightBorder"
                 BorderBrush="{ThemeResource PrimaryBlueBrush}"
                 BorderThickness="3"
                 CornerRadius="10"
                 Background="Transparent"
                 IsHitTestVisible="False"
-                Visibility="Collapsed"
-                Canvas.ZIndex="1" />
+                Canvas.ZIndex="1"
+                Visibility="Collapsed" />
 
         <!-- ══════════════════════════════════════════════════════════
-             TOUR SIDEBAR — right-side panel
+             TOUR SIDEBAR — floating card, top-right corner
+             Always on top of scrim + spotlight so it's fully
+             readable and clickable.
         ══════════════════════════════════════════════════════════ -->
         <Border x:Name="TourSidebar"
                 Width="320"
                 HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,60,20,0"
                 Background="{ThemeResource SurfaceWhiteBrush}"
                 BorderBrush="{ThemeResource BorderLightBrush}"
-                BorderThickness="1,0,0,0"
-                Canvas.ZIndex="3"
+                BorderThickness="1"
+                CornerRadius="12"
+                Canvas.ZIndex="10"
                 IsHitTestVisible="True"
                 Visibility="Collapsed">
 
@@ -89,11 +108,11 @@
                 <Border Grid.Row="1" Height="1" Background="{ThemeResource BorderLightBrush}" Margin="16,0" />
 
                 <!-- ── Description body ── -->
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="16,16">
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="16,12">
                     <TextBlock x:Name="StepDescription"
                                TextWrapping="Wrap"
-                               FontSize="13.5"
-                               LineHeight="22"
+                               FontSize="13"
+                               LineHeight="20"
                                Foreground="{ThemeResource TextSecondaryBrush}" />
                 </ScrollViewer>
 
@@ -131,11 +150,11 @@
                         <Button x:Name="NextBtn" Click="NextBtn_Click"
                                 Background="{ThemeResource PrimaryBlueBrush}"
                                 Foreground="White"
-                                Padding="16,6"
+                                Padding="16,8"
                                 CornerRadius="8">
                             <StackPanel x:Name="NextBtnContent" Orientation="Horizontal" Spacing="6">
-                                <TextBlock x:Name="NextBtnText" Text="Next" FontSize="12" FontWeight="SemiBold" />
-                                <FontIcon x:Name="NextBtnIcon" Glyph="&#xE72A;" FontSize="11"
+                                <TextBlock x:Name="NextBtnText" Text="Next" FontSize="13" FontWeight="SemiBold" />
+                                <FontIcon x:Name="NextBtnIcon" Glyph="&#xE72A;" FontSize="12"
                                           Foreground="White" />
                             </StackPanel>
                         </Button>

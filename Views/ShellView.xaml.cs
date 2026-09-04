@@ -1,4 +1,5 @@
 using AutoTable.Services;
+using AutoTable.Models;
 using System;
 using System.IO;
 using System.Linq;
@@ -97,27 +98,45 @@ namespace AutoTable.Views
             }
             catch { }
 
-            // ── ROLE-BASED SIDEBAR GATING (dormant during development) ──────
-            // Uncomment the block below and remove the unconditional Visible lines
-            // when you switch from development mode to production role enforcement.
-            //
-            // Admin-only pages: hide sidebar items for non-admins
-            // NavModeration.Visibility = _vm.IsAdministrator
-            //     ? Visibility.Visible : Visibility.Collapsed;
-            // NavTermManagement.Visibility = _vm.IsAdministrator
-            //     ? Visibility.Visible : Visibility.Collapsed;
-            // NavClasses.Visibility = _vm.IsAdministrator
-            //     ? Visibility.Visible : Visibility.Collapsed;
-            // NavBudget.Visibility = _vm.IsAdministrator
-            //     ? Visibility.Visible : Visibility.Collapsed;
-            // NavPromotion.Visibility = _vm.IsAdministrator
-            //     ? Visibility.Visible : Visibility.Collapsed;
+            // ── ROLE-BASED SIDEBAR GATING ─────────────────────────────
+            var isAdmin = _vm.IsAdministrator;
+            var allowedPages = SessionService.Instance.CurrentUser?.AllowedPages;
+            var hasPageRestrictions = !isAdmin && !string.IsNullOrWhiteSpace(allowedPages);
+            var allowedSet = hasPageRestrictions
+                ? new HashSet<string>(allowedPages!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                : null;
 
-            // DEV MODE: all pages visible to all roles
-            NavTermManagement.Visibility = Visibility.Visible;
-            NavClasses.Visibility = Visibility.Visible;
-            NavBudget.Visibility = Visibility.Visible;
-            NavPromotion.Visibility = Visibility.Visible;
+            // Admin-only pages: hidden for non-admins
+            NavTermManagement.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+            NavPromotion.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+            NavAuditLog.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+
+            // Pages restricted by invite-code AllowedPages
+            if (hasPageRestrictions && allowedSet != null)
+            {
+                NavDashboard.Visibility = allowedSet.Contains("Dashboard") ? Visibility.Visible : Visibility.Collapsed;
+                NavAssessments.Visibility = allowedSet.Contains("Assessments") ? Visibility.Visible : Visibility.Collapsed;
+                NavMarksEntry.Visibility = allowedSet.Contains("MarksEntry") ? Visibility.Visible : Visibility.Collapsed;
+                NavGradebook.Visibility = allowedSet.Contains("Gradebook") ? Visibility.Visible : Visibility.Collapsed;
+                NavStudentPerformance.Visibility = allowedSet.Contains("StudentPerformance") ? Visibility.Visible : Visibility.Collapsed;
+                NavAnalytics.Visibility = allowedSet.Contains("Analytics") ? Visibility.Visible : Visibility.Collapsed;
+                NavReportCards.Visibility = allowedSet.Contains("ReportCards") ? Visibility.Visible : Visibility.Collapsed;
+                NavStudents.Visibility = allowedSet.Contains("Students") ? Visibility.Visible : Visibility.Collapsed;
+                NavTeachers.Visibility = allowedSet.Contains("Teachers") ? Visibility.Visible : Visibility.Collapsed;
+                NavClasses.Visibility = allowedSet.Contains("Classes") ? Visibility.Visible : Visibility.Collapsed;
+                NavFinDashboard.Visibility = allowedSet.Contains("FinDashboard") ? Visibility.Visible : Visibility.Collapsed;
+                NavFeeCollection.Visibility = allowedSet.Contains("FeeCollection") ? Visibility.Visible : Visibility.Collapsed;
+                NavDefaulters.Visibility = allowedSet.Contains("Defaulters") ? Visibility.Visible : Visibility.Collapsed;
+                NavBudget.Visibility = allowedSet.Contains("Budget") ? Visibility.Visible : Visibility.Collapsed;
+                NavAiInsights.Visibility = allowedSet.Contains("AiInsights") ? Visibility.Visible : Visibility.Collapsed;
+                NavSchoolSettings.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+            }
+            else if (!isAdmin)
+            {
+                // No restrictions but not admin: show all non-admin pages
+                NavClasses.Visibility = Visibility.Visible;
+                NavBudget.Visibility = Visibility.Visible;
+            }
 
             NavigationService.Instance.InitializeShell(ContentFrame);
 
@@ -205,10 +224,19 @@ namespace AutoTable.Views
         {
             if (!Routes.ContainsKey(tag)) return;
 
-            // ── ROLE-BASED ROUTE GUARD (dormant during development) ──────
-            // Uncomment when enforcing admin-only page access:
-            // if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
-            //     return;
+            // ── ROLE-BASED ROUTE GUARD ─────────────────────────────────
+            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+                return;
+
+            // ── INVITE-CODE PAGE RESTRICTION ───────────────────────────
+            var currentUser = SessionService.Instance.CurrentUser;
+            if (currentUser != null && currentUser.Role != UserRole.Administrator
+                && !string.IsNullOrWhiteSpace(currentUser.AllowedPages))
+            {
+                var allowed = new HashSet<string>(currentUser.AllowedPages.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                if (!allowed.Contains(tag))
+                    return;
+            }
 
             if (PageMeta.TryGetValue(tag, out var meta))
             {
@@ -244,31 +272,54 @@ namespace AutoTable.Views
 
         private static readonly HashSet<string> AdminOnlyRoutes = new()
         {
-            "Budget", "Promotion"
+            "Budget", "Promotion", "TermManagement", "AuditLog", "SchoolSettings"
         };
 
         private async void NavigateTo(string tag, Button btn)
         {
             if (!Routes.TryGetValue(tag, out var pageType)) return;
 
-            // ── ROLE-BASED ROUTE GUARD (dormant during development) ──────
-            // Uncomment when enforcing admin-only page access:
-            // if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
-            // {
-            //     try
-            //     {
-            //         var dlg = new ContentDialog
-            //         {
-            //             Title = "Access Restricted",
-            //             Content = "This page is restricted to administrators. Please sign in with an admin account to access it.",
-            //             CloseButtonText = "OK",
-            //             XamlRoot = this.XamlRoot
-            //         };
-            //         await dlg.ShowAsync();
-            //     }
-            //     catch { }
-            //     return;
-            // }
+            // ── ROLE-BASED ROUTE GUARD ─────────────────────────────────
+            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+            {
+                try
+                {
+                    var dlg = new ContentDialog
+                    {
+                        Title = "Access Restricted",
+                        Content = "This page is restricted to administrators. Please sign in with an admin account to access it.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dlg.ShowAsync();
+                }
+                catch { }
+                return;
+            }
+
+            // ── INVITE-CODE PAGE RESTRICTION GUARD ──────────────────────
+            var currentUser = SessionService.Instance.CurrentUser;            if (currentUser != null && currentUser.Role != UserRole.Administrator
+                && !string.IsNullOrWhiteSpace(currentUser.AllowedPages))
+            {
+                var allowed = new HashSet<string>(currentUser.AllowedPages.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                if (!allowed.Contains(tag))
+                {
+                    try
+                    {
+
+                        var dlg = new ContentDialog
+                        {
+                            Title = "Access Restricted",
+                            Content = "You do not have permission to access this page. Your invite code does not include access to this section.",
+                            CloseButtonText = "OK",
+                            XamlRoot = this.XamlRoot
+                        };
+                        await dlg.ShowAsync();
+                    }
+                    catch { }
+                    return;
+                }
+            }
 
             // Update header
             if (PageMeta.TryGetValue(tag, out var meta))
@@ -347,6 +398,7 @@ namespace AutoTable.Views
         private void SignOut_Click(object sender, RoutedEventArgs e)
         {
             SessionService.Instance.SignOut();
+            // Navigate back to the appropriate login page based on admin existence
             NavigationService.Instance.Navigate(typeof(LoginView));
         }
 

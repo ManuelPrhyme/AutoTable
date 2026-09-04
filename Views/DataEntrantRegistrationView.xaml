@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page
-    x:Class="AutoTable.Views.LoginView"
+    x:Class="AutoTable.Views.DataEntrantRegistrationView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:AutoTable.Controls"
@@ -14,7 +14,7 @@
             <ColumnDefinition Width="480" />
         </Grid.ColumnDefinitions>
 
-        <!-- Left: illustration panel (sheets & graphs instead of phone) -->
+        <!-- Left: illustration panel -->
         <Grid Grid.Column="0" Background="{ThemeResource NavyDarkBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
@@ -33,16 +33,16 @@
                     FontSize="32"
                     FontWeight="Bold"
                     Foreground="{ThemeResource TextOnDarkBrush}"
-                    Text="AutoTable" />
+                    Text="Join AutoTable" />
                 <TextBlock
                     MaxWidth="420"
                     Foreground="{ThemeResource TextOnDarkMutedBrush}"
-                    Text="Marks &amp; Performance Management for Primary Schools. Enter marks, analyze trends, and generate reports with AI assistance."
+                    Text="Enter the invite code provided by your administrator to create your account."
                     TextWrapping="WrapWholeWords" />
             </StackPanel>
         </Grid>
 
-        <!-- Right: white auth panel -->
+        <!-- Right: registration form -->
         <Grid Grid.Column="1" Background="{ThemeResource SurfaceGrayBrush}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <Border Style="{ThemeResource CardBorderStyle}" Margin="24,48,24,40" MaxWidth="480">
@@ -52,24 +52,40 @@
                         HorizontalAlignment="Center"
                         Spacing="16">
                     <TextBlock
-                        FontSize="28"
+                        FontSize="22"
                         FontWeight="Bold"
                         Foreground="{ThemeResource TextPrimaryBrush}"
-                        Text="Welcome back" />
+                        Text="Create Account" />
                     <TextBlock
                         Style="{ThemeResource MutedTextStyle}"
-                        Text="Sign in to continue to your school dashboard." />
+                        Text="Use your invite code to sign up." />
+
+                    <TextBox
+                        x:Name="InviteCodeBox"
+                        Header="Invite Code"
+                        PlaceholderText="e.g. AB12-CD34"
+                        InputScope="Text" />
+
+                    <TextBox
+                        x:Name="FullNameBox"
+                        Header="Full name"
+                        PlaceholderText="e.g. John Doe" />
 
                     <TextBox
                         x:Name="UsernameBox"
                         Header="Username"
-                        PlaceholderText="username"
+                        PlaceholderText="e.g. jdoe"
                         InputScope="Text" />
 
                     <PasswordBox
                         x:Name="PasswordBox"
                         Header="Password"
-                        PlaceholderText="Enter your password" />
+                        PlaceholderText="Create a password" />
+
+                    <PasswordBox
+                        x:Name="ConfirmPasswordBox"
+                        Header="Confirm password"
+                        PlaceholderText="Re-enter your password" />
 
                     <TextBlock
                         x:Name="ErrorText"
@@ -78,19 +94,21 @@
                         Visibility="Collapsed" />
 
                     <Button
-                        x:Name="SignInButton"
+                        x:Name="RegisterButton"
+                        Click="RegisterButton_Click"
                         HorizontalAlignment="Stretch"
-                        Content="Sign In"
+                        Content="Create Account"
                         Style="{ThemeResource PrimaryButtonStyle}" />
 
-                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="New data entrant?" />
-                        <HyperlinkButton x:Name="SignUpLink" Content="Register with invite code" />
-                    </StackPanel>
+                    <Button
+                        x:Name="BackToLoginButton"
+                        Click="BackToLoginButton_Click"
+                        HorizontalAlignment="Stretch"
+                        Content="Back to Sign In"
+                        Style="{ThemeResource GhostButtonStyle}" />
                     </StackPanel>
                 </Border>
             </ScrollViewer>
         </Grid>
     </Grid>
 </Page>
-

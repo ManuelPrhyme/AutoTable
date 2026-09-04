@@ -97,10 +97,11 @@ namespace AutoTable.Controls
                 await Task.Delay(250);
             }
 
-            // Position spotlight on the target element
+            // Position spotlight and dimming on the target element
             LayoutSpotlight(step);
 
-            // Show the sidebar
+            // Show the dimming scrim + sidebar
+            DimmingScrim.Visibility = Visibility.Visible;
             TourSidebar.Visibility = Visibility.Visible;
 
             // Entrance animation
@@ -128,7 +129,7 @@ namespace AutoTable.Controls
         }
 
         // ────────────────────────────────────────────────────────────
-        //  LAYOUT: spotlight positioning
+        //  LAYOUT: spotlight positioning + dimming
         // ────────────────────────────────────────────────────────────
 
         private void LayoutSpotlight(TourStep step)
@@ -191,32 +192,47 @@ namespace AutoTable.Controls
             TourSidebar.Opacity = 0;
             TourSidebar.Translation = new Vector3(40, 0, 0);
 
+            // Fade in the scrim
+            DimmingScrim.Opacity = 0;
+
             await Task.Delay(20);
 
             try
             {
-                var visual = Microsoft.UI.Xaml.Hosting.ElementCompositionPreview
+                var sidebarVisual = Microsoft.UI.Xaml.Hosting.ElementCompositionPreview
                     .GetElementVisual(TourSidebar);
-                var compositor = visual.Compositor;
+                var scrimVisual = Microsoft.UI.Xaml.Hosting.ElementCompositionPreview
+                    .GetElementVisual(DimmingScrim);
+                var compositor = sidebarVisual.Compositor;
 
                 if (compositor != null)
                 {
-                    var opacityAnim = compositor.CreateScalarKeyFrameAnimation();
-                    opacityAnim.InsertKeyFrame(1f, 1f);
-                    opacityAnim.Duration = TimeSpan.FromMilliseconds(250);
-                    visual.StartAnimation("Opacity", opacityAnim);
+                    // Sidebar slide + fade
+                    var sidebarOpacity = compositor.CreateScalarKeyFrameAnimation();
+                    sidebarOpacity.InsertKeyFrame(1f, 1f);
+                    sidebarOpacity.Duration = TimeSpan.FromMilliseconds(250);
+                    sidebarVisual.StartAnimation("Opacity", sidebarOpacity);
 
                     var slideAnim = compositor.CreateVector3KeyFrameAnimation();
                     slideAnim.InsertKeyFrame(1f, Vector3.Zero);
                     slideAnim.Duration = TimeSpan.FromMilliseconds(250);
-                    visual.StartAnimation("Translation", slideAnim);
+                    sidebarVisual.StartAnimation("Translation", slideAnim);
+
+                    // Scrim fade in
+                    var scrimOpacity = compositor.CreateScalarKeyFrameAnimation();
+                    scrimOpacity.InsertKeyFrame(1f, 1f);
+                    scrimOpacity.Duration = TimeSpan.FromMilliseconds(300);
+                    scrimVisual.StartAnimation("Opacity", scrimOpacity);
+
                     return;
                 }
             }
             catch { }
 
+            // Fallback: instant show
             TourSidebar.Opacity = 1;
             TourSidebar.Translation = Vector3.Zero;
+            DimmingScrim.Opacity = 1;
         }
 
         // ────────────────────────────────────────────────────────────
@@ -245,6 +261,7 @@ namespace AutoTable.Controls
         {
             Visibility = Visibility.Collapsed;
             IsHitTestVisible = false;
+            DimmingScrim.Visibility = Visibility.Collapsed;
             SpotlightBorder.Visibility = Visibility.Collapsed;
             SpotlightGlow.Visibility = Visibility.Collapsed;
             TourSidebar.Visibility = Visibility.Collapsed;

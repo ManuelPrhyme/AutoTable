@@ -158,6 +158,9 @@ namespace AutoTable
 
                         // Register the global data service.
                         AppServices.DataService = new DatabaseDataService(options);
+
+                        // Expose connection string for AuthService (user/invite-code lookups)
+                        AppServices.AuthConnectionString = connStr;
                     }
                 }
                 catch (Exception initEx)
@@ -194,7 +197,18 @@ namespace AutoTable
                 var root = new Frame();
                 _window.Content = root;
                 NavigationService.Instance.Initialize(root);
-                root.Navigate(typeof(Views.LoginView));
+                // First launch with no administrator → show admin registration.
+                // Otherwise → normal login view.
+                bool needsAdminSetup = false;
+                if (!demoMode)
+                {
+                    try
+                    {
+                        needsAdminSetup = !AuthService.Instance.HasAdministratorAsync().GetAwaiter().GetResult();
+                    }
+                    catch { /* If DB check fails, fall back to login view */ }
+                }
+                root.Navigate(needsAdminSetup ? typeof(Views.AdminRegistrationView) : typeof(Views.LoginView));
                 _window.Activate();
             }
             catch (Exception ex)

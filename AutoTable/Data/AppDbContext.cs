@@ -52,6 +52,7 @@ namespace AutoTable.Data
         public DbSet<GradeBandEntity> GradeBands => Set<GradeBandEntity>();
         public DbSet<SchoolSettingsEntity> SchoolSettings => Set<SchoolSettingsEntity>();
         public DbSet<HeadTeacherCommentEntity> HeadTeacherComments => Set<HeadTeacherCommentEntity>();
+        public DbSet<InviteCodeEntity> InviteCodes => Set<InviteCodeEntity>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -239,6 +240,16 @@ namespace AutoTable.Data
             // Budget lines: unique per category+year
             modelBuilder.Entity<BudgetLineEntity>()
                 .HasIndex(b => new { b.Category, b.FinancialYear })
+                .IsUnique();
+
+            // InviteCode → CreatedByUser FK
+            modelBuilder.Entity<InviteCodeEntity>()
+                .HasOne(i => i.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(i => i.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<InviteCodeEntity>()
+                .HasIndex(i => i.Code)
                 .IsUnique();
 
             base.OnModelCreating(modelBuilder);
