@@ -269,6 +269,10 @@ namespace AutoTable.Data.Entities
         public string? PreviousSchools { get; set; }      // comma-separated
         public bool IsRegisteredTeacher { get; set; }     // registered with the teachers' board
         public bool IsStudentTeacher { get; set; }        // still a student teacher
+
+        /// <summary>Comma-separated page tags this user may access, inherited from the invite code
+        /// used at registration. Null or empty means full access (admin or unrestricted data entrant).</summary>
+        public string? AllowedPages { get; set; }
     }
 
     public class TerminationLogEntity

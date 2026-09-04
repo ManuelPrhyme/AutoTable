@@ -37,6 +37,7 @@ namespace AutoTable.Data
             PatchAssessmentsStreamIds(connection);
             PatchInviteCodes(connection);
             PatchUsersPasswordHash(connection);
+            PatchUsersAllowedPages(connection);
         }
 
         // ── Terms ──────────────────────────────────────────────────────────
@@ -365,6 +366,12 @@ namespace AutoTable.Data
         private static void PatchUsersPasswordHash(SqliteConnection conn)
         {
             AddColumnIfMissing(conn, "Users", "PasswordHash", "ALTER TABLE Users ADD COLUMN PasswordHash TEXT;");
+        }
+
+        // ── Users.AllowedPages (page restrictions for data entrants) ──────
+        private static void PatchUsersAllowedPages(SqliteConnection conn)
+        {
+            AddColumnIfMissing(conn, "Users", "AllowedPages", "ALTER TABLE Users ADD COLUMN AllowedPages TEXT;");
         }
 
         // ── Helpers ────────────────────────────────────────────────────────

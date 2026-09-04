@@ -111,7 +111,8 @@ namespace AutoTable.Services
                 FullName = user.FullName,
                 Email = user.Email ?? string.Empty,
                 Role = role,
-                UserId = user.Id
+                UserId = user.Id,
+                AllowedPages = user.AllowedPages
             });
 
             return true;
@@ -153,6 +154,7 @@ namespace AutoTable.Services
                 Email = username.Trim().ToLower(),
                 PasswordHash = PasswordHelper.HashPassword(password),
                 Role = invite.Role,
+                AllowedPages = invite.AllowedPages,
                 CreatedAt = DateTime.UtcNow
             };
 
