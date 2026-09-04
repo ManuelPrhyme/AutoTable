@@ -94,6 +94,28 @@ namespace AutoTable.Views
             }
         }
 
+        // ── Invite Code Copy ──────────────────────────────
+
+        private async void CopyInviteCode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not string code) return;
+            try
+            {
+                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dp.SetText(code);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+
+                // Brief visual feedback
+                var originalContent = btn.Content;
+                btn.Content = "\u2713";
+                btn.IsEnabled = false;
+                await System.Threading.Tasks.Task.Delay(1200);
+                btn.Content = originalContent;
+                btn.IsEnabled = true;
+            }
+            catch { }
+        }
+
         // ── Invite Code Generation ──────────────────────────────
 
         private async void GenerateInviteCode_Click(object sender, RoutedEventArgs e)
