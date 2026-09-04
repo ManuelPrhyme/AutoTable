@@ -58,12 +58,12 @@ namespace AutoTable.Views
                 if (_vm.GradingSystems.Count > 0)
                 {
                     // At least one grading system exists — go straight to class creation.
-                    CreateClass_Click(null, null);
+                    CreateClass_Click(null!, null!);
                 }
                 else
                 {
                     await OpenCreateGradingSystemModalAsync();
-                    CreateClass_Click(null, null);
+                    CreateClass_Click(null!, null!);
                 }
             }
         }
@@ -103,7 +103,7 @@ namespace AutoTable.Views
             // is assigned after the class exists.
             await _vm.LoadAllStreamsAsync();
             await _vm.LoadGradingSystemsAsync();
-            var allSubjects = await AppServices.DataService.GetSubjectsAsync();
+            var allSubjects = await AppServices.DataService!.GetSubjectsAsync();
 
             // Teachers are not needed to create the class — the list is only
             // fetched after creation for the class-teacher assignment step.
@@ -314,7 +314,7 @@ namespace AutoTable.Views
             await _vm.LoadAllStreamsAsync();
             await _vm.LoadGradingSystemsAsync();
             await _vm.LoadSubjectsForClassAsync(cls.Id);
-            var allSubjects = await AppServices.DataService.GetSubjectsAsync();
+            var allSubjects = await AppServices.DataService!.GetSubjectsAsync();
 
             // --- Name field ---
             var nameBox = new TextBox

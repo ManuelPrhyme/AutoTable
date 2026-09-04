@@ -51,7 +51,7 @@ namespace AutoTable.Reports.ReportCards.Components
                 .Border(0.7f)
                 .BorderColor(_theme.GridBlue)
                 .Background(_theme.White)
-                .Image(_school.Logo)
+                .Image(_school.Logo!)
                 .FitArea();
         }
 
