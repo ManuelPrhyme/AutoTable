@@ -56,9 +56,9 @@ namespace AutoTable.Data.Entities
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        // Optional class teacher — must be an existing registered teacher (Users.Role == "Teacher")
+        // Optional class teacher — must be an existing row in the Teachers table
         public int? ClassTeacherId { get; set; }
-        public UserEntity? ClassTeacher { get; set; }
+        public TeacherEntity? ClassTeacher { get; set; }
         // Optional grading system — null falls back to the school default
         public int? GradingSystemId { get; set; }
         public GradingSystemEntity? GradingSystem { get; set; }
@@ -346,7 +346,7 @@ namespace AutoTable.Data.Entities
 
         // Optional stream-level teacher — falls back to the class teacher when null.
         public int? StreamTeacherId { get; set; }
-        public UserEntity? StreamTeacher { get; set; }
+        public TeacherEntity? StreamTeacher { get; set; }
     }
 
     // Term fee entity: amount to be charged for a given Class during a Term

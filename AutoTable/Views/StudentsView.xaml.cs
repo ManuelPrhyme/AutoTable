@@ -115,13 +115,10 @@ namespace AutoTable.Views
                 }
                 _vm.ApplyFilters();
 
-                // Close enrollment dialog first, then show the generated report card preview
+                // Close the enrollment dialog. No report-card preview is shown after
+                // enrollment — the report card is generated later from the Report Cards page.
                 dialog?.Hide();
-                try
-                {
-                    await form.ShowPreviewForStudentAsync(createdStudent!);
-                }
-                catch { }
+                AppServices.Toasts.Show("Student Enrolled", $"{createdStudent?.FullName} was enrolled successfully.");
             };
 
             // Modal-size.md standard: 1040 x 577 dialog. WinUI clamps ContentDialog width

@@ -295,17 +295,26 @@
                                                         Visibility="{Binding CanEnhanceVisibility}"
                                                         Style="{ThemeResource SecondaryButtonStyle}"
                                                         Padding="8,3" FontSize="11" MinWidth="64" />
+                                                <Button Content="Demote"
+                                                        Tag="{Binding Id}"
+                                                        Click="DemoteAccess_Click"
+                                                        Visibility="{Binding CanEnhanceVisibility}"
+                                                        Style="{ThemeResource SecondaryButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
                                                 <Button Content="Revoke"
                                                         Tag="{Binding Id}"
                                                         Click="RevokeAccess_Click"
                                                         Visibility="{Binding CanRevokeVisibility}"
                                                         Style="{ThemeResource DangerGhostButtonStyle}"
                                                         Padding="8,3" FontSize="11" MinWidth="64" />
-                                                <Button Content="Remove"
-                                                        Tag="{Binding Id}"
+                                                <Button Tag="{Binding Id}"
                                                         Click="RemoveAccount_Click"
                                                         Style="{ThemeResource DangerGhostButtonStyle}"
-                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                                        Visibility="{Binding CanRemoveVisibility}"
+                                                        Padding="6,3" FontSize="11" MinWidth="32"
+                                                        ToolTipService.ToolTip="Remove account">
+                                                    <FontIcon Glyph="&#xE74D;" FontSize="13" />
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>

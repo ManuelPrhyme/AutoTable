@@ -6,10 +6,12 @@ using AutoTable.Views.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Printing;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,6 +27,12 @@ namespace AutoTable.Views
 
         /// <summary>Holds the A4 sheets to print — one page per student.</summary>
         private readonly List<UIElement> _pages = new();
+
+        // ── Assessment selection for report cards / marks slips ──
+        // When set, only the assessment names in this set appear on printed
+        // report cards / slips. Empty set = include everything.
+        private HashSet<string> _includedAssessmentNames = new(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> _includedAssessmentIds = new();
 
         // ── Print-modal controls and state (direct-to-printer flow) ──
         private ComboBox? _printerCombo;
@@ -153,7 +161,29 @@ namespace AutoTable.Views
                 return new ReportCardSheetView { DataContext = null };
             var data = await service.GetReportCardSheetAsync(
                 row.StudentName, row.ClassName, ViewModel.SelectedTerm);
+
+            // When the user explicitly selected assessments, keep only those rows
+            // on the sheet (both the promotional and contributory result tables).
+            if (data != null && _includedAssessmentIds.Count > 0)
+            {
+                data.PromotionalAssessments = data.PromotionalAssessments
+                    .Where(r => AssessmentRowIncluded(r.AssessmentName, r.Subject))
+                    .ToList();
+                data.ContributoryAssessments = data.ContributoryAssessments
+                    .Where(r => AssessmentRowIncluded(r.AssessmentName, r.Subject))
+                    .ToList();
+            }
+
             return new ReportCardSheetView { DataContext = data };
+        }
+
+        /// <summary>True when an assessment row (name + optional subject) is in the user's printed selection.</summary>
+        private bool AssessmentRowIncluded(string assessmentName, string subject)
+        {
+            if (_includedAssessmentIds.Count == 0) return true;
+            var key = string.IsNullOrWhiteSpace(subject) ? assessmentName : $"{assessmentName} — {subject}";
+            return _includedAssessmentNames.Contains(key)
+                || _includedAssessmentNames.Contains(assessmentName);
         }
 
         private async Task<IReadOnlyList<ReportCardSheetView>> BuildSheetsAsync(IEnumerable<ReportCardRow> rows)
@@ -284,6 +314,8 @@ namespace AutoTable.Views
             {
                 try
                 {
+                    // Let the user pick which assessments to include before building the sheet.
+                    if (!await PromptReportCardAssessmentSelectionAsync()) return;
                     var sheets = await BuildSheetsAsync(new[] { row });
                     await ShowPreviewAndPrintAsync(sheets, $"Report Card — {row.StudentName}", new[] { row });
                 }
@@ -307,6 +339,8 @@ namespace AutoTable.Views
 
             try
             {
+                // Let the user pick which assessments to include on the report cards.
+                if (!await PromptReportCardAssessmentSelectionAsync()) return;
                 var rows = ViewModel.ReportCards.ToList();
                 var sheets = await BuildSheetsAsync(rows);
                 await ShowPreviewAndPrintAsync(sheets, $"Report Cards — {sheets.Count} students", rows);
@@ -525,23 +559,169 @@ namespace AutoTable.Views
             }.ShowAsync();
         }
 
+        // ── Assessment selection helper (report cards) ──────────────────────────
+
+        /// <summary>
+        /// Shows a modal listing the contributory assessments (end-of-term / end-of-year)
+        /// for the current class/term so the user can pick which to print on a report card.
+        /// Returns true when a selection was confirmed.
+        /// </summary>
+        private async Task<bool> PromptReportCardAssessmentSelectionAsync()
+        {
+            var service = AppServices.DataService;
+            if (service == null) return false;
+
+            var className = ViewModel.SelectedClass;
+            var termName = ViewModel.SelectedTerm;
+            if (string.IsNullOrWhiteSpace(className) || string.Equals(className, "All", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(termName) || string.Equals(termName, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                await new ContentDialog
+                {
+                    Title = "Select Filters First",
+                    Content = "Pick a specific class and term before selecting assessments. \"All\" is not supported for report-card assessment selection.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return false;
+            }
+
+            var all = new List<AssessmentItem>();
+            try { all = (await service.GetAssessmentsAsync()).ToList(); }
+            catch { all = new List<AssessmentItem>(); }
+
+            // Only contributory assessments (end-of-term / end-of-year) belong on the card.
+            var contributory = all
+                .Where(a => a.PromotionRole != AssessmentPromotionRole.None)
+                .OrderBy(a => a.Subject)
+                .ThenBy(a => a.Name)
+                .ToList();
+
+            if (contributory.Count == 0)
+            {
+                await new ContentDialog
+                {
+                    Title = "No Contributory Assessments",
+                    Content = "There are no assessments marked as contributory to the end-of-term or end-of-year result for this class/term. Mark an assessment as contributory first.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return false;
+            }
+
+            var items = contributory.Select(a => new AssessmentOption
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Subject = a.Subject,
+                Display = string.IsNullOrWhiteSpace(a.Subject) ? a.Name : $"{a.Name} — {a.Subject}",
+                IsSelected = _includedAssessmentIds.Count == 0 || _includedAssessmentIds.Contains(a.Id)
+            }).ToList();
+
+            var checkboxHost = new StackPanel { Spacing = 4, MaxHeight = 320 };
+            foreach (var opt in items)
+            {
+                var chk = new CheckBox { Content = opt.Display, IsChecked = opt.IsSelected, Margin = new Thickness(2, 0, 0, 0) };
+                chk.Click += (_, _) => opt.IsSelected = chk.IsChecked == true;
+                checkboxHost.Children.Add(chk);
+            }
+
+            var selectAll = new CheckBox { Content = "Select all contributory assessments", Margin = new Thickness(0, 0, 0, 6) };
+            selectAll.IsChecked = items.All(i => i.IsSelected);
+            selectAll.Click += (_, _) =>
+            {
+                bool check = selectAll.IsChecked == true;
+                foreach (var i in items) i.IsSelected = check;
+                foreach (var child in checkboxHost.Children.OfType<CheckBox>()) child.IsChecked = check;
+            };
+
+            var stack = new StackPanel { Spacing = 8, Width = 470 };
+            stack.Children.Add(new TextBlock
+            {
+                Text = "Choose which assessments to print on the report card. Only assessments that contribute to the end-of-term or end-of-year result are listed.",
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13,
+                Opacity = 0.8
+            });
+            stack.Children.Add(selectAll);
+            stack.Children.Add(new ScrollViewer
+            {
+                Content = checkboxHost,
+                MaxHeight = 300,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            });
+
+            var dialog = new ContentDialog
+            {
+                Title = "Select Assessments for Report Card",
+                Content = stack,
+                PrimaryButtonText = "OK — Show Print Preview",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot,
+                Width = 520
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return false;
+
+            var chosen = items.Where(i => i.IsSelected).ToList();
+            if (chosen.Count == 0)
+            {
+                await new ContentDialog
+                {
+                    Title = "No Assessment Selected",
+                    Content = "Select at least one assessment to include on the report cards.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return false;
+            }
+
+            _includedAssessmentIds = chosen.Select(c => c.Id).ToHashSet();
+            _includedAssessmentNames = chosen
+                .Select(c => string.IsNullOrWhiteSpace(c.Subject) ? c.Name : $"{c.Name} — {c.Subject}")
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return true;
+        }
+
+        private sealed class AssessmentOption : INotifyPropertyChanged
+        {
+            public string Id { get; init; } = string.Empty;
+            public string Name { get; init; } = string.Empty;
+            public string Subject { get; init; } = string.Empty;
+            public string Display { get; init; } = string.Empty;
+
+            private bool _isSelected = true;
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set { _isSelected = value; PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IsSelected))); }
+            }
+
+            public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        }
+
         private async void MidTermSlips_Click(object sender, RoutedEventArgs e)
         {
             var service = AppServices.DataService;
             if (service == null) return;
+
+            // 1) Let the user choose which assessments to put on the marks slips (max 2).
+            var selectedIds = await PromptMarksSlipAssessmentSelectionAsync();
+            if (selectedIds == null) return; // cancelled
 
             var stream = ViewModel.SelectedStream;
             if (stream == "None" || string.IsNullOrWhiteSpace(stream))
                 stream = null;
 
             var slips = await service.GetMidTermSlipsAsync(
-                ViewModel.SelectedClass, ViewModel.SelectedTerm, stream);
+                ViewModel.SelectedClass, ViewModel.SelectedTerm, stream, selectedIds);
 
             if (slips.Count == 0)
             {
                 await new ContentDialog
                 {
-                    Title = "Mid-Term Slips",
+                    Title = "Marks Slips",
                     Content = "No students found for the selected filters.",
                     CloseButtonText = "OK",
                     XamlRoot = this.XamlRoot
@@ -549,20 +729,16 @@ namespace AutoTable.Views
                 return;
             }
 
-            // Build compact slip views — 3 per A4 page
-            var slipViews = slips.Select(s =>
-            {
-                var view = new MidTermSlipView { DataContext = s };
-                return view;
-            }).ToList();
+            // 2) Build A4 pages: 5 slips per sheet, each torn off at the dotted line.
+            var pages = BuildMarksSlipA4Pages(slips);
 
-            // Show first slip in preview dialog
+            // 3) Preview the first page, then print all on request.
             var dialog = new ContentDialog
             {
-                Title = $"Mid-Term Slips — {slips.Count} students",
+                Title = $"Marks Slips — {slips.Count} students ({pages.Count} sheet(s))",
                 Content = new ScrollViewer
                 {
-                    Content = slipViews[0],
+                    Content = pages.Count > 0 ? pages[0] : null,
                     HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto
                 },
@@ -570,7 +746,7 @@ namespace AutoTable.Views
                 CloseButtonText = "Close",
                 XamlRoot = this.XamlRoot,
                 Width = 860,
-                Height = 500
+                Height = 560
             };
 
             var result = await dialog.ShowAsync();
@@ -578,10 +754,170 @@ namespace AutoTable.Views
 
             try
             {
-                RegisterForPrinting(slipViews);
+                RegisterForPrinting(pages);
                 await ShowPrintDialogAsync();
             }
             finally { UnregisterForPrinting(); }
+        }
+
+        /// <summary>
+        /// Shows a modal listing the class/term assessments so the user can pick which
+        /// papers to print on the marks slips (max 2, per the school's slip format).
+        /// Returns null when cancelled, an empty list when "All assessments" was chosen.
+        /// </summary>
+        private async Task<IReadOnlyList<string>?> PromptMarksSlipAssessmentSelectionAsync()
+        {
+            var service = AppServices.DataService;
+            if (service == null) return new List<string>();
+
+            var all = new List<AssessmentItem>();
+            try { all = (await service.GetAssessmentsAsync()).ToList(); }
+            catch { all = new List<AssessmentItem>(); }
+
+            var className = ViewModel.SelectedClass;
+            var candidates = all
+                .Where(a =>
+                    string.IsNullOrWhiteSpace(className) || string.Equals(className, "All", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(a.ClassName, className, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(a.ClassName, "All Classes", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(a => a.Subject)
+                .ThenBy(a => a.Name)
+                .ToList();
+
+            if (candidates.Count == 0)
+            {
+                await new ContentDialog
+                {
+                    Title = "No Assessments",
+                    Content = "There are no assessments for the current class/term. Create an assessment first so it can appear on the marks slips.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return new List<string>();
+            }
+
+                                    var checkboxes = new List<CheckBox>();
+            foreach (var a in candidates)
+            {
+                var dbId = a.Id; // string GUID
+                var label = string.IsNullOrWhiteSpace(a.Subject) ? a.Name : $"{a.Name} ({a.Subject})";
+                var chk = new CheckBox { Content = label, Tag = dbId, Margin = new Thickness(2, 2, 0, 2) };
+                chk.Click += (_, _) =>
+                {
+                    // Enforce the 2-assessment maximum.
+                    if (checkboxes.Count(c => c.IsChecked == true) > 2)
+                        chk.IsChecked = false;
+                };
+                checkboxes.Add(chk);
+            }
+
+            var allAssess = new CheckBox
+            {
+                Content = "All assessments",
+                IsChecked = true,
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            allAssess.Click += (_, _) =>
+            {
+                bool check = allAssess.IsChecked == true;
+                foreach (var c in checkboxes) c.IsChecked = check;
+            };
+
+            var host = new StackPanel { Spacing = 2, MaxHeight = 320 };
+            foreach (var c in checkboxes) host.Children.Add(c);
+
+            var stack = new StackPanel { Spacing = 8, Width = 460 };
+            stack.Children.Add(new TextBlock
+            {
+                Text = "Choose which assessments to print on the marks slips. You can select at most 2 assessments.",
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13,
+                Opacity = 0.8
+            });
+            stack.Children.Add(allAssess);
+            stack.Children.Add(new ScrollViewer
+            {
+                Content = host,
+                MaxHeight = 300,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            });
+
+            var dialog = new ContentDialog
+            {
+                Title = "Marks Slip — Select Assessments (max 2)",
+                Content = stack,
+                PrimaryButtonText = "OK — Build Slips",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot,
+                Width = 520
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return null;
+
+            return checkboxes.Where(c => c.IsChecked == true).Select(c => (string)c.Tag).ToList();
+        }
+
+        /// <summary>
+        /// Lays 5 mid-term slips onto an A4-format page (794 × 1123 px), separated by
+        /// dotted tear lines so each slip can be cut and handed out individually. Larger
+        /// classes produce multiple sheets that overflow onto additional pages.
+        /// </summary>
+        private List<UIElement> BuildMarksSlipA4Pages(IReadOnlyList<MidTermSlipModel> slips)
+        {
+            const int SlipsPerPage = 5;
+            const double PageWidth = 794;   // A4 portrait @ 96 DPI (210 mm)
+            const double PageHeight = 1123; // A4 portrait @ 96 DPI (297 mm)
+            const double SlipCellHeight = PageHeight / SlipsPerPage; // ~224.6 px per slip
+
+            var pages = new List<UIElement>();
+            int index = 0;
+            while (index < slips.Count)
+            {
+                var grid = new Grid
+                {
+                    Width = PageWidth,
+                    Height = PageHeight,
+                    Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White)
+                };
+                grid.RowDefinitions.Clear();
+                for (int i = 0; i < SlipsPerPage; i++)
+                    grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(SlipCellHeight) });
+
+                for (int row = 0; row < SlipsPerPage && index < slips.Count; row++, index++)
+                {
+                    var slip = new MidTermSlipView { DataContext = slips[index] };
+
+                    // Scale the 794×270 slip into the ~249 px cell height.
+                    var box = new Viewbox
+                    {
+                        Child = slip,
+                        Stretch = Stretch.Uniform,
+                        StretchDirection = StretchDirection.DownOnly
+                    };
+                    Grid.SetRow(box, row);
+                    grid.Children.Add(box);
+
+                    // Dotted tear line below every slip except the last row on the page.
+                    if (row < SlipsPerPage - 1)
+                    {
+                        var tear = new Microsoft.UI.Xaml.Shapes.Rectangle
+                        {
+                            Height = 1,
+                            Stroke = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
+                            StrokeDashArray = new DoubleCollection { 3, 3 },
+                            StrokeThickness = 1,
+                            VerticalAlignment = VerticalAlignment.Bottom,
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            Margin = new Thickness(12, 0, 12, 0)
+                        };
+                        Grid.SetRow(tear, row);
+                        grid.Children.Add(tear);
+                    }
+                }
+                pages.Add(grid);
+            }
+            return pages;
         }
 
         private async Task ShowPreviewAndPrintAsync(IReadOnlyList<ReportCardSheetView> sheets, string title, IReadOnlyList<ReportCardRow>? rowsForPdf = null)

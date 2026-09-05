@@ -73,8 +73,13 @@
                                         <TextBlock FontSize="12" Text="{x:Bind Phone}" TextWrapping="Wrap"
                                                    Foreground="{ThemeResource TextSecondaryBrush}" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" FontSize="12" VerticalAlignment="Center"
-                                               Text="{x:Bind SubjectsTaught}" TextWrapping="Wrap" />
+                                    <ItemsControl Grid.Column="2" ItemsSource="{x:Bind SubjectsList}" VerticalAlignment="Center">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" FontSize="12" HorizontalAlignment="Left" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                     <TextBlock Grid.Column="3" FontSize="12" VerticalAlignment="Center"
                                                Text="{x:Bind ClassesTaught}" TextWrapping="Wrap" />
                                     <StackPanel Grid.Column="4" Spacing="2" VerticalAlignment="Center">

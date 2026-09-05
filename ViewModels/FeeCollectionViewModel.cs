@@ -20,12 +20,13 @@ namespace AutoTable.ViewModels
 
         public ObservableCollection<string> Classes { get; }
         public ObservableCollection<string> Terms { get; }
-        public ObservableCollection<string> StatusOptions { get; } = new() { "All", "Paid", "Partial", "Unpaid" };
+        public ObservableCollection<string> StatusOptions { get; } = new() { "All", "Paid", "Partial", "Unpaid", "Surplus" };
         public ObservableCollection<FeeRecord> FeeRecords { get; } = new();
 
         public decimal TotalExpected => FeeRecords.Sum(f => f.ExpectedAmount);
         public decimal TotalCollected => FeeRecords.Sum(f => f.PaidAmount);
-        public decimal TotalOutstanding => FeeRecords.Sum(f => f.Balance);
+        // Surplus (overpayment) is not "outstanding" — only clamp to a positive balance.
+        public decimal TotalOutstanding => FeeRecords.Sum(f => f.Balance > 0 ? f.Balance : 0);
         public double CollectionRate => TotalExpected == 0 ? 0 : (double)(TotalCollected / TotalExpected * 100);
 
         public FeeCollectionViewModel()
@@ -178,6 +179,17 @@ namespace AutoTable.ViewModels
                         ? studentPayments.Max(p => p.PaymentDate).ToString("dd MMM yyyy")
                         : "-"
                 });
+            }
+
+            // Apply the status filter (All = show everything). Surplus rows appear
+            // here when the balance is negative (overpayment).
+            if (!string.Equals(SelectedStatus, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                var filtered = FeeRecords
+                    .Where(f => string.Equals(f.PaymentStatus, SelectedStatus, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                FeeRecords.Clear();
+                foreach (var f in filtered) FeeRecords.Add(f);
             }
 
             StatusMessage = errors.Count > 0

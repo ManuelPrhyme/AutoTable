@@ -14,6 +14,11 @@ namespace AutoTable.Services
         /// <summary>Sign in with username + password against the DB.</summary>
         Task<bool> SignInAsync(string email, string password);
 
+        /// <summary>Verify the current user's password against the DB.
+        /// In demo mode (no auth connection string), any non-empty password is accepted.
+        /// Returns true if the password is correct, false otherwise.</summary>
+        Task<bool> VerifyPasswordAsync(string password);
+
         /// <summary>Sign up a data entrant using an admin-generated invite code.</summary>
         Task<(bool Success, string? Error)> SignUpWithInviteCodeAsync(
             string fullName, string username, string password, string inviteCode);

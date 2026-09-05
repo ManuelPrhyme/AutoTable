@@ -412,8 +412,17 @@ namespace AutoTable.Views
                     if (activeTerm != null && ViewModel.Terms.Contains(activeTerm.Name))
                         ViewModel.SelectedTerm = activeTerm.Name;
                     await ViewModel.RefreshCommand!.ExecuteAsync(null);
-                    ViewModel.StatusMessage = $"Recorded payment of {amt:N0} for {selectedStudent.FullName} ({termLabel}).";
-                    // AppServices.Toasts.Show("Payment Recorded", $"Recorded payment of {amt:N0} for {selectedStudent.FullName} ({termLabel}).");
+
+                    // Auto-detect surplus: if total paid now exceeds the expected amount,
+                    // the record's status flips to "Surplus" (blue, +UGX). Surface it here.
+                    var msg = $"Recorded payment of {amt:N0} for {selectedStudent.FullName} ({termLabel}).";
+                    if (expected.HasValue && expected.Value > 0 && amt > expected.Value)
+                    {
+                        ViewModel.SelectedStatus = "Surplus";
+                        msg += $" This exceeds the expected {expected.Value:N0} — status set to Surplus.";
+                    }
+                    ViewModel.StatusMessage = msg;
+                    AppServices.Toasts.Show("Payment Recorded", msg);
                 }
                 catch (Exception ex)
                 {
@@ -767,6 +776,7 @@ namespace AutoTable.Views
             statusCombo.Items.Add("Paid");
             statusCombo.Items.Add("Partial");
             statusCombo.Items.Add("Unpaid");
+            statusCombo.Items.Add("Surplus");
 
             // Pre-select current status
             var currentStatus = record.PaymentStatus;
@@ -778,6 +788,58 @@ namespace AutoTable.Views
                     break;
                 }
             }
+
+            // Amount field — shown when Partial or Surplus is chosen.
+            //   Partial → the actual total amount the student has paid.
+            //   Surplus → the excess amount paid beyond what was expected.
+            var amountLabel = new TextBlock
+            {
+                Text = "Amount",
+                FontSize = 12,
+                Opacity = 0.7,
+                Visibility = Visibility.Collapsed
+            };
+            var amountBox = new TextBox
+            {
+                PlaceholderText = "Enter amount",
+                Width = 300,
+                Visibility = Visibility.Collapsed
+            };
+            var amountHint = new TextBlock
+            {
+                Text = "",
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xB5, 0x4D)),
+                Visibility = Visibility.Collapsed
+            };
+
+            void UpdateAmountField()
+            {
+                var status = statusCombo.SelectedItem?.ToString();
+                bool needsAmount = status == "Partial" || status == "Surplus";
+                amountLabel.Visibility = needsAmount ? Visibility.Visible : Visibility.Collapsed;
+                amountBox.Visibility = needsAmount ? Visibility.Visible : Visibility.Collapsed;
+                amountHint.Visibility = needsAmount ? Visibility.Visible : Visibility.Collapsed;
+
+                if (status == "Partial")
+                {
+                    amountLabel.Text = "Amount Actually Paid";
+                    amountHint.Text = $"Expected: {record.ExpectedAmount:N0}. Enter the total actually paid so far.";
+                }
+                else if (status == "Surplus")
+                {
+                    amountLabel.Text = "Surplus Amount Paid (over expected)";
+                    amountHint.Text = $"Expected: {record.ExpectedAmount:N0}. Enter only the EXTRA paid beyond this.";
+                }
+            }
+
+            statusCombo.SelectionChanged += (_, _) =>
+            {
+                UpdateAmountField();
+                if (statusCombo.SelectedItem?.ToString() == "Partial")
+                    amountBox.Text = record.PaidAmount.ToString("0.##");
+            };
 
             var notesBox = new TextBox
             {
@@ -792,6 +854,9 @@ namespace AutoTable.Views
             stack.Children.Add(new TextBlock { Text = $"Student: {record.StudentName}", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
             stack.Children.Add(new TextBlock { Text = $"LIN: {record.AdmissionNumber}", Opacity = 0.7, FontSize = 12 });
             stack.Children.Add(statusCombo);
+            stack.Children.Add(amountLabel);
+            stack.Children.Add(amountBox);
+            stack.Children.Add(amountHint);
             stack.Children.Add(notesBox);
 
             var dialog = new ContentDialog
@@ -803,20 +868,86 @@ namespace AutoTable.Views
                 XamlRoot = this.XamlRoot
             };
 
+            // Validate: Partial/Surplus require a positive amount.
+            dialog.PrimaryButtonClick += (s, args) =>
+            {
+                var status = statusCombo.SelectedItem?.ToString();
+                if ((status == "Partial" || status == "Surplus") &&
+                    !TryParseUiAmount(amountBox.Text, out _))
+                {
+                    args.Cancel = true;
+                    amountHint.Text = "Enter a valid amount greater than 0.";
+                    amountHint.Visibility = Visibility.Visible;
+                }
+            };
+
             var result = await dialog.ShowAsync();
             if (result != ContentDialogResult.Primary) return;
 
-            // TODO: Persist the payment status change to the database
-            // This would involve updating the FeePayments table and recalculating the balance
-
-            var successDialog = new ContentDialog
+            try
             {
-                Title = "Status Updated",
-                Content = $"Payment status for {record.StudentName} has been updated to \"{statusCombo.SelectedItem}\".",
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
-            };
-            await successDialog.ShowAsync();
+                var status = statusCombo.SelectedItem?.ToString() ?? "Paid";
+                double amount = (status == "Partial" || status == "Surplus")
+                    ? TryParseUiAmount(amountBox.Text, out var amt) ? amt : 0
+                    : 0;
+
+                // Resolve the student by LIN and the term scope.
+                var student = (await AppServices.DataService!.GetStudentsAsync())
+                    .FirstOrDefault(st => string.Equals(st.LIN, record.AdmissionNumber, StringComparison.OrdinalIgnoreCase));
+                if (student == null)
+                    throw new InvalidOperationException("Student could not be found for this record.");
+
+                var termId = await ResolveCurrentTermIdAsync();
+
+                await AppServices.DataService!.SetFeePaymentStatusAsync(student.Id, termId, status, amount);
+                await ViewModel.RefreshCommand!.ExecuteAsync(null);
+
+                ViewModel.StatusMessage = status == "Surplus"
+                    ? $"{record.StudentName} has a surplus of {amount:N0} (paid in excess of the expected amount)."
+                    : $"{record.StudentName}'s payment status is now \"{status}\".";
+                AppServices.Toasts.Show("Status Updated", ViewModel.StatusMessage);
+
+                var ok = new ContentDialog
+                {
+                    Title = "Status Updated",
+                    Content = ViewModel.StatusMessage,
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await ok.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                var errDialog = new ContentDialog
+                {
+                    Title = "Could not update status",
+                    Content = ex.Message,
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errDialog.ShowAsync();
+            }
+        }
+
+        private static bool TryParseUiAmount(string? raw, out double value)
+        {
+            value = 0;
+            var clean = (raw ?? string.Empty).Replace(",", string.Empty).Replace(" ", string.Empty);
+            return double.TryParse(clean, out value) && value > 0;
+        }
+
+        private async Task<int?> ResolveCurrentTermIdAsync()
+        {
+            // Prefer the page's selected term; fall back to the active term.
+            if (!string.IsNullOrEmpty(ViewModel.SelectedTerm) &&
+                !string.Equals(ViewModel.SelectedTerm, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                var lookups = await AppServices.DataService!.GetTermLookupsAsync();
+                var match = lookups.FirstOrDefault(t => string.Equals(t.Name, ViewModel.SelectedTerm, StringComparison.OrdinalIgnoreCase));
+                if (match != null) return match.Id;
+            }
+            try { return (await AppServices.DataService!.GetActiveTermAsync())?.Id; }
+            catch { return null; }
         }
     }
 }

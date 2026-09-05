@@ -303,6 +303,64 @@ Concrete wiring:
 
 ---
 
+## 9. Vertical column titles (multi-word headers)
+
+When a column is **narrow** and its header has two words (e.g. `GRADING SYSTEM`,
+`CLASS TEACHER`, `FEE BALANCE`), a single-line `TextBlock` can collide with the
+neighbouring header or get visually truncated. Stack the words vertically so the
+label fits the column width without wrapping mid-word.
+
+### When to use
+
+- Short, fixed-width columns (widths ~`1.2*` or lower) with a multi-word header.
+- Headers that would otherwise wrap awkwardly ("GRADING SYST / EM") or overlap
+  the adjacent header at narrow window sizes.
+
+### Two-word header — StackPanel of TextBlocks (recommended)
+
+```xml
+<StackPanel Spacing="0" VerticalAlignment="Center">
+    <TextBlock Text="GRADING" Style="{ThemeResource TableHeaderStyle}" FontSize="11" />
+    <TextBlock Text="SYSTEM" Style="{ThemeResource TableHeaderStyle}" FontSize="11" />
+</StackPanel>
+```
+
+- Keep `Spacing="0"` so the two lines read as a single label.
+- Use `FontSize="11"` (same as `TableHeaderStyle`) so the stacked header does not
+  grow taller than its single-line neighbours.
+- `VerticalAlignment="Center"` keeps it aligned with the row of column titles.
+- Set the same style/left-alignment as other headers (§3.5).
+- **Same geometry rule still holds:** the header *grid column* is unchanged — only
+  the label *inside* that column stacks. No change to column widths or spacing.
+
+### Fallback — Word-wrapping a single TextBlock
+
+For a header that is one long word ("ADMINISTRATION") or a two-word header in a
+proportional column, rely on `TextWrapping`:
+
+```xml
+<TextBlock Text="CLASS TEACHER" Style="{ThemeResource TableHeaderStyle}"
+           TextWrapping="Wrap" MaxWidth="90" />
+```
+
+- `MaxWidth` lets the header wrap onto a second line *within its own column*
+  instead of pushing the next column.
+- `TextWrapping="WrapWholeWords"` avoids splitting a single word like "GRADING".
+
+### What NOT to do
+
+- ✗ `<TextBlock Text="GRADING SYSTEM" />` in a narrow column — the header either
+  truncates, wraps mid-word, or overflows into the next header.
+- ✗ Reordering the words to "SYSTEM GRADING" to fit — keep the natural reading order.
+
+### Worked in the All Classes table
+
+`GRADING SYSTEM` and `CLASS TEACHER` headers use the StackPanel pattern above, so the
+words sit one over the other ("GRADING", then "SYSTEM"; "CLASS", then "TEACHER"),
+fitting their columns without colliding with `SUBJECTS` / `STUDENTS`.
+
+---
+
 ## 8. Fill-in checklist for a new table
 
 - [ ] Pick `{COLUMN_COUNT}` and write the §2 column plan (headers + cell styles).

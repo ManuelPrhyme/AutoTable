@@ -138,6 +138,57 @@ namespace AutoTable.Services
             await ProcessOverpaymentCreditAsync(db, studentId, termId);
         }
 
+        /// <summary>
+        /// Adjusts a student's total paid amount for a term so the register
+        /// reflects the chosen payment status. Writes a (possibly negative)
+        /// adjustment FeePayment row so actual transactions are preserved and
+        /// the on-screen table updates immediately.
+        /// </summary>
+        public async Task SetFeePaymentStatusAsync(int studentId, int? termId, string status, double amount)
+        {
+            using var db = CreateContext();
+            var s = await db.Students.FindAsync(studentId);
+            if (s == null) throw new InvalidOperationException("Student not found.");
+
+            // Expected amount = the term fee configured for the student's class.
+            double expected = 0;
+            if (s.ClassId != null && termId.HasValue)
+            {
+                var tf = await db.TermFees
+                    .FirstOrDefaultAsync(t => t.ClassId == s.ClassId.Value && t.TermId == termId.Value);
+                expected = tf?.Amount ?? 0;
+            }
+
+            // Current total paid for this student in the term scope.
+            var existing = await db.FeePayments
+                .Where(fp => fp.StudentId == studentId && (!termId.HasValue || fp.TermId == termId.Value))
+                .ToListAsync();
+            double currentPaid = existing.Sum(fp => fp.Amount);
+
+            double targetPaid = status switch
+            {
+                "Paid"    => expected,
+                "Partial" => Math.Max(0, amount),
+                "Unpaid"  => 0,
+                "Surplus" => expected + Math.Max(0, amount), // amount = the surplus (extra) paid
+                _         => currentPaid
+            };
+
+            double adjustment = targetPaid - currentPaid;
+            if (Math.Abs(adjustment) < 0.005) return; // nothing to change
+
+            db.FeePayments.Add(new FeePaymentEntity
+            {
+                StudentId = studentId,
+                Amount = adjustment, // negative reduces the total paid (e.g. Unpaid)
+                PaymentDate = DateTime.UtcNow,
+                TermId = termId,
+                Description = $"Status adjustment → {status}"
+            });
+            await db.SaveChangesAsync();
+            await ProcessOverpaymentCreditAsync(db, studentId, termId);
+        }
+
         public async Task UpdateMarkAsync(int assessmentId, int studentId, double? mark, string? grade, string? remarks = null, string? subjectName = null)
         {
             using var db = CreateContext();
@@ -1642,7 +1693,7 @@ namespace AutoTable.Services
         /// Returns mid-term slip data for all active students in a class.
         /// </summary>
         public async Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(
-            string? className, string? term, string? stream)
+            string? className, string? term, string? stream, IReadOnlyList<string>? assessmentIds = null)
         {
             using var db = CreateContext();
             var clsName = (className ?? string.Empty).Trim().ToLower();
@@ -1689,16 +1740,26 @@ namespace AutoTable.Services
                 if (termEntity != null)
                     assessmentsQuery = assessmentsQuery.Where(a => a.TermId == termEntity.Id);
             }
-            var assessmentEntities = await assessmentsQuery
+            // If the user selected specific assessments for the marks slips (max 2),
+            // include only those papers in the results.
+            if (assessmentIds != null && assessmentIds.Count > 0)
+            {
+                var assessmentIdInts = assessmentIds
+                    .Select(idStr => int.TryParse(idStr, out int parsedId) ? parsedId : -1)
+                    .Where(id => id > 0)
+                    .ToList();
+                assessmentsQuery = assessmentsQuery.Where(a => assessmentIdInts.Contains(a.Id));
+            }
+                    var assessmentEntities = await assessmentsQuery
                 .Include(a => a.Subject)
                 .OrderBy(a => a.Subject!.Name)
                 .ThenBy(a => a.Name)
                 .ToListAsync();
 
-            var assessmentIds = assessmentEntities.Select(a => a.Id).ToList();
+            var matchedAssessmentIds = assessmentEntities.Select(a => a.Id).ToList();
             var studentIds = students.Select(s => s.Id).ToList();
             var marks = await db.Marks
-                .Where(m => studentIds.Contains(m.StudentId) && assessmentIds.Contains(m.AssessmentId))
+                .Where(m => studentIds.Contains(m.StudentId) && matchedAssessmentIds.Contains(m.AssessmentId))
                 .ToListAsync();
 
             var slips = students.Select(s =>
@@ -2116,8 +2177,8 @@ namespace AutoTable.Services
             // (registered teachers AND student teachers are both allowed).
             if (classTeacherId.HasValue)
             {
-                var teacher = await db.Users.FindAsync(classTeacherId.Value);
-                if (teacher == null || teacher.Role != "Teacher")
+                var teacher = await db.Teachers.FindAsync(classTeacherId.Value);
+                if (teacher == null)
                     throw new InvalidOperationException("Selected class teacher was not found among teachers.");
             }
 
@@ -2148,8 +2209,8 @@ namespace AutoTable.Services
             // Validate and set class teacher
             if (classTeacherId.HasValue)
             {
-                var teacher = await db.Users.FindAsync(classTeacherId.Value);
-                if (teacher == null || teacher.Role != "Teacher")
+                var teacher = await db.Teachers.FindAsync(classTeacherId.Value);
+                if (teacher == null)
                     throw new InvalidOperationException("Selected class teacher was not found among teachers.");
             }
             c.ClassTeacherId = classTeacherId;

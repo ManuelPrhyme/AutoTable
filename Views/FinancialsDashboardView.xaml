@@ -26,9 +26,16 @@
                 </Grid>
             </Border>
 
-            <!-- PRIMARY KPI CARDS ROW -->
-            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Left">
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
+            <!-- PRIMARY KPI CARDS ROW — four equal-width cards distributing across the full row -->
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{ThemeResource KpiCardStyle}" MinWidth="0" HorizontalAlignment="Stretch">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="4" />
@@ -47,7 +54,7 @@
                     </Grid>
                 </Border>
 
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
+                <Border Grid.Column="1" Style="{ThemeResource KpiCardStyle}" MinWidth="0" HorizontalAlignment="Stretch">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="4" />
@@ -66,7 +73,7 @@
                     </Grid>
                 </Border>
 
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
+                <Border Grid.Column="2" Style="{ThemeResource KpiCardStyle}" MinWidth="0" HorizontalAlignment="Stretch">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="4" />
@@ -85,7 +92,7 @@
                     </Grid>
                 </Border>
 
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
+                <Border Grid.Column="3" Style="{ThemeResource KpiCardStyle}" MinWidth="0" HorizontalAlignment="Stretch">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="4" />
@@ -103,7 +110,7 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-            </StackPanel>
+            </Grid>
 
             <!-- SECONDARY KPI CARDS (2x2 Grid) -->
             <Grid ColumnSpacing="12" RowSpacing="12">

@@ -307,8 +307,8 @@ namespace AutoTable.Views
                         // Can't enhance or revoke yourself, and can't modify other admins
                         CanEnhanceVisibility = (!isAdmin && u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed,
                         CanRevokeVisibility = (!isAdmin && u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed,
-                        // Always show Remove, except don't let admin remove themselves
-                        CanRemoveVisibility = (u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed
+                        // Admins are indelible — hide Remove for every admin account (not just self)
+                        CanRemoveVisibility = (!isAdmin && u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed
                     });
                 }
 
@@ -431,6 +431,124 @@ namespace AutoTable.Views
                     if (!updatedPages.Contains(page)) updatedPages.Add(page);
 
                 user.AllowedPages = string.Join(",", updatedPages);
+                await db.SaveChangesAsync();
+                await LoadActiveAccountsAsync();
+            }
+            catch { }
+        }
+
+        private async void DemoteAccess_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not int userId) return;
+
+            var account = _activeAccounts.FirstOrDefault(a => a.Id == userId);
+            if (account == null) return;
+
+            var options = GetDbOptions();
+            if (options == null) return;
+
+            using var db = new AppDbContext(options);
+            var user = await db.Users.FindAsync(userId);
+            if (user == null) return;
+
+            var currentAllowedPages = string.IsNullOrEmpty(user.AllowedPages)
+                ? new List<string>()
+                : user.AllowedPages.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            if (currentAllowedPages.Count == 0)
+            {
+                var noPagesDialog = new ContentDialog
+                {
+                    Title = $"Demote Access — {account.FullName}",
+                    Content = "This user currently has no page access to revoke.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await noPagesDialog.ShowAsync();
+                return;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Demote Access — {account.FullName}",
+                PrimaryButtonText = "Revoke Selected",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var checkboxes = new System.Collections.Generic.List<(CheckBox CheckBox, string RouteTag)>();
+            var panel = new StackPanel { Spacing = 8 };
+
+            var instructionText = new TextBlock
+            {
+                Text = $"Uncheck pages to revoke access for {account.FullName}:",
+                TextWrapping = TextWrapping.WrapWholeWords,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
+            panel.Children.Add(instructionText);
+
+            // 3-column grid for the checkboxes (pages user currently has)
+            var grid = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var allPages = new List<(string DisplayName, string RouteTag)>
+            {
+                ("Dashboard", "Dashboard"),
+                ("Assessments", "Assessments"),
+                ("Marks Entry", "MarksEntry"),
+                ("Gradebook", "Gradebook"),
+                ("Student Performance", "StudentPerformance"),
+                ("Analytics", "Analytics"),
+                ("Report Cards", "ReportCards"),
+                ("Students", "Students"),
+                ("Teachers", "Teachers"),
+                ("Classes Management", "Classes"),
+                ("Fin. Dashboard", "FinDashboard"),
+                ("Fee Collection", "FeeCollection"),
+            };
+
+            var row = 0;
+            var col = 0;
+            // Only pages the user currently has access to belong in the Demote modal —
+            // unchecking one revokes that specific page.
+            foreach (var (displayName, routeTag) in allPages.Where(p => currentAllowedPages.Contains(p.RouteTag)))
+            {
+                var cb = new CheckBox { Content = displayName, IsChecked = true };
+                checkboxes.Add((cb, routeTag));
+
+                Grid.SetColumn(cb, col);
+                Grid.SetRow(cb, row);
+                grid.Children.Add(cb);
+
+                col++;
+                if (col >= 3) { col = 0; row++; }
+            }
+
+            for (int i = 0; i < row + 1; i++)
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            panel.Children.Add(grid);
+            dialog.Content = panel;
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                // Keep only pages that are still checked
+                var remainingPages = checkboxes.Where(c => c.CheckBox.IsChecked == true).Select(c => c.RouteTag).ToList();
+
+                if (remainingPages.Count == 0)
+                {
+                    // No pages left — lock out the user
+                    user.AllowedPages = "__NONE__";
+                }
+                else
+                {
+                    user.AllowedPages = string.Join(",", remainingPages);
+                }
                 await db.SaveChangesAsync();
                 await LoadActiveAccountsAsync();
             }

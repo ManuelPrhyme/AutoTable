@@ -199,10 +199,12 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="10" Padding="0,6">
-                                        <Ellipse Width="6" Height="6" Fill="{ThemeResource PrimaryBlueBrush}" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding}" Style="{ThemeResource MutedTextStyle}" TextWrapping="WrapWholeWords" />
-                                    </StackPanel>
+                                    <Border Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8" Padding="10,8">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Ellipse Width="6" Height="6" Fill="{ThemeResource PrimaryBlueBrush}" VerticalAlignment="Center" Margin="0,1,0,0" />
+                                            <TextBlock Text="{Binding}" TextWrapping="WrapWholeWords" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                    </Border>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>

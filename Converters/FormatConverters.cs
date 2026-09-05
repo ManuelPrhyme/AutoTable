@@ -176,4 +176,60 @@ namespace AutoTable.Converters
         public object ConvertBack(object value, Type targetType, object parameter, string language)
             => throw new NotImplementedException();
     }
+
+    /// <summary>
+    /// Formats a balance value for display.
+    /// Negative balance (surplus) → "+UGX {abs}" (blue)
+    /// Zero balance (paid) → "UGX 0" (green)
+    /// Positive balance (owed) → "UGX {value}" (red)
+    /// </summary>
+    public class BalanceTextConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            decimal amount = value switch
+            {
+                decimal d => d,
+                double db => (decimal)db,
+                int i => i,
+                _ => 0
+            };
+
+            if (amount < 0)
+                return $"+UGX {Math.Abs(amount):N0}";  // surplus
+            return $"UGX {amount:N0}";
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Returns the appropriate color for a balance value.
+    /// Negative balance (surplus) → Blue
+    /// Zero balance (paid in full) → Green
+    /// Positive balance (still owes) → Red
+    /// </summary>
+    public class BalanceColorConverter : IValueConverter
+    {
+        private static readonly SolidColorBrush BlueBrush = new(Windows.UI.Color.FromArgb(255, 41, 128, 185));   // surplus
+        private static readonly SolidColorBrush GreenBrush = new(Windows.UI.Color.FromArgb(255, 39, 174, 96));   // paid
+        private static readonly SolidColorBrush RedBrush = new(Windows.UI.Color.FromArgb(255, 231, 76, 60));     // owed
+
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            decimal amount = value switch
+            {
+                decimal d => d,
+                double db => (decimal)db,
+                int i => i,
+                _ => 0
+            };
+
+            if (amount < 0) return BlueBrush;   // surplus (overpaid)
+            if (amount == 0) return GreenBrush; // paid in full
+            return RedBrush;                    // still owes
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
 }

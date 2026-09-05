@@ -294,6 +294,10 @@ namespace AutoTable.Views
 
         private async void DeleteClass_Click(object sender, RoutedEventArgs e)
         {
+            // ── ROLE-BASED GATING (dormant during development) ──────
+            // Uncomment _isAdmin and the guards below when enforcing role restrictions.
+            // private readonly bool _isAdmin;
+
             if ((sender as Button)?.Tag is not ClassInfo cls) return;
 
             var dialog = new ContentDialog
@@ -307,6 +311,35 @@ namespace AutoTable.Views
 
             var result = await dialog.ShowAsync();
             if (result != ContentDialogResult.Primary) return;
+
+            // ── PASSWORD VERIFICATION ───────────────────────────────
+            // Require an administrator to re-enter their password before
+            // a destructive action (class deletion) is finalized.
+            if (SessionService.Instance.IsAuthenticated && SessionService.Instance.IsAdministrator)
+            {
+                var passwordBox = new PasswordBox { Width = 300, Header = "Enter your password to confirm" };
+                var pwDialog = new ContentDialog
+                {
+                    Title = "Password Verification",
+                    Content = passwordBox,
+                    PrimaryButtonText = "Confirm",
+                    CloseButtonText = "Cancel",
+                    XamlRoot = this.XamlRoot
+                };
+
+                var pwResult = await pwDialog.ShowAsync();
+                if (pwResult != ContentDialogResult.Primary) return;
+
+                var authService = AuthService.Instance;
+                var password = passwordBox.Password;
+                var verified = await authService.VerifyPasswordAsync(password);
+
+                if (!verified)
+                {
+                    await ShowErrorAsync("Authentication Failed", "Incorrect password. The class was not deleted.");
+                    return;
+                }
+            }
 
             try
             {

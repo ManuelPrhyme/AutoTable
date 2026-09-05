@@ -210,7 +210,7 @@ namespace AutoTable.Data
             modelBuilder.Entity<AssessmentEntity>()
                 .HasIndex(a => a.TermId);
 
-            // Class teacher must be a real registered user (Users.Role == "Teacher")
+            // Class teacher must be a real row in the Teachers table
             modelBuilder.Entity<ClassEntity>()
                 .HasOne(c => c.ClassTeacher)
                 .WithMany()

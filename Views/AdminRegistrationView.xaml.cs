@@ -66,7 +66,12 @@ namespace AutoTable.Views
             }
             catch (System.Exception ex)
             {
-                ShowError("Registration failed: " + ex.Message);
+                // Surface the inner DB exception when available — the top-level
+                // message for EF SaveChanges failures is generic.
+                var detail = ex.InnerException?.Message;
+                ShowError(string.IsNullOrWhiteSpace(detail)
+                    ? "Registration failed: " + ex.Message
+                    : "Registration failed: " + detail);
             }
             finally
             {

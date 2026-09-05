@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,11 +19,20 @@ namespace AutoTable.Views
             InitializeComponent();
             DataContext = ViewModel;
             Loaded += FinancialsDashboardView_Loaded;
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
         private async void FinancialsDashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             await LoadFeeCollectionByClassAsync();
+        }
+
+        // Re-render the per-class chart whenever the selected term changes so it stays
+        // in sync with the KPI cards (which are already term-scoped).
+        private async void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModel.SelectedTermName))
+                await LoadFeeCollectionByClassAsync();
         }
 
         private async Task LoadFeeCollectionByClassAsync()
@@ -35,8 +45,26 @@ namespace AutoTable.Views
 
                 var classes = await ds.GetClassesAsync();
                 var students = (await ds.GetStudentsAsync()).Where(s => s.IsActive).ToList();
+
+                // Resolve the term selected on the dashboard so the chart reflects the SAME
+                // term as the KPI cards instead of an all-time / general metric.
+                bool showAll = string.IsNullOrEmpty(ViewModel.SelectedTermName)
+                    || string.Equals(ViewModel.SelectedTermName, "All Terms", StringComparison.OrdinalIgnoreCase);
+                int? termId = null;
+                if (!showAll)
+                {
+                    var termLookups = await ds.GetTermLookupsAsync();
+                    termId = termLookups.FirstOrDefault(t => string.Equals(t.Name, ViewModel.SelectedTermName, StringComparison.OrdinalIgnoreCase))?.Id;
+                }
+
                 var termFees = await ds.GetTermFeesAsync();
-                var payments = await ds.GetFeePaymentsAsync();
+                // Payments scoped to the selected term (null termId = all terms)
+                var payments = await ds.GetFeePaymentsAsync(null, termId);
+                // Per-class expected fees scoped to the selected term (all terms → sum of every term's fee)
+                var classFees = termFees
+                    .Where(tf => termId == null || tf.TermId == termId.Value)
+                    .GroupBy(tf => tf.ClassId)
+                    .ToDictionary(g => g.Key, g => g.Sum(tf => tf.Amount));
 
                 if (classes.Count == 0)
                 {
@@ -50,17 +78,17 @@ namespace AutoTable.Views
                 }
 
                 // Update the term label with the selected term
-                FeeCollectionTermLabel.Text = ViewModel.SelectedTermName;
+                FeeCollectionTermLabel.Text = showAll ? "All Terms" : ViewModel.SelectedTermName;
 
                 // Build per-class collected vs outstanding data
                 var classData = new List<(string Name, double Collected, double Outstanding)>();
                 foreach (var cls in classes)
                 {
                     var classStudents = students.Where(s => s.ClassId == cls.Id).ToList();
-                    var classTermFee = termFees.FirstOrDefault(tf => tf.ClassId == cls.Id)?.Amount ?? 0;
+                    var classTermFee = classFees.TryGetValue(cls.Id, out var fee) ? fee : 0;
                     var expected = classTermFee * classStudents.Count;
 
-                    // Sum payments for students in this class
+                    // Sum payments for students in this class (already term-scoped)
                     var studentIds = classStudents.Select(s => s.Id).ToHashSet();
                     var collected = payments.Where(p => studentIds.Contains(p.StudentId)).Sum(p => p.Amount);
                     var outstanding = expected > collected ? expected - collected : 0;

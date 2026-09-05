@@ -28,7 +28,8 @@ namespace AutoTable.Models
         public decimal ExpectedAmount { get; set; }
         public decimal PaidAmount { get; set; }
         public decimal Balance => ExpectedAmount - PaidAmount;
-        public string PaymentStatus => Balance <= 0 ? "Paid" : PaidAmount > 0 ? "Partial" : "Unpaid";
+        // Negative balance (overpaid) → Surplus; zero → Paid; otherwise Partial/Unpaid.
+        public string PaymentStatus => Balance < 0 ? "Surplus" : Balance == 0 ? "Paid" : PaidAmount > 0 ? "Partial" : "Unpaid";
         public string Term { get; set; } = string.Empty;
         public string PaymentDate { get; set; } = string.Empty;
     }

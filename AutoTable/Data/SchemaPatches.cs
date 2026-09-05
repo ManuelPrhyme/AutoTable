@@ -39,6 +39,7 @@ namespace AutoTable.Data
             PatchUsersPasswordHash(connection);
             PatchUsersAllowedPages(connection);
             PatchUsersCredentialResetCode(connection);
+            PatchUsersLegacyTeacherColumns(connection);
             PatchTeachersTable(connection);
         }
 
@@ -397,10 +398,91 @@ namespace AutoTable.Data
             AddColumnIfMissing(conn, "Users", "PasswordHash", "ALTER TABLE Users ADD COLUMN PasswordHash TEXT;");
         }
 
-        // ── Users.AllowedPages (page restrictions for data entrants) ──────
+        // ── Users.AllowedPages (page restrictions for data entrants) ───────
         private static void PatchUsersAllowedPages(SqliteConnection conn)
         {
             AddColumnIfMissing(conn, "Users", "AllowedPages", "ALTER TABLE Users ADD COLUMN AllowedPages TEXT;");
+        }
+
+        // ── Users legacy teacher columns (removal) ────────────────────────
+        // Older builds kept teacher profile fields directly on the Users
+        // table (Phone, SubjectsTaught, …, IsRegisteredTeacher,
+        // IsStudentTeacher). The current model moved teachers to their own
+        // Teachers table, so these columns are dead schema. Worse, databases
+        // created by EnsureCreated while that legacy model was live declared
+        // IsRegisteredTeacher / IsStudentTeacher as NOT NULL WITHOUT DEFAULT,
+        // which makes ANY new INSERT into Users — such as first-time admin
+        // registration — fail with
+        //   "NOT NULL constraint failed: Users.IsRegisteredTeacher".
+        // SQLite can't drop or alter an existing column, so the standard fix
+        // is a full table rebuild: create the current schema, copy the rows,
+        // swap names, and restore the AUTOINCREMENT sequence.
+        private static void PatchUsersLegacyTeacherColumns(SqliteConnection conn)
+        {
+            // Fresh databases (current model) have none of these columns — nothing to do.
+            bool hasLegacyColumns =
+                ColumnExists(conn, "Users", "Phone") ||
+                ColumnExists(conn, "Users", "SubjectsTaught") ||
+                ColumnExists(conn, "Users", "ClassesTaught") ||
+                ColumnExists(conn, "Users", "NextOfKinName") ||
+                ColumnExists(conn, "Users", "NextOfKinRelationship") ||
+                ColumnExists(conn, "Users", "NextOfKinPhone") ||
+                ColumnExists(conn, "Users", "PreviousSchools") ||
+                ColumnExists(conn, "Users", "IsRegisteredTeacher") ||
+                ColumnExists(conn, "Users", "IsStudentTeacher");
+            if (!hasLegacyColumns) return;
+
+            // foreign_keys must be OFF while the parent Users table is dropped
+            // (Marks/FeePayments/InviteCodes reference it by name) and re-enabled
+            // afterwards. This pragma cannot change inside a transaction, so it
+            // is issued before BEGIN and after COMMIT.
+            using (var fkOff = conn.CreateCommand())
+            {
+                fkOff.CommandText = "PRAGMA foreign_keys = OFF;";
+                fkOff.ExecuteNonQuery();
+            }
+
+            using (var tx = (SqliteTransaction)conn.BeginTransaction())
+            {
+                try
+                {
+                    Exec(conn, tx, @"
+                        CREATE TABLE Users_new (
+                            Id INTEGER NOT NULL CONSTRAINT PK_Users PRIMARY KEY AUTOINCREMENT,
+                            FullName TEXT NOT NULL,
+                            Email TEXT NULL,
+                            Role TEXT NULL,
+                            PasswordHash TEXT NULL,
+                            CreatedAt TEXT NOT NULL,
+                            AllowedPages TEXT NULL,
+                            CredentialResetCode TEXT NULL
+                        );");
+                    Exec(conn, tx, @"
+                        INSERT INTO Users_new (Id, FullName, Email, Role, PasswordHash, CreatedAt, AllowedPages, CredentialResetCode)
+                        SELECT Id, FullName, Email, Role, PasswordHash, CreatedAt, AllowedPages, CredentialResetCode
+                        FROM Users;");
+                    Exec(conn, tx, "DROP TABLE Users;");
+                    Exec(conn, tx, "ALTER TABLE Users_new RENAME TO Users;");
+                    // The old sqlite_sequence row died with the table — restore it.
+                    Exec(conn, tx, @"
+                        INSERT INTO sqlite_sequence (name, seq)
+                            SELECT 'Users', (SELECT COALESCE(MAX(Id), 0) FROM Users)
+                            WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = 'Users');");
+                    Exec(conn, tx, "UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(Id), 0) FROM Users) WHERE name = 'Users';");
+                    tx.Commit();
+                }
+                catch
+                {
+                    try { tx.Rollback(); } catch { }
+                    throw;
+                }
+            }
+
+            using (var fkOn = conn.CreateCommand())
+            {
+                fkOn.CommandText = "PRAGMA foreign_keys = ON;";
+                fkOn.ExecuteNonQuery();
+            }
         }
 
         // ── Helpers ────────────────────────────────────────────────────────

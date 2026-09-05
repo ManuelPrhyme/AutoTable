@@ -51,7 +51,7 @@ namespace AutoTable.Demo
             return Task.FromResult<IReadOnlyList<Models.ReportCardRow>>(new List<Models.ReportCardRow>());
         }
 
-        public Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string? className, string? term, string? stream)
+        public Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string? className, string? term, string? stream, IReadOnlyList<string>? assessmentIds = null)
         {
             return Task.FromResult<IReadOnlyList<Models.MidTermSlipModel>>(new List<Models.MidTermSlipModel>());
         }
@@ -258,6 +258,12 @@ namespace AutoTable.Demo
             => Task.FromResult(new TermFee { Id = 0, TermId = termId, ClassId = classId, Amount = amount, TermName = string.Empty, ClassName = string.Empty });
 
         public Task CreateFeePaymentAsync(int studentId, double amount, int? termId = null, int? recordedByUserId = null, string? description = null)
+        {
+            // Mock: no-op
+            return Task.CompletedTask;
+        }
+
+        public Task SetFeePaymentStatusAsync(int studentId, int? termId, string status, double amount)
         {
             // Mock: no-op
             return Task.CompletedTask;

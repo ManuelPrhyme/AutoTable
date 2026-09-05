@@ -138,6 +138,39 @@ namespace AutoTable.Services
             return true;
         }
 
+        // ── Verify the current user password ──────────────────────
+
+        public async Task<bool> VerifyPasswordAsync(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return false;
+
+            var currentUser = SessionService.Instance.CurrentUser;
+            if (currentUser?.Email == null)
+                return false;
+
+            // Demo mode: no DB connection configured
+            if (string.IsNullOrEmpty(AppServices.AuthConnectionString))
+                return true;
+
+            try
+            {
+                using var db = new AppDbContext(GetOptions());
+
+                var user = await db.Users
+                    .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == currentUser.Email.ToLower());
+
+                if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+                    return false;
+
+                return PasswordHelper.VerifyPassword(password, user.PasswordHash);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         // ── Invite-code sign-up (data entrant) ───────────────────
 
         public async Task<(bool Success, string? Error)> SignUpWithInviteCodeAsync(

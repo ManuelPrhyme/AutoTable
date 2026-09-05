@@ -18,6 +18,8 @@
             <converters:GradeColorConverter    x:Key="GradeColorConverter" />
             <converters:StatusColorConverter   x:Key="StatusColorConverter" />
             <converters:RoundPercentConverter  x:Key="RoundPercentConverter" />
+            <converters:BalanceTextConverter    x:Key="BalanceTextConverter" />
+            <converters:BalanceColorConverter   x:Key="BalanceColorConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

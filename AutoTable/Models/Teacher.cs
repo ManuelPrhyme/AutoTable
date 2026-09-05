@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace AutoTable.Models
 {
     public class Teacher
@@ -37,5 +40,11 @@ namespace AutoTable.Models
             string.IsNullOrWhiteSpace(NextOfKinRelationship)
                 ? NextOfKinName ?? string.Empty
                 : $"{NextOfKinName} ({NextOfKinRelationship})";
+
+        /// <summary>Subjects as a list for vertical display.</summary>
+        public List<string> SubjectsList =>
+            string.IsNullOrWhiteSpace(SubjectsTaught)
+                ? new List<string>()
+                : SubjectsTaught.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries).ToList();
     }
 }

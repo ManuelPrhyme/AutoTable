@@ -53,8 +53,9 @@ namespace AutoTable.Services
         /// <summary>Returns all active students in a class with overall average across all subjects for a given term.
         /// Used by the Report Cards list view.</summary>
         Task<IReadOnlyList<Models.ReportCardRow>> GetReportCardListAsync(string? className, string? term, string? stream);
-        /// <summary>Returns mid-term slip data for all students in a class for a given term.</summary>
-        Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string? className, string? term, string? stream);
+        /// <summary>Returns mid-term slip data for all students in a class for a given term.
+        /// <paramref name="assessmentIds"/> optionally limits the slips to the selected papers (max 2 for marks slips).</summary>
+        Task<IReadOnlyList<Models.MidTermSlipModel>> GetMidTermSlipsAsync(string? className, string? term, string? stream, IReadOnlyList<string>? assessmentIds = null);
 
         Task<IReadOnlyList<Student>> GetStudentsAsync();
         Task<Student?> GetStudentByIdAsync(int id);
@@ -117,6 +118,14 @@ namespace AutoTable.Services
         // Fee payment reads (Phase 5)
         Task<IReadOnlyList<AutoTable.Models.FeePaymentSummary>> GetFeePaymentsAsync(int? classId = null, int? termId = null);
 
+        // Adjust a student's payment status for a term:
+        //   "Paid"    → paid = expected
+        //   "Partial" → paid = amount (actual amount paid)
+        //   "Unpaid"  → paid = 0
+        //   "Surplus" → paid = expected + amount (amount is the surplus / extra paid)
+        // Persists an adjustment row so the register and table reflect the change.
+        Task SetFeePaymentStatusAsync(int studentId, int? termId, string status, double amount);
+
         // Defaulters / cohort finance analytics (P5.5)
         Task<IReadOnlyList<AutoTable.Models.DefaulterRecord>> GetDefaultersAsync(int? termId = null, int? classId = null, decimal? minBalance = null);
         Task<IReadOnlyList<AutoTable.Models.CohortSummary>> GetCohortSummariesAsync(int? termId = null);
@@ -125,7 +134,7 @@ namespace AutoTable.Services
         Task<IReadOnlyList<AutoTable.Models.StudentCredit>> GetStudentCreditsAsync(int studentId);
         Task<double> GetAvailableCreditAsync(int studentId, int termId);
 
-        // Teacher CRUD (maps to UserEntity with Role="Teacher")
+        // Teacher CRUD (backed by the Teachers table — separate from Users)
         Task<IReadOnlyList<AutoTable.Models.Teacher>> GetTeachersAsync();
         Task<AutoTable.Models.Teacher> CreateTeacherAsync(AutoTable.Models.Teacher teacher);
         Task<AutoTable.Models.Teacher?> UpdateTeacherAsync(AutoTable.Models.Teacher teacher);
