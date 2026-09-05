@@ -40,6 +40,7 @@ namespace AutoTable.Data
         public DbSet<FeePaymentEntity> FeePayments => Set<FeePaymentEntity>();
         public DbSet<StudentCreditEntity> StudentCredits => Set<StudentCreditEntity>();
         public DbSet<UserEntity> Users => Set<UserEntity>();
+        public DbSet<TeacherEntity> Teachers => Set<TeacherEntity>();
         public DbSet<TerminationLogEntity> TerminationLogs => Set<TerminationLogEntity>();
         public DbSet<EnrollmentEntity> Enrollments => Set<EnrollmentEntity>();
         // New entities

@@ -1,6 +1,7 @@
 using AutoTable.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace AutoTable.Views
 {
@@ -51,11 +52,12 @@ namespace AutoTable.Views
             try
             {
                 var auth = AuthService.Instance;
-                var success = await auth.RegisterAdministratorAsync(fullName, username, password);
+                var (success, resetCode) = await auth.RegisterAdministratorAsync(fullName, username, password);
 
                 if (success)
                 {
-                    NavigationService.Instance.Navigate(typeof(Views.ShellView));
+                    // Show the reset code before navigating
+                    ShowResetCodeAndContinue(resetCode);
                 }
                 else
                 {
@@ -70,6 +72,62 @@ namespace AutoTable.Views
             {
                 RegisterButton.IsEnabled = true;
             }
+        }
+
+        private async void ShowResetCodeAndContinue(string? resetCode)
+        {
+            var panel = new StackPanel { Spacing = 12 };
+
+            var titleText = new TextBlock
+            {
+                Text = "Your Credential Reset Code",
+                FontSize = 18,
+                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+                TextWrapping = TextWrapping.WrapWholeWords
+            };
+
+            var infoText = new TextBlock
+            {
+                Text = "Save this code in a secure place. If you ever forget your username or password, you can use this code to reset your credentials.",
+                FontSize = 12,
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 100, 100, 100)),
+                TextWrapping = TextWrapping.WrapWholeWords
+            };
+
+            var codeText = new TextBlock
+            {
+                Text = resetCode ?? "N/A",
+                FontSize = 28,
+                FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 33, 150, 243)),
+                HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center,
+                Margin = new Microsoft.UI.Xaml.Thickness(0, 12, 0, 12)
+            };
+
+            panel.Children.Add(titleText);
+            panel.Children.Add(infoText);
+            panel.Children.Add(codeText);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Account Created Successfully",
+                Content = panel,
+                PrimaryButtonText = "Continue to Dashboard",
+                CloseButtonText = "Copy Code & Continue",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Secondary)
+            {
+                // Copy to clipboard
+                var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                package.SetText(resetCode ?? "");
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+            }
+
+            NavigationService.Instance.Navigate(typeof(Views.ShellView));
         }
 
         private void ShowError(string message)

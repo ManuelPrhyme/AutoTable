@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="AutoTable.Views.ClassesView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -55,51 +55,72 @@
                         </Border>
 
                         <Border Style="{ThemeResource TableHeaderRowStyle}">
-                            <Grid ColumnSpacing="12">
+                            <Grid ColumnSpacing="4" Padding="16,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="36" />
                                     <ColumnDefinition Width="2*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="1.5*" />
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="120" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
-                                <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CLASS NAME" />
-                                <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="STREAM" />
-                                <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="GRADING SYSTEM" />
-                                <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="CLASS TEACHER" />
-                                <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STUDENTS" />
-                                <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
+                                <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CLASS NAME" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECTS" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="GRADING SYSTEM" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="CLASS TEACHER" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STUDENTS" HorizontalAlignment="Center" />
+                                <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" HorizontalAlignment="Center" />
                             </Grid>
                         </Border>
 
-                        <ListView x:Name="ClassesList" ItemsSource="{Binding ClassInfos}" IsItemClickEnabled="True" ItemClick="ClassesList_ItemClick" SelectionMode="Single">
+                        <ListView x:Name="ClassesList" ItemsSource="{Binding ClassInfos}" IsItemClickEnabled="True" ItemClick="ClassesList_ItemClick" SelectionMode="Single"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="MinHeight" Value="0" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="models:ClassInfo" xmlns:models="using:AutoTable.Models">
-                                    <Grid Padding="12" ColumnSpacing="12">
+                                    <Grid Padding="16,8" ColumnSpacing="4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="36" />
                                         <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="120" />
                                     </Grid.ColumnDefinitions>
-                                    <Ellipse Grid.Column="0" Width="28" Height="28" Fill="{ThemeResource PrimaryBlueBrush}" />
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{x:Bind SubjectsCsv}" Style="{ThemeResource MutedTextStyle}" FontSize="12" TextWrapping="WrapWholeWords" />
+                                    <TextBlock Grid.Column="0" Text="{x:Bind Index}" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" HorizontalAlignment="Left" />
+                                        <ItemsControl ItemsSource="{x:Bind Streams}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Style="{ThemeResource MutedTextStyle}" FontSize="12" HorizontalAlignment="Left" /></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="{x:Bind StreamsCsv}" VerticalAlignment="Center" TextWrapping="WrapWholeWords" />
-                                    <TextBlock Grid.Column="3" Text="{x:Bind GradingSystemName}" VerticalAlignment="Center" TextWrapping="WrapWholeWords"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    <TextBlock Grid.Column="4" Text="{x:Bind ClassTeacherName}" VerticalAlignment="Center" TextWrapping="WrapWholeWords"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    <TextBlock Grid.Column="5" Text="{x:Bind StudentCount}" VerticalAlignment="Center" />
-                                    <Button Grid.Column="6" Content="Edit" Tag="{x:Bind}" Click="EditClass_Click"
-                                            Style="{ThemeResource SecondaryButtonStyle}" Padding="8,4" FontSize="12"
-                                            VerticalAlignment="Center" />
+                                    <ItemsControl Grid.Column="2" ItemsSource="{x:Bind Subjects}" VerticalAlignment="Center">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" Style="{ThemeResource MutedTextStyle}" FontSize="12" HorizontalAlignment="Left" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Grid.Column="3" Text="{x:Bind GradingSystemName}" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="4" Text="{x:Bind ClassTeacherName}" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="5" Text="{x:Bind StudentCount}" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                    <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Button Content="Edit" Tag="{x:Bind}" Click="EditClass_Click"
+                                                Style="{ThemeResource SecondaryButtonStyle}" Padding="8,3" FontSize="11" />
+                                        <Button Content="Delete" Tag="{x:Bind}" Click="DeleteClass_Click"
+                                                Style="{ThemeResource DangerGhostButtonStyle}" Padding="8,3" FontSize="11" />
+                                    </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
@@ -148,3 +169,4 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
+

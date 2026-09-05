@@ -150,6 +150,19 @@ namespace AutoTable.Views
                 NavBudget.Visibility = Visibility.Visible;
             }
 
+            // ── HIDE SECTIONS WITH NO VISIBLE PAGES ─────────────────
+            // If every button in a section is collapsed, hide the section header too.
+            SectionPerformance.Visibility = HasAnyVisible(
+                NavDashboard, NavAssessments, NavMarksEntry, NavGradebook,
+                NavStudentPerformance, NavAnalytics) ? Visibility.Visible : Visibility.Collapsed;
+
+            SectionAdmin.Visibility = HasAnyVisible(
+                NavReportCards, NavStudents, NavTeachers, NavTermManagement,
+                NavClasses, NavPromotion, NavAuditLog) ? Visibility.Visible : Visibility.Collapsed;
+
+            SectionFinancials.Visibility = HasAnyVisible(
+                NavFinDashboard, NavFeeCollection, NavBudget) ? Visibility.Visible : Visibility.Collapsed;
+
             NavigationService.Instance.InitializeShell(ContentFrame);
 
             // Keep header/sidebar in sync when other pages navigate the shell frame
@@ -288,6 +301,19 @@ namespace AutoTable.Views
                 if (found != null) return found;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Returns true if any of the provided UI elements is visible.
+        /// Used to determine whether a sidebar section header should be shown.
+        /// </summary>
+        private static bool HasAnyVisible(params UIElement[] elements)
+        {
+            foreach (var el in elements)
+            {
+                if (el.Visibility == Visibility.Visible) return true;
+            }
+            return false;
         }
 
         private void NavItem_Click(object sender, RoutedEventArgs e)

@@ -9,7 +9,7 @@ namespace AutoTable.Services
         Task<bool> HasAdministratorAsync();
 
         /// <summary>Register the first administrator (fails if one already exists).</summary>
-        Task<bool> RegisterAdministratorAsync(string fullName, string username, string password);
+        Task<(bool Success, string? ResetCode)> RegisterAdministratorAsync(string fullName, string username, string password);
 
         /// <summary>Sign in with username + password against the DB.</summary>
         Task<bool> SignInAsync(string email, string password);

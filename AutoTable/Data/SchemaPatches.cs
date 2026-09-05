@@ -38,6 +38,8 @@ namespace AutoTable.Data
             PatchInviteCodes(connection);
             PatchUsersPasswordHash(connection);
             PatchUsersAllowedPages(connection);
+            PatchUsersCredentialResetCode(connection);
+            PatchTeachersTable(connection);
         }
 
         // ── Terms ──────────────────────────────────────────────────────────
@@ -360,6 +362,33 @@ namespace AutoTable.Data
                 }
                 catch { /* index may already exist */ }
             }
+        }
+
+        // ── Teachers table (separate from Users) ────────────────────────────
+        private static void PatchTeachersTable(SqliteConnection conn)
+        {
+            CreateTableIfNotExists(conn, "Teachers",
+                @"CREATE TABLE Teachers (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    FullName TEXT NOT NULL,
+                    Email TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    Phone TEXT,
+                    SubjectsTaught TEXT,
+                    ClassesTaught TEXT,
+                    NextOfKinName TEXT,
+                    NextOfKinRelationship TEXT,
+                    NextOfKinPhone TEXT,
+                    PreviousSchools TEXT,
+                    IsRegisteredTeacher INTEGER DEFAULT 0,
+                    IsStudentTeacher INTEGER DEFAULT 0
+                );");
+        }
+
+        // ── Users.CredentialResetCode (forgot-credentials recovery) ─────────
+        private static void PatchUsersCredentialResetCode(SqliteConnection conn)
+        {
+            AddColumnIfMissing(conn, "Users", "CredentialResetCode", "ALTER TABLE Users ADD COLUMN CredentialResetCode TEXT;");
         }
 
         // ── Users.PasswordHash (ensure column exists for older DBs) ────────

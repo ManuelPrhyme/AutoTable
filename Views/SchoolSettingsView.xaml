@@ -117,22 +117,19 @@
                                       Margin="0,2,0,6" Checked="SelectAllPagesCheck_Changed"
                                       Unchecked="SelectAllPagesCheck_Changed" />
 
-                            <ListView x:Name="AccessPagesList"
-                                      SelectionMode="None"
-                                      IsItemClickEnabled="False"
-                                      MaxHeight="220"
-                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <CheckBox Content="{Binding DisplayName}"
-                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                  IsEnabled="{Binding IsEnabled}"
-                                                  Checked="PageCheckBox_Changed"
-                                                  Unchecked="PageCheckBox_Changed"
-                                                  Margin="0,2" />
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
+                            <Grid x:Name="AccessPagesGrid" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                            </Grid>
 
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button x:Name="GenerateCodeButton" Content="Generate Code"
@@ -193,13 +190,16 @@
                                                 </TextBlock>
                                             </StackPanel>
 
-                                            <Button Grid.Column="2"
-                                                    Content="✓"
-                                                    Tag="{Binding Code}"
-                                                    Click="CopyInviteCode_Click"
-                                                    Style="{ThemeResource GhostButtonStyle}" FontSize="14"
-                                                    Padding="8,4" MinWidth="40"
-                                                    ToolTipService.ToolTip="Copy code" />
+                                                                                                                                                        <Button x:Name="CopyInviteCodeBtn"
+                                            Grid.Column="2"
+                                            Tag="{Binding Code}"
+                                            Click="CopyInviteCode_Click"
+                                            Style="{ThemeResource GhostButtonStyle}" FontSize="12"
+                                            Padding="8,4" MinWidth="50"
+                                            Foreground="White"
+                                            ToolTipService.ToolTip="Copy code">
+                                        <TextBlock x:Name="CopyInviteCodeContent" Text="Copy" FontWeight="SemiBold" />
+                                    </Button>
 
                                             <Button Grid.Column="3"
                                                     Content="Revoke"
@@ -223,7 +223,7 @@
                             <TextBlock Text="ACTIVE ACCOUNTS" FontSize="11" FontWeight="SemiBold"
                                        Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
 
-                            <TextBlock Text="Manage registered users: view roles, enhance access, revoke rights, or remove accounts."
+                            <TextBlock Text="Manage registered users: view roles, promote access, revoke rights, or remove accounts."
                                        FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
                                        TextWrapping="WrapWholeWords" />
 
@@ -289,9 +289,9 @@
 
                                             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4"
                                                         VerticalAlignment="Center">
-                                                <Button Content="Enhance"
+                                                <Button Content="Promote"
                                                         Tag="{Binding Id}"
-                                                        Click="EnhanceAccess_Click"
+                                                        Click="PromoteAccess_Click"
                                                         Visibility="{Binding CanEnhanceVisibility}"
                                                         Style="{ThemeResource SecondaryButtonStyle}"
                                                         Padding="8,3" FontSize="11" MinWidth="64" />
@@ -311,6 +311,53 @@
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
                             </ListView>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Credential Reset Codes -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="CredentialResetCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="CREDENTIAL RESET CODES" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Generate a reset code for a user. They can use it to recover their account if they forget their username or password."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <ComboBox x:Name="ResetUserCombo" Header="Select User"
+                                      HorizontalAlignment="Stretch" SelectionChanged="ResetUserCombo_SelectionChanged" />
+
+                            <TextBlock x:Name="CurrentResetCodeText" FontSize="12"
+                                       Foreground="{ThemeResource TextSecondaryBrush}"
+                                       TextWrapping="WrapWholeWords" Visibility="Collapsed">
+                                <Run Text="Current reset code: " />
+                                <Run x:Name="CurrentResetCodeRun" FontFamily="Consolas" FontWeight="SemiBold" />
+                            </TextBlock>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="GenerateResetCodeButton" Content="Generate New Code"
+                                        Click="GenerateResetCode_Click" Style="{ThemeResource PrimaryButtonStyle}" />
+                                <Button x:Name="CopyResetCodeButton"
+                                        Click="CopyResetCode_Click" Style="{ThemeResource SecondaryButtonStyle}"
+                                        Visibility="Collapsed">
+                                    <TextBlock x:Name="CopyResetCodeContent" Text="Copy Code" FontWeight="SemiBold" />
+                                </Button>
+                            </StackPanel>
+
+                            <Border x:Name="NewResetCodeBorder" Visibility="Collapsed"
+                                    Background="#F0F9FF" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="New reset code generated!" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock x:Name="NewResetCodeText" FontSize="18" FontWeight="Bold"
+                                               Foreground="{ThemeResource PrimaryBlueBrush}" FontFamily="Consolas" />
+                                    <TextBlock Text="Share this code with the user. It will replace any previous reset code."
+                                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}"
+                                               TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </Border>
 
                         </StackPanel>
                     </Border>

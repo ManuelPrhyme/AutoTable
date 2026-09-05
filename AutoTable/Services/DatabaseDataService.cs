@@ -18,22 +18,21 @@ namespace AutoTable.Services
             _options = options;
         }
 
-        // Teacher CRUD implementations
+        // Teacher CRUD implementations — uses TeacherEntity (NOT UserEntity)
         public async Task<IReadOnlyList<AutoTable.Models.Teacher>> GetTeachersAsync()
         {
             using var db = CreateContext();
-            var users = await db.Users.Where(u => u.Role == "Teacher").OrderBy(u => u.FullName).ToListAsync();
-            return users.Select(MapTeacher).ToList();
+            var teachers = await db.Teachers.OrderBy(t => t.FullName).ToListAsync();
+            return teachers.Select(MapTeacher).ToList();
         }
 
         public async Task<AutoTable.Models.Teacher> CreateTeacherAsync(AutoTable.Models.Teacher teacher)
         {
             using var db = CreateContext();
-            var entity = new UserEntity
+            var entity = new TeacherEntity
             {
                 FullName = teacher.FullName ?? string.Empty,
                 Email = teacher.Email,
-                Role = "Teacher",
                 CreatedAt = DateTime.UtcNow,
                 Phone = teacher.Phone,
                 SubjectsTaught = teacher.SubjectsTaught,
@@ -45,7 +44,7 @@ namespace AutoTable.Services
                 IsRegisteredTeacher = teacher.IsRegisteredTeacher,
                 IsStudentTeacher = teacher.IsStudentTeacher
             };
-            db.Users.Add(entity);
+            db.Teachers.Add(entity);
             await db.SaveChangesAsync();
             teacher.Id = entity.Id;
             return teacher;
@@ -54,47 +53,46 @@ namespace AutoTable.Services
         public async Task<AutoTable.Models.Teacher?> UpdateTeacherAsync(AutoTable.Models.Teacher teacher)
         {
             using var db = CreateContext();
-            var u = await db.Users.FindAsync(teacher.Id);
-            if (u == null || u.Role != "Teacher") return null;
-            u.FullName = teacher.FullName;
-            u.Email = teacher.Email;
-            u.Phone = teacher.Phone;
-            u.SubjectsTaught = teacher.SubjectsTaught;
-            u.ClassesTaught = teacher.ClassesTaught;
-            u.NextOfKinName = teacher.NextOfKinName;
-            u.NextOfKinRelationship = teacher.NextOfKinRelationship;
-            u.NextOfKinPhone = teacher.NextOfKinPhone;
-            u.PreviousSchools = teacher.PreviousSchools;
-            u.IsRegisteredTeacher = teacher.IsRegisteredTeacher;
-            u.IsStudentTeacher = teacher.IsStudentTeacher;
-            db.Users.Update(u);
+            var t = await db.Teachers.FindAsync(teacher.Id);
+            if (t == null) return null;
+            t.FullName = teacher.FullName;
+            t.Email = teacher.Email;
+            t.Phone = teacher.Phone;
+            t.SubjectsTaught = teacher.SubjectsTaught;
+            t.ClassesTaught = teacher.ClassesTaught;
+            t.NextOfKinName = teacher.NextOfKinName;
+            t.NextOfKinRelationship = teacher.NextOfKinRelationship;
+            t.NextOfKinPhone = teacher.NextOfKinPhone;
+            t.PreviousSchools = teacher.PreviousSchools;
+            t.IsRegisteredTeacher = teacher.IsRegisteredTeacher;
+            t.IsStudentTeacher = teacher.IsStudentTeacher;
+            db.Teachers.Update(t);
             await db.SaveChangesAsync();
-            return MapTeacher(u);
+            return MapTeacher(t);
         }
 
-        private static AutoTable.Models.Teacher MapTeacher(UserEntity u) => new()
+        private static AutoTable.Models.Teacher MapTeacher(TeacherEntity t) => new()
         {
-            Id = u.Id,
-            FullName = u.FullName,
-            Email = u.Email,
-            Role = u.Role,
-            Phone = u.Phone,
-            SubjectsTaught = u.SubjectsTaught,
-            ClassesTaught = u.ClassesTaught,
-            NextOfKinName = u.NextOfKinName,
-            NextOfKinRelationship = u.NextOfKinRelationship,
-            NextOfKinPhone = u.NextOfKinPhone,
-            PreviousSchools = u.PreviousSchools,
-            IsRegisteredTeacher = u.IsRegisteredTeacher,
-            IsStudentTeacher = u.IsStudentTeacher
+            Id = t.Id,
+            FullName = t.FullName,
+            Email = t.Email,
+            Phone = t.Phone,
+            SubjectsTaught = t.SubjectsTaught,
+            ClassesTaught = t.ClassesTaught,
+            NextOfKinName = t.NextOfKinName,
+            NextOfKinRelationship = t.NextOfKinRelationship,
+            NextOfKinPhone = t.NextOfKinPhone,
+            PreviousSchools = t.PreviousSchools,
+            IsRegisteredTeacher = t.IsRegisteredTeacher,
+            IsStudentTeacher = t.IsStudentTeacher
         };
 
         public async Task DeleteTeacherAsync(int teacherId)
         {
             using var db = CreateContext();
-            var u = await db.Users.FindAsync(teacherId);
-            if (u == null || u.Role != "Teacher") return;
-            db.Users.Remove(u);
+            var t = await db.Teachers.FindAsync(teacherId);
+            if (t == null) return;
+            db.Teachers.Remove(t);
             await db.SaveChangesAsync();
         }
 

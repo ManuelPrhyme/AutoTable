@@ -87,6 +87,10 @@
                         <TextBlock Style="{ThemeResource MutedTextStyle}" Text="New data entrant?" />
                         <HyperlinkButton x:Name="SignUpLink" Content="Register with invite code" />
                     </StackPanel>
+
+                    <HyperlinkButton x:Name="ForgotCredentialsLink" Content="Forgot Username / Password?"
+                                     Click="ForgotCredentialsLink_Click" HorizontalAlignment="Center"
+                                     Margin="0,8,0,0" FontSize="12" />
                     </StackPanel>
                 </Border>
             </ScrollViewer>

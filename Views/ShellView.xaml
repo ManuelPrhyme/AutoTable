@@ -55,7 +55,7 @@
                 <StackPanel Padding="12,16,12,8" Spacing="2">
 
                     <!-- MODULE: PERFORMANCE -->
-                    <TextBlock
+                    <TextBlock x:Name="SectionPerformance"
                         Text="PERFORMANCE"
                         FontSize="10"
                         FontWeight="SemiBold"
@@ -131,7 +131,7 @@
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
                     <!-- MODULE: ADMIN -->
-                    <TextBlock
+                    <TextBlock x:Name="SectionAdmin"
                         Text="ADMINISTRATION"
                         FontSize="10"
                         FontWeight="SemiBold"
@@ -197,7 +197,7 @@
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
                     <!-- MODULE: FINANCIALS -->
-                    <TextBlock
+                    <TextBlock x:Name="SectionFinancials"
                         Text="FINANCIALS"
                         FontSize="10"
                         FontWeight="SemiBold"
@@ -282,8 +282,8 @@
                         <TextBlock x:Name="SidebarUserName" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextOnDarkBrush}" />
                         <TextBlock x:Name="SidebarUserRole" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                     </StackPanel>
-                    <Button Style="{ThemeResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Sign Out" Click="SignOut_Click">
-                        <FontIcon Glyph="&#xE8FB;" FontSize="14" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
+                    <Button Style="{ThemeResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Lock (Sign Out)" Click="SignOut_Click">
+                        <FontIcon Glyph="&#xE72E;" FontSize="14" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                     </Button>
                 </StackPanel>
             </Border>

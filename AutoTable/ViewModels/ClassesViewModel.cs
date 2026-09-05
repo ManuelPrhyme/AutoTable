@@ -40,6 +40,7 @@ namespace AutoTable.ViewModels
             var gradingNames = await _dataService.GetClassGradingSystemNamesAsync();
             // Resolve teacher and grading system IDs for each class
             var allClasses = await _dataService.GetClassesAsync();
+            int index = 1;
             foreach (var c in classes)
             {
                 var streamsForClass = await _dataService.GetStreamsForClassAsync(c.Id);
@@ -48,9 +49,10 @@ namespace AutoTable.ViewModels
                 var info = new AutoTable.Models.ClassInfo
                 {
                     Id = c.Id,
+                    Index = index++,
                     Name = c.Name,
-                    StreamsCsv = string.Join(", ", streamsForClass.Select(s => s.Name)),
-                    SubjectsCsv = string.Join(", ", subjectsForClass.Select(s => s.Name)),
+                    Streams = streamsForClass.Select(s => s.Name).ToList(),
+                    Subjects = subjectsForClass.Select(s => s.Name).ToList(),
                     StudentCount = count,
                     ClassTeacherName = teacherNames.TryGetValue(c.Id, out var tn) ? tn : string.Empty,
                     GradingSystemName = gradingNames.TryGetValue(c.Id, out var gn) ? gn : string.Empty

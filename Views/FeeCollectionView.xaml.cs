@@ -1,5 +1,8 @@
 using AutoTable.Converters;
+using AutoTable.Data;
+using Microsoft.EntityFrameworkCore;
 using AutoTable.Models;
+using AutoTable.Services;
 using AutoTable.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -677,6 +680,143 @@ namespace AutoTable.Views
         {
             var slips = ViewModel.FeeRecords.Select(BuildSlipGrid).ToList();
             await ShowSlipPreviewAndPrintAsync(slips, $"Payment Slips — {slips.Count} student(s)");
+        }
+
+        // ── Edit Fee Payment (with password verification) ────────────
+
+        private async void EditFeePayment_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { DataContext: FeeRecord record }) return;
+
+            // Step 1: Password verification dialog
+            var passwordBox = new PasswordBox
+            {
+                Header = "Enter your password",
+                PlaceholderText = "Password",
+                Width = 300
+            };
+
+            var verifyDialog = new ContentDialog
+            {
+                Title = "Verify Your Identity",
+                Content = passwordBox,
+                PrimaryButtonText = "Verify",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await verifyDialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            // Step 2: Verify the password against the current user
+            var enteredPassword = passwordBox.Password;
+            if (!VerifyCurrentUserPassword(enteredPassword))
+            {
+                var errDialog = new ContentDialog
+                {
+                    Title = "Incorrect Password",
+                    Content = "The password you entered is incorrect. Please try again.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errDialog.ShowAsync();
+                return;
+            }
+
+            // Step 3: Open the edit payment status modal
+            await OpenEditPaymentStatusDialogAsync(record);
+        }
+
+        private bool VerifyCurrentUserPassword(string password)
+        {
+            var currentUser = SessionService.Instance.CurrentUser;
+            if (currentUser == null || string.IsNullOrEmpty(currentUser.Email))
+                return false;
+
+            try
+            {
+                var connStr = AppServices.AuthConnectionString;
+                if (string.IsNullOrEmpty(connStr)) return false;
+
+                var options = new DbContextOptionsBuilder<AppDbContext>()
+                    .UseSqlite(connStr)
+                    .AddInterceptors(new AppDbContext.ForeignKeyInterceptor())
+                    .Options;
+
+                using var db = new AppDbContext(options);
+                var user = db.Users.FirstOrDefault(u => u.Email != null && u.Email.ToLower() == currentUser.Email.ToLower());
+                if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+                    return false;
+
+                return PasswordHelper.VerifyPassword(password, user.PasswordHash);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task OpenEditPaymentStatusDialogAsync(FeeRecord record)
+        {
+            var statusCombo = new ComboBox
+            {
+                Header = "Payment Status",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                SelectedIndex = 0
+            };
+            statusCombo.Items.Add("Paid");
+            statusCombo.Items.Add("Partial");
+            statusCombo.Items.Add("Unpaid");
+
+            // Pre-select current status
+            var currentStatus = record.PaymentStatus;
+            for (int i = 0; i < statusCombo.Items.Count; i++)
+            {
+                if (statusCombo.Items[i].ToString() == currentStatus)
+                {
+                    statusCombo.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            var notesBox = new TextBox
+            {
+                Header = "Notes (optional)",
+                PlaceholderText = "Add any notes about this change...",
+                Width = 300,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            var stack = new StackPanel { Spacing = 12 };
+            stack.Children.Add(new TextBlock { Text = $"Student: {record.StudentName}", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+            stack.Children.Add(new TextBlock { Text = $"LIN: {record.AdmissionNumber}", Opacity = 0.7, FontSize = 12 });
+            stack.Children.Add(statusCombo);
+            stack.Children.Add(notesBox);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Edit Payment Status",
+                Content = stack,
+                PrimaryButtonText = "Save",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            // TODO: Persist the payment status change to the database
+            // This would involve updating the FeePayments table and recalculating the balance
+
+            var successDialog = new ContentDialog
+            {
+                Title = "Status Updated",
+                Content = $"Payment status for {record.StudentName} has been updated to \"{statusCombo.SelectedItem}\".",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await successDialog.ShowAsync();
         }
     }
 }

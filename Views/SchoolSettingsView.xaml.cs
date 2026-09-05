@@ -65,7 +65,29 @@ namespace AutoTable.Views
             foreach (var opt in options)
                 _accessPageOptions.Add(opt);
 
-            AccessPagesList.ItemsSource = _accessPageOptions;
+            // Populate the grid of checkboxes for access pages (3 columns)
+            AccessPagesGrid.Children.Clear();
+            int idx = 0;
+            foreach (var opt in _accessPageOptions)
+            {
+                var cb = new CheckBox
+                {
+                    Content = opt.DisplayName,
+                    IsEnabled = opt.IsEnabled,
+                    IsChecked = opt.IsSelected,
+                    Margin = new Thickness(0, 4, 0, 4),
+                    Tag = opt
+                };
+                cb.Checked += PageCheckBox_Changed;
+                cb.Unchecked += PageCheckBox_Changed;
+
+                int row = idx / 3;
+                int col = idx % 3;
+                Grid.SetRow(cb, row);
+                Grid.SetColumn(cb, col);
+                AccessPagesGrid.Children.Add(cb);
+                idx++;
+            }
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -121,31 +143,7 @@ namespace AutoTable.Views
             }
         }
 
-        // ── Invite Code Copy ──────────────────────────────
-
-        private async void CopyInviteCode_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is not Button btn || btn.Tag is not string code) return;
-            try
-            {
-                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
-                dp.SetText(code);
-                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
-
-                // Brief visual feedback
-                var originalContent = btn.Content;
-                btn.Content = "\u2713";
-                btn.IsEnabled = false;
-                await System.Threading.Tasks.Task.Delay(1200);
-                btn.Content = originalContent;
-                btn.IsEnabled = true;
-            }
-            catch { }
-        }
-
-        // ── Invite Code Generation ──────────────────────────────
-
-        private async void GenerateInviteCode_Click(object sender, RoutedEventArgs e)
+                private async void GenerateInviteCode_Click(object sender, RoutedEventArgs e)
         {
             var currentUser = SessionService.Instance.CurrentUser;
             if (currentUser == null) return;
@@ -198,6 +196,16 @@ namespace AutoTable.Views
             {
                 GenerateCodeButton.IsEnabled = true;
             }
+        }
+
+        private void CopyInviteCode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not string code) return;
+                        var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            package.SetText(code);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+            if (btn.Content is TextBlock tb)
+                tb.Text = "✓";
         }
 
         private async void RevokeInviteCode_Click(object sender, RoutedEventArgs e)
@@ -303,48 +311,111 @@ namespace AutoTable.Views
                         CanRemoveVisibility = (u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed
                     });
                 }
+
+                // Populate the ResetUserCombo so admins can pick a user to generate credential reset codes
+                ResetUserCombo.Items.Clear();
+                foreach (var u in users)
+                {
+                    var item = new ComboBoxItem { Content = u.FullName, Tag = u.Id };
+                    ResetUserCombo.Items.Add(item);
+                }
             }
             catch { }
         }
 
         // ── Active Account Actions ───────────────────────────────────
 
-        private async void EnhanceAccess_Click(object sender, RoutedEventArgs e)
+        private async void PromoteAccess_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button btn || btn.Tag is not int userId) return;
 
             var account = _activeAccounts.FirstOrDefault(a => a.Id == userId);
             if (account == null) return;
 
-            // Build a list of possible access levels
             var options = GetDbOptions();
             if (options == null) return;
 
-            var enhanceChoices = new[]
+            using var db = new AppDbContext(options);
+            var user = await db.Users.FindAsync(userId);
+            if (user == null) return;
+
+            var currentAllowedPages = string.IsNullOrEmpty(user.AllowedPages)
+                ? new List<string>()
+                : user.AllowedPages.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            var allPages = new List<AccessPageOption>
             {
-                "Promote to Administrator",
-                "Full Access (all pages)",
-                "Marks Entry + Gradebook",
-                "Fee Collection Only",
-                "Marks Entry Only"
+                new() { DisplayName = "Dashboard", RouteTag = "Dashboard" },
+                new() { DisplayName = "Assessments", RouteTag = "Assessments" },
+                new() { DisplayName = "Marks Entry", RouteTag = "MarksEntry" },
+                new() { DisplayName = "Gradebook", RouteTag = "Gradebook" },
+                new() { DisplayName = "Student Performance", RouteTag = "StudentPerformance" },
+                new() { DisplayName = "Analytics", RouteTag = "Analytics" },
+                new() { DisplayName = "Report Cards", RouteTag = "ReportCards" },
+                new() { DisplayName = "Students", RouteTag = "Students" },
+                new() { DisplayName = "Teachers", RouteTag = "Teachers" },
+                new() { DisplayName = "Classes Management", RouteTag = "Classes" },
+                new() { DisplayName = "Fin. Dashboard", RouteTag = "FinDashboard" },
+                new() { DisplayName = "Fee Collection", RouteTag = "FeeCollection" },
             };
+
+            var unselectedPages = allPages
+                .Where(p => !currentAllowedPages.Contains(p.RouteTag))
+                .ToList();
+
+            if (unselectedPages.Count == 0)
+            {
+                var noPagesDialog = new ContentDialog
+                {
+                    Title = $"Promote Access — {account.FullName}",
+                    Content = "This user already has access to all available pages.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await noPagesDialog.ShowAsync();
+                return;
+            }
 
             var dialog = new ContentDialog
             {
-                Title = $"Enhance Access — {account.FullName}",
-                Content = "Select the new access level for this account.",
-                PrimaryButtonText = "Apply",
+                Title = $"Promote Access — {account.FullName}",
+                PrimaryButtonText = "Grant Access",
                 CloseButtonText = "Cancel",
                 XamlRoot = this.XamlRoot
             };
 
-            // Use a ComboBox inside a StackPanel for the dialog content
+            var checkboxes = new System.Collections.Generic.List<(CheckBox CheckBox, string RouteTag)>();
             var panel = new StackPanel { Spacing = 8 };
-            var combo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
-            foreach (var choice in enhanceChoices)
-                combo.Items.Add(choice);
-            combo.SelectedIndex = 1; // default to Full Access
-            panel.Children.Add(combo);
+
+            var selectAllCheck = new CheckBox { Content = "Select All", IsThreeState = true, IsChecked = false };
+            selectAllCheck.Checked += (_, _) => { foreach (var (cb, _) in checkboxes) cb.IsChecked = true; };
+            selectAllCheck.Unchecked += (_, _) => { foreach (var (cb, _) in checkboxes) cb.IsChecked = false; };
+            panel.Children.Add(selectAllCheck);
+
+            var grid = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var row = 0;
+            var col = 0;
+
+            foreach (var page in unselectedPages)
+            {
+                var cb = new CheckBox { Content = page.DisplayName, IsChecked = false };
+                cb.Checked += (_, _) => UpdateSelectAllState(checkboxes, selectAllCheck);
+                cb.Unchecked += (_, _) => UpdateSelectAllState(checkboxes, selectAllCheck);
+                checkboxes.Add((cb, page.RouteTag));
+                Grid.SetColumn(cb, col);
+                Grid.SetRow(cb, row);
+                grid.Children.Add(cb);
+                col++;
+                if (col >= 3) { col = 0; row++; }
+            }
+
+            for (int i = 0; i < row + 1; i++)
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            panel.Children.Add(grid);
             dialog.Content = panel;
 
             var result = await dialog.ShowAsync();
@@ -352,37 +423,26 @@ namespace AutoTable.Views
 
             try
             {
-                using var db = new AppDbContext(options);
-                var user = await db.Users.FindAsync(userId);
-                if (user == null) return;
+                var selectedPages = checkboxes.Where(c => c.CheckBox.IsChecked == true).Select(c => c.RouteTag).ToList();
+                if (selectedPages.Count == 0) return;
 
-                var selected = combo.SelectedItem?.ToString();
-                if (selected == "Promote to Administrator")
-                {
-                    user.Role = "Administrator";
-                    user.AllowedPages = null;
-                }
-                else if (selected == "Full Access (all pages)")
-                {
-                    user.Role = "DataEntrant";
-                    user.AllowedPages = null;
-                }
-                else
-                {
-                    user.Role = "DataEntrant";
-                    user.AllowedPages = selected switch
-                    {
-                        "Marks Entry + Gradebook" => "MarksEntry,Gradebook",
-                        "Fee Collection Only" => "FeeCollection",
-                        "Marks Entry Only" => "MarksEntry",
-                        _ => null
-                    };
-                }
+                var updatedPages = new List<string>(currentAllowedPages);
+                foreach (var page in selectedPages)
+                    if (!updatedPages.Contains(page)) updatedPages.Add(page);
 
+                user.AllowedPages = string.Join(",", updatedPages);
                 await db.SaveChangesAsync();
                 await LoadActiveAccountsAsync();
             }
             catch { }
+        }
+
+        private static void UpdateSelectAllState(System.Collections.Generic.List<(CheckBox CheckBox, string RouteTag)> checkboxes, CheckBox selectAllCheck)
+        {
+            int checkedCount = checkboxes.Count(c => c.CheckBox.IsChecked == true);
+            if (checkedCount == 0) selectAllCheck.IsChecked = false;
+            else if (checkedCount == checkboxes.Count) selectAllCheck.IsChecked = true;
+            else selectAllCheck.IsChecked = null;
         }
 
         private async void RevokeAccess_Click(object sender, RoutedEventArgs e)
@@ -487,6 +547,83 @@ namespace AutoTable.Views
                 SelectAllPagesCheck.IsChecked = true;
             else
                 SelectAllPagesCheck.IsChecked = null; // indeterminate
+        }
+
+        private async void ResetUserCombo_SelectionChanged(object sender, RoutedEventArgs e)
+        {
+            if (ResetUserCombo.SelectedItem is not ComboBoxItem cb || cb.Tag is not int userId)
+                return;
+
+            try
+            {
+                var options = GetDbOptions();
+                if (options == null) return;
+                using var db = new AppDbContext(options);
+                var user = await db.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    CurrentResetCodeText.Visibility = Visibility.Collapsed;
+                    CopyResetCodeButton.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(user.CredentialResetCode))
+                {
+                    CurrentResetCodeText.Visibility = Visibility.Collapsed;
+                    CopyResetCodeButton.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    CurrentResetCodeRun.Text = user.CredentialResetCode;
+                    CurrentResetCodeText.Visibility = Visibility.Visible;
+                    CopyResetCodeButton.Visibility = Visibility.Visible;
+                }
+            }
+            catch { }
+        }
+
+        private async void GenerateResetCode_Click(object sender, RoutedEventArgs e)
+        {
+            if (ResetUserCombo.SelectedItem is not ComboBoxItem cb || cb.Tag is not int userId) return;
+
+            GenerateResetCodeButton.IsEnabled = false;
+            try
+            {
+                var code = GenerateRandomCode();
+                var options = GetDbOptions();
+                if (options == null) return;
+                using var db = new AppDbContext(options);
+                var user = await db.Users.FindAsync(userId);
+                if (user == null) return;
+                user.CredentialResetCode = code;
+                await db.SaveChangesAsync();
+
+                NewResetCodeText.Text = code;
+                NewResetCodeBorder.Visibility = Visibility.Visible;
+                CurrentResetCodeRun.Text = code;
+                CurrentResetCodeText.Visibility = Visibility.Visible;
+                CopyResetCodeButton.Visibility = Visibility.Visible;
+            }
+            catch { }
+            finally { GenerateResetCodeButton.IsEnabled = true; }
+        }
+
+        private void CopyResetCode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn) return;
+            try
+            {
+                var code = NewResetCodeBorder.Visibility == Visibility.Visible
+                    ? NewResetCodeText.Text
+                    : CurrentResetCodeRun.Text;
+                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dp.SetText(code ?? string.Empty);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+
+                if (btn.Content is TextBlock tb)
+                    tb.Text = "✓";
+            }
+            catch { }
         }
 
         // ── Helpers ─────────────────────────────────────────────

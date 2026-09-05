@@ -259,7 +259,27 @@ namespace AutoTable.Data.Entities
         public string? PasswordHash { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Extended teacher profile fields
+        /// <summary>Comma-separated page tags this user may access, inherited from the invite code
+        /// used at registration. Null or empty means full access (admin or unrestricted data entrant).</summary>
+        public string? AllowedPages { get; set; }
+
+        /// <summary>Unique credential reset code for this user. Used to verify identity when
+        /// resetting a forgotten username or password. Null if no reset code has been generated.</summary>
+        public string? CredentialResetCode { get; set; }
+    }
+
+    /// <summary>
+    /// Teacher entity — separate from UserEntity. Teachers are registered via the teacher
+    /// registration workflow and do NOT automatically become application users.
+    /// </summary>
+    public class TeacherEntity
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Teacher profile fields
         public string? Phone { get; set; }
         public string? SubjectsTaught { get; set; }       // comma-separated
         public string? ClassesTaught { get; set; }        // comma-separated
@@ -269,10 +289,6 @@ namespace AutoTable.Data.Entities
         public string? PreviousSchools { get; set; }      // comma-separated
         public bool IsRegisteredTeacher { get; set; }     // registered with the teachers' board
         public bool IsStudentTeacher { get; set; }        // still a student teacher
-
-        /// <summary>Comma-separated page tags this user may access, inherited from the invite code
-        /// used at registration. Null or empty means full access (admin or unrestricted data entrant).</summary>
-        public string? AllowedPages { get; set; }
     }
 
     public class TerminationLogEntity

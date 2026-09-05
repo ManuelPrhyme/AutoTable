@@ -292,6 +292,33 @@ namespace AutoTable.Views
                 await OpenEditClassModalAsync(cls);
         }
 
+        private async void DeleteClass_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is not ClassInfo cls) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Delete Class — {cls.Name}",
+                Content = "Are you sure you want to permanently delete this class? This action cannot be undone.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                await _vm.DeleteClassAsync(cls.Id);
+                await _vm.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorAsync("Unable to delete class.", ex.Message);
+            }
+        }
+
         private async void EditClass_Click(object sender, RoutedEventArgs e)
         {
             // ── ROLE-BASED GATING (dormant during development) ──────
