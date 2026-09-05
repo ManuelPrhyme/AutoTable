@@ -4,13 +4,16 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class GradebookViewModel : BaseViewModel
     {
-        [ObservableProperty] private string _selectedClass = "P5";
-        [ObservableProperty] private string _selectedSubject = "Mathematics";
+        private readonly IDataService _dataService;
+
+        [ObservableProperty] private string _selectedClass = "All";
+        [ObservableProperty] private string _selectedSubject = "All";
         [ObservableProperty] private string _statusMessage = string.Empty;
 
         public ObservableCollection<string> Classes { get; }
@@ -23,24 +26,42 @@ namespace AutoTable.ViewModels
 
         public GradebookViewModel()
         {
-            Classes = new ObservableCollection<string>(MockDataService.Instance.Classes);
-            Subjects = new ObservableCollection<string>(MockDataService.Instance.Subjects);
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            Classes = new ObservableCollection<string>();
+            Subjects = new ObservableCollection<string>();
             GradebookRows = new ObservableCollection<GradebookRow>();
-            LoadGradebook();
+            _ = LoadAsync();
         }
 
-        partial void OnSelectedClassChanged(string value) => LoadGradebook();
-        partial void OnSelectedSubjectChanged(string value) => LoadGradebook();
+        partial void OnSelectedClassChanged(string value) => _ = LoadAsync();
+        partial void OnSelectedSubjectChanged(string value) => _ = LoadAsync();
 
         [RelayCommand]
-        private void Refresh() => LoadGradebook();
+        private async Task Refresh() => await LoadAsync();
 
         [RelayCommand]
         private void Export() => StatusMessage = "Export to Excel will run via Power Automate (placeholder).";
 
-        private void LoadGradebook()
+        private async Task LoadAsync()
         {
-            var rows = MockDataService.Instance.GetGradebook(SelectedClass, SelectedSubject);
+            if (Classes.Count == 0)
+            {
+                Classes.Add("All");
+                var classes = await _dataService.GetClassesAsync();
+                foreach (var c in classes) Classes.Add(c.Name);
+            }
+
+            if (Subjects.Count == 0)
+            {
+                Subjects.Add("All");
+                var subjects = await _dataService.GetSubjectsAsync();
+                foreach (var s in subjects) Subjects.Add(s.Name);
+            }
+
+            var className = SelectedClass == "All" ? null : SelectedClass;
+            var subject = SelectedSubject == "All" ? null : SelectedSubject;
+
+            var rows = await _dataService.GetGradebookAsync(className, subject);
             GradebookRows.Clear();
             foreach (var row in rows)
                 GradebookRows.Add(row);

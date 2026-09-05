@@ -84,23 +84,13 @@
                         Style="{ThemeResource PrimaryButtonStyle}" />
 
                     <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Don't have an account?" />
-                        <HyperlinkButton x:Name="SignUpLink" Content="Sign up" />
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="New data entrant?" />
+                        <HyperlinkButton x:Name="SignUpLink" Content="Register with invite code" />
                     </StackPanel>
 
-                    <Border
-                        Background="{ThemeResource SurfaceGrayBrush}"
-                        CornerRadius="8"
-                        Padding="12">
-                        <StackPanel Spacing="4">
-                            <TextBlock
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextPrimaryBrush}"
-                                Text="Demo roles" />
-                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="admin@school.edu → Administrator" />
-                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Any other email → Data Entrant" />
-                        </StackPanel>
-                    </Border>
+                    <HyperlinkButton x:Name="ForgotCredentialsLink" Content="Forgot Username / Password?"
+                                     Click="ForgotCredentialsLink_Click" HorizontalAlignment="Center"
+                                     Margin="0,8,0,0" FontSize="12" />
                     </StackPanel>
                 </Border>
             </ScrollViewer>

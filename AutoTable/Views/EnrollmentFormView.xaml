@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AutoTable.Views.EnrollmentFormView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Modal-size.md standard: 992 x 457 usable area inside the 1040 x 577 dialog,
+         two star columns separated by a 24 px gutter, fields stretch to column width. -->
+    <Grid Width="992" Height="457">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" MaxWidth="484" />
+                <ColumnDefinition Width="24" />
+                <ColumnDefinition Width="1*" MaxWidth="484" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ── LEFT COLUMN: Student info + Parent/Guardian ── -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                <StackPanel Spacing="12">
+
+                    <TextBlock Text="STUDENT INFORMATION"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                    <TextBox Header="Full name"
+                             Text="{Binding FullName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0" Header="Class" HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Classes}" DisplayMemberPath="Name"
+                                  SelectedValuePath="Id" SelectedValue="{Binding SelectedClassId, Mode=TwoWay}" />
+                        <ComboBox Grid.Column="1" Header="Stream" HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Streams}" DisplayMemberPath="Name"
+                                  SelectedValuePath="Id" SelectedValue="{Binding SelectedStreamId, Mode=TwoWay}" />
+                    </Grid>
+                    <TextBox Header="LIN"
+                             Text="{Binding Lin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <CalendarDatePicker Grid.Column="0" Header="Date of birth"
+                                            PlaceholderText="Pick date of birth"
+                                            Description="Tap to open the calendar"
+                                            HorizontalAlignment="Stretch"
+                                            Date="{Binding DateOfBirth, Mode=TwoWay}" />
+                        <ComboBox Grid.Column="1" Header="Gender" HorizontalAlignment="Stretch"
+                                  SelectedItem="{Binding Gender, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <ComboBoxItem Content="Male" />
+                            <ComboBoxItem Content="Female" />
+                            <ComboBoxItem Content="Other" />
+                        </ComboBox>
+                    </Grid>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Header="Nationality"
+                                 Text="{Binding Nationality, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Grid.Column="1" Header="Religion"
+                                 Text="{Binding Religion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                    <TextBox Header="Previous school (if any)"
+                             Text="{Binding PreviousSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+    
+                    <TextBlock Text="PARENT / GUARDIAN DETAILS"
+                               FontSize="11" FontWeight="SemiBold" Margin="0,8,0,0"
+                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                    <TextBox Header="Guardian full name"
+                             Text="{Binding GuardianName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Header="Relationship to student"
+                                 Text="{Binding GuardianRelationship, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Grid.Column="1" Header="Contact number"
+                                 Text="{Binding GuardianPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                    <TextBox Header="Email"
+                             Text="{Binding GuardianEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Residential address"
+                             Text="{Binding GuardianAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <CheckBox Content="Custody documents on file"
+                              IsChecked="{Binding HasCustodyDocuments, Mode=TwoWay}" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ── RIGHT COLUMN: Residency + Health + Emergency contacts ── -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                <StackPanel Spacing="12">
+
+                    <!-- Photo upload / preview -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                        <Border Width="110" Height="140" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6">
+                            <Image x:Name="PhotoPreview" Width="110" Height="140" Stretch="UniformToFill" />
+                        </Border>
+                        <StackPanel Spacing="6" VerticalAlignment="Top">
+                            <Button Content="Pick Photo" Click="PickPhoto_Click" Width="120" />
+                            <Button Content="Clear Photo" Click="ClearPhoto_Click" Width="120" />
+                            <TextBlock Text="Recommended: JPG/PNG, max 2 MB" FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" Width="120" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+
+
+                    <TextBlock Text="RESIDENCY VERIFICATION"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                    <ComboBox Header="Proof of residence" HorizontalAlignment="Stretch"
+                              SelectedItem="{Binding ResidenceProofType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ComboBoxItem Content="Utility Bill" />
+                        <ComboBoxItem Content="LC1 Letter" />
+                        <ComboBoxItem Content="Lease Agreement" />
+                    </ComboBox>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Header="District"
+                                 Text="{Binding ResidenceDistrict, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Grid.Column="1" Header="Zone / Village"
+                                 Text="{Binding ResidenceZone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+
+                    <TextBlock Text="HEALTH RECORDS"
+                               FontSize="11" FontWeight="SemiBold" Margin="0,8,0,0"
+                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <CheckBox Content="Immunization card on file"
+                                  IsChecked="{Binding HasImmunizationCard, Mode=TwoWay}" />
+                        <CheckBox Content="Medical exam report on file"
+                                  IsChecked="{Binding HasMedicalExamReport, Mode=TwoWay}" />
+                    </StackPanel>
+                    <TextBox Header="Allergies / chronic conditions"
+                             Text="{Binding AllergiesOrConditions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Header="Health insurance information"
+                             Text="{Binding HealthInsurance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="EMERGENCY CONTACTS"
+                               FontSize="11" FontWeight="SemiBold" Margin="0,8,0,0"
+                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                    <TextBox Header="Emergency contact name"
+                             Text="{Binding EmergencyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Header="Relationship to student"
+                                 Text="{Binding EmergencyRelationship, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Grid.Column="1" Header="Phone number"
+                                 Text="{Binding EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                    <TextBox Header="Authorized pickup person(s)"
+                             Text="{Binding AuthorizedPickupPerson, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ══════════ BOTTOM ACTION BAR ══════════ -->
+        <Grid Grid.Row="1" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{Binding StatusMessage}"
+                       Style="{ThemeResource MutedTextStyle}"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1"
+                    Content="Submit Enrollment"
+                    Command="{Binding SubmitCommand}"
+                    Style="{ThemeResource PrimaryButtonStyle}" />
+        </Grid>
+    </Grid>
+</UserControl>

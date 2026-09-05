@@ -1,4 +1,4 @@
-using AutoTable.Models;
+﻿using AutoTable.Models;
 using AutoTable.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -6,19 +6,25 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-
+using System.Threading.Tasks;
 
 namespace AutoTable.ViewModels
 {
     public partial class StudentPerformanceViewModel : BaseViewModel
     {
-        // Query parameters — each capable of being null
-        [ObservableProperty] private string? _selectedAcademicYear;
-        [ObservableProperty] private string? _selectedTerm = "Term 2, 2025";
-        [ObservableProperty] private string? _selectedClass = "P5";
-        [ObservableProperty] private string? _selectedStream;
-        [ObservableProperty] private string? _selectedStudent;
-        [ObservableProperty] private string? _selectedSubject = "Mathematics";
+        private readonly IDataService _dataService;
+
+        // Sentinel value for filter ComboBoxes � selecting "None" turns that filter off
+        public const string AllOption = "All";
+
+        // Query parameters � each capable of being null
+        // A value of null or "All" means "no filter applied" for that dimension
+        [ObservableProperty] private string? _selectedAcademicYear = "All";
+        [ObservableProperty] private string? _selectedTerm = "All";
+        [ObservableProperty] private string? _selectedClass = "All";
+        [ObservableProperty] private string? _selectedStream = "All";
+        [ObservableProperty] private string? _selectedStudent = "All";
+        [ObservableProperty] private string? _selectedSubject = "All";
 
         // Search bar text
         [ObservableProperty] private string? _searchText;
@@ -46,15 +52,15 @@ namespace AutoTable.ViewModels
 
         public StudentPerformanceViewModel()
         {
-            AcademicYears = new ObservableCollection<string>(MockDataService.Instance.AcademicYears);
-            Streams = new ObservableCollection<string>(MockDataService.Instance.Streams);
-            Classes = new ObservableCollection<string>(MockDataService.Instance.Classes);
-            Subjects = new ObservableCollection<string>(MockDataService.Instance.Subjects);
-            Terms = new ObservableCollection<string>(MockDataService.Instance.Terms);
-            AllStudents = new ObservableCollection<string>(MockDataService.Instance.AllStudents);
-            Load();
+            _dataService = AppServices.DataService ?? throw new System.InvalidOperationException("DataService not configured.");
+            AcademicYears = new ObservableCollection<string>();
+            Streams = new ObservableCollection<string>();
+            Classes = new ObservableCollection<string>();
+            Subjects = new ObservableCollection<string>();
+            Terms = new ObservableCollection<string>();
+            AllStudents = new ObservableCollection<string>();
+            _ = LoadAsync();
 
-            // React to generated property changes (ObservableProperty source generator)
             PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(SelectedAcademicYear)
@@ -64,7 +70,7 @@ namespace AutoTable.ViewModels
                     || e.PropertyName == nameof(SelectedStudent)
                     || e.PropertyName == nameof(SelectedSubject))
                 {
-                    Load();
+                    _ = Load();
                 }
 
                 if (e.PropertyName == nameof(SearchText))
@@ -74,12 +80,86 @@ namespace AutoTable.ViewModels
             };
         }
 
-
-        [RelayCommand]
-        private void Load()
+        private async Task LoadAsync()
         {
-            var rows = MockDataService.Instance.GetGradebook(
-                SelectedClass, SelectedSubject, SelectedAcademicYear, SelectedTerm, SelectedStream, SelectedStudent);
+            if (Classes.Count == 0)
+            {
+                var classes = await _dataService.GetClassesAsync();
+                Classes.Add(AllOption);
+                foreach (var c in classes) Classes.Add(c.Name);
+            }
+
+            if (Streams.Count == 0)
+            {
+                var streams = await _dataService.GetStreamsAsync();
+                Streams.Add(AllOption);
+                foreach (var s in streams) Streams.Add(s);
+            }
+
+            if (AcademicYears.Count == 0)
+            {
+                var years = await _dataService.GetAcademicYearsAsync();
+                AcademicYears.Add(AllOption);
+                foreach (var y in years) AcademicYears.Add(y);
+            }
+
+            if (Subjects.Count == 0)
+            {
+                var subjects = await _dataService.GetSubjectsAsync();
+                Subjects.Add(AllOption);
+                foreach (var s in subjects) Subjects.Add(s.Name);
+            }
+
+            if (Terms.Count == 0)
+            {
+                var terms = await _dataService.GetTermsAsync();
+                Terms.Add(AllOption);
+                foreach (var t in terms) Terms.Add(t);
+            }
+
+            if (AllStudents.Count == 0)
+            {
+                var students = await _dataService.GetAllStudentsAsync();
+                AllStudents.Add(AllOption);
+                foreach (var s in students) AllStudents.Add(s);
+            }
+
+            await Load();
+        }
+
+        private async Task Load()
+        {
+            var academicYear = SelectedAcademicYear;
+            if (academicYear == AllOption || string.IsNullOrWhiteSpace(academicYear))
+                academicYear = null;
+
+            var term = SelectedTerm;
+            if (term == AllOption || string.IsNullOrWhiteSpace(term))
+                term = null;
+
+            var className = SelectedClass;
+            if (className == AllOption || string.IsNullOrWhiteSpace(className))
+                className = null;
+
+            var stream = SelectedStream;
+            if (stream == AllOption || string.IsNullOrWhiteSpace(stream))
+                stream = null;
+
+            var studentName = SelectedStudent;
+            if (studentName == AllOption || string.IsNullOrWhiteSpace(studentName))
+                studentName = null;
+
+            var subject = SelectedSubject;
+            if (subject == AllOption || string.IsNullOrWhiteSpace(subject))
+                subject = null;
+
+            var rows = await _dataService.GetGradebookAsync(
+                className ?? string.Empty,
+                subject ?? string.Empty,
+                academicYear,
+                term,
+                stream,
+                studentName);
             _loadedStudents = rows.ToList();
             ApplySearchFilter();
             OnPropertyChanged(nameof(TotalStudents));
@@ -102,10 +182,18 @@ namespace AutoTable.ViewModels
         }
 
         [RelayCommand]
-        private void OpenStudentModal(GradebookRow student)
+        private async Task OpenStudentModal(GradebookRow student)
         {
             if (student == null) return;
-            var modalVm = new StudentPerformanceModalViewModel(student);
+            var modalVm = new StudentPerformanceModalViewModel(
+                _dataService,
+                student.StudentName,
+                student.ClassName,
+                student.Subject,
+                student.AcademicYear,
+                student.Term,
+                student.Stream);
+            await modalVm.InitializeAsync();
             RequestShowModal?.Invoke(this, modalVm);
         }
 

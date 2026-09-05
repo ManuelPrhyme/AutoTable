@@ -21,7 +21,7 @@
                     </Grid.ColumnDefinitions>
                     <Border Width="48" Height="48" CornerRadius="12"
                             Background="{ThemeResource AccentPurpleBrush}" VerticalAlignment="Center">
-                        <FontIcon Glyph="&#xE946;" FontSize="22" Foreground="White"
+                        <FontIcon Glyph="&#xE946;" FontSize="22" Foreground="{ThemeResource TextOnAccentBrush}"
                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
@@ -29,7 +29,7 @@
                         <TextBlock Style="{ThemeResource MutedTextStyle}"
                                    Text="Powered by AutoTable AI — updated automatically based on current marks data." />
                     </StackPanel>
-                    <Button Grid.Column="2" Content="Refresh Insights" VerticalAlignment="Center"
+                    <Button x:Name="RefreshInsightsBtn" Grid.Column="2" Content="Refresh Insights" VerticalAlignment="Center"
                             Style="{ThemeResource PrimaryButtonStyle}"
                             Command="{Binding RefreshCommand}" />
                 </Grid>

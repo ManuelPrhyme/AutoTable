@@ -9,63 +9,132 @@
     Background="{ThemeResource SurfaceGrayBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Padding="24" Spacing="16">
+    <Grid RowSpacing="12" Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />  <!-- Filter bar -->
+            <RowDefinition Height="Auto" />  <!-- Progress indicator -->
+            <RowDefinition Height="*" />     <!-- Table -->
+        </Grid.RowDefinitions>
 
-            <Border Style="{ThemeResource FilterBarStyle}">
-                <Grid ColumnSpacing="12">
+        <!-- Filter bar -->
+        <Border Grid.Row="0" Style="{ThemeResource FilterBarStyle}">
+            <Grid RowSpacing="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />  <!-- Search + Fee + Filters (one line) -->
+                    <RowDefinition Height="Auto" />  <!-- Action buttons -->
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Class / Term / Stream filters on the left; Search + Fee checkbox as a unit on the right -->
+                <Grid Grid.Row="0" ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Grid.Column="0" Header="Class" MinWidth="100"
                               ItemsSource="{Binding Classes}"
-                              SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
+                              SelectedItem="{Binding SelectedClass, Mode=TwoWay}" VerticalAlignment="Bottom" />
                     <ComboBox Grid.Column="1" Header="Term" MinWidth="140"
                               ItemsSource="{Binding Terms}"
-                              SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" />
-                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                        <Button Content="Generate All" Style="{ThemeResource SecondaryButtonStyle}"
-                                Command="{Binding GenerateAllCommand}" />
-                        <Button Content="Print All" Style="{ThemeResource PrimaryButtonStyle}"
-                                Command="{Binding PrintAllCommand}" />
+                              SelectedItem="{Binding SelectedTerm, Mode=TwoWay}" VerticalAlignment="Bottom" />
+                    <ComboBox Grid.Column="2" Header="Stream" MinWidth="120"
+                              ItemsSource="{Binding Streams}"
+                              SelectedItem="{Binding SelectedStream, Mode=TwoWay}" VerticalAlignment="Bottom" />
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom"  MinWidth="320">
+                        <TextBox Header="Search"
+                                 Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 MinWidth="280" MinHeight="32"
+                                 HorizontalContentAlignment="Left"
+                                 VerticalAlignment="Bottom" />
+                        <CheckBox Content="Fee Cleared Only" IsChecked="{Binding FeeClearedOnly, Mode=TwoWay}"
+                                  VerticalAlignment="Bottom" FontSize="12" Margin="0,0,8,0" />
                     </StackPanel>
+                </Grid>
+
+                <!-- Row 1: Action buttons, left-aligned -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                    <Button Content="Generate All" Style="{ThemeResource SecondaryButtonStyle}" Click="GenerateAll_Click" />
+                    <Button Content="Print All" Style="{ThemeResource PrimaryButtonStyle}"
+                            Click="PrintAll_Click" />
+                    <Button Content="Export PDF" Style="{ThemeResource SecondaryButtonStyle}"
+                            Click="ExportPdf_Click" />
+                    <Button x:Name="BtnMidTermSlips" Content="Mid-Term Slips" Style="{ThemeResource SecondaryButtonStyle}"
+                            Click="MidTermSlips_Click" />
+                    <Button Content="Preview (Test)" Style="{ThemeResource SecondaryButtonStyle}"
+                            Click="PreviewFixture_Click" />
+                    <Button Content="Stress Test" Style="{ThemeResource SecondaryButtonStyle}"
+                            Click="StressTestPreview_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Batch progress indicator (hidden by default) -->
+        <Border x:Name="ProgressCard" Grid.Row="1" Style="{ThemeResource KpiCardStyle}" Visibility="Collapsed"
+                MinWidth="300" HorizontalAlignment="Left">
+            <StackPanel Spacing="6">
+                <TextBlock x:Name="ProgressText" Style="{ThemeResource MutedTextStyle}" Text="Generating report cards..." />
+                <ProgressBar x:Name="ProgressRing" Minimum="0" Maximum="100" Height="6" />
+                <TextBlock x:Name="ProgressDetail" FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Table card -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Style="{ThemeResource CardHeaderBorderStyle}">
+                <Grid>
+                    <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Report Cards" VerticalAlignment="Center" />
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Style="{ThemeResource SectionTitleStyle}" FontSize="14"
+                               Text="{Binding TotalStudentsLabel}" />
                 </Grid>
             </Border>
 
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Students" />
-                        <TextBlock Style="{ThemeResource KpiValueStyle}" Text="{Binding TotalStudents}" />
-                    </StackPanel>
-                </Border>
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Generated" />
-                        <TextBlock Style="{ThemeResource KpiValueStyle}"
-                                   Foreground="{ThemeResource SuccessGreenBrush}"
-                                   Text="{Binding GeneratedCount}" />
-                    </StackPanel>
-                </Border>
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="150">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Printed" />
-                        <TextBlock Style="{ThemeResource KpiValueStyle}"
-                                   Foreground="{ThemeResource PrimaryBlueBrush}"
-                                   Text="{Binding PrintedCount}" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            <Border Grid.Row="1" Style="{ThemeResource TableHeaderRowStyle}">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="120" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
+                    <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
+                    <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" />
+                    <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
+                    <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="AVERAGE" />
+                    <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                    <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="FEES" />
+                    <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
+                </Grid>
+            </Border>
 
-            <Border Style="{ThemeResource TableCardStyle}">
-                <StackPanel>
-                    <Border Style="{ThemeResource CardHeaderBorderStyle}">
-                        <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Report Cards" />
-                    </Border>
-                    <Border Style="{ThemeResource TableHeaderRowStyle}">
-                        <Grid ColumnSpacing="12">
+            <ListView Grid.Row="2" ItemsSource="{Binding ReportCards}" SelectionMode="None"
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="MinHeight" Value="0" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnSpacing="8" Padding="16,9">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="36" />
                                 <ColumnDefinition Width="2*" />
@@ -73,66 +142,47 @@
                                 <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
-                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
-                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
-                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
-                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="AVERAGE" />
-                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
-                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
+                                       Text="{Binding Rank}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
+                                       Text="{Binding StudentName}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
+                                       Text="{Binding AdmissionNumber}" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
+                                       Text="{Binding ClassName}" />
+                            <TextBlock Grid.Column="4" FontSize="14" FontWeight="Bold"
+                                       Foreground="{ThemeResource PrimaryBlueBrush}"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding Average, Converter={StaticResource PercentConverter}}" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableCellStyle}"
+                                       Text="{Binding Status}" />
+                            <TextBlock Grid.Column="6" FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Text="{Binding FeeStatus}"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" />
+                            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6">
+                                <Button Content="View" Style="{ThemeResource SecondaryButtonStyle}"
+                                        Padding="8,4" FontSize="12" Click="ViewReport_Click" />
+                                <Button Content="Print" Style="{ThemeResource PrimaryButtonStyle}"
+                                        Padding="8,4" FontSize="12" Click="PrintReport_Click" />
+                            </StackPanel>
                         </Grid>
-                    </Border>
-                    <ListView ItemsSource="{Binding ReportCards}" SelectionMode="None">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="MinHeight" Value="0" />
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnSpacing="12" Padding="16,9">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="36" />
-                                        <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="80" />
-                                        <ColumnDefinition Width="80" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="120" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
-                                               Text="{Binding Rank}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
-                                               Text="{Binding StudentName}" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
-                                               Text="{Binding AdmissionNumber}" />
-                                    <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
-                                               Text="{Binding ClassName}" />
-                                    <TextBlock Grid.Column="4" FontSize="14" FontWeight="Bold"
-                                               Foreground="{ThemeResource PrimaryBlueBrush}"
-                                               VerticalAlignment="Center"
-                                               Text="{Binding Average, Converter={StaticResource PercentConverter}}" />
-                                    <TextBlock Grid.Column="5" Style="{ThemeResource TableCellStyle}"
-                                               Text="{Binding Status}" />
-                                    <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
-                                        <Button Content="View" Style="{ThemeResource SecondaryButtonStyle}"
-                                                Padding="8,4" FontSize="12" />
-                                        <Button Content="Print" Style="{ThemeResource PrimaryButtonStyle}"
-                                                Padding="8,4" FontSize="12" />
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </StackPanel>
-            </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
 
-        </StackPanel>
+        <!-- Off-screen render host: keeps report-card sheets in the XAML tree so they can
+             be rasterized with RenderTargetBitmap for direct-to-printer output. Invisible,
+             non-interactive, parked far outside the visible area. -->
+        <Grid x:Name="RenderHost"
+              Width="794" Height="1123"
+              HorizontalAlignment="Left" VerticalAlignment="Top"
+              Margin="-5000,-5000,0,0"
+              Opacity="0" IsHitTestVisible="False" />
+
+    </Grid>
     </ScrollViewer>
 </Page>
-

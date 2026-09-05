@@ -75,56 +75,13 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Class Performance Bar Chart -->
+                <!-- Class Performance Bar Chart (built from real data in code-behind) -->
                 <Border Grid.Column="0" Style="{ThemeResource CardBorderStyle}">
                     <StackPanel Spacing="12">
                         <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Class Performance Comparison" />
-                        <Border Height="200" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8">
-                            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center"
-                                        Orientation="Horizontal" Spacing="10" Padding="16,16">
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="72" Background="{ThemeResource PrimaryBlueBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                    <TextBlock Text="P1" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="88" Background="{ThemeResource PrimaryBlueBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                    <TextBlock Text="P2" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="64" Background="{ThemeResource WarningAmberBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                    <TextBlock Text="P3" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="100" Background="{ThemeResource SuccessGreenBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                    <TextBlock Text="P4" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="82" Background="{ThemeResource PrimaryBlueBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.9" />
-                                    <TextBlock Text="P5" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="56" Background="{ThemeResource DangerRedBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.8" />
-                                    <TextBlock Text="P6" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <Border Width="32" Height="94" Background="{ThemeResource PrimaryBlueBrush}"
-                                            CornerRadius="4" VerticalAlignment="Bottom" />
-                                    <TextBlock Text="P7" FontSize="11" HorizontalAlignment="Center"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                            </StackPanel>
+                        <Border Height="220" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8">
+                            <StackPanel x:Name="BarChartPanel" VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                                        Orientation="Horizontal" Spacing="10" Padding="16,16" />
                         </Border>
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -133,7 +90,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Border Width="12" Height="12" Background="{ThemeResource WarningAmberBrush}" CornerRadius="2" VerticalAlignment="Center" />
-                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="50–70%" />
+                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="50-70%" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Border Width="12" Height="12" Background="{ThemeResource DangerRedBrush}" CornerRadius="2" VerticalAlignment="Center" />
@@ -143,30 +100,17 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Term Trend Line Chart -->
+                <!-- Term Trend Line Chart (built from real data in code-behind) -->
                 <Border Grid.Column="1" Style="{ThemeResource CardBorderStyle}">
                     <StackPanel Spacing="12">
                         <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Term-over-Term Trend" />
-                        <Border Height="200" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8">
-                            <Canvas>
-                                <Polyline Canvas.Left="16" Canvas.Top="16"
-                                          Stroke="{ThemeResource PrimaryBlueBrush}" StrokeThickness="3"
-                                          StrokeLineJoin="Round"
-                                          Points="0,140 60,110 120,120 180,80 240,90 300,50 360,60" />
-                                <Polyline Canvas.Left="16" Canvas.Top="16"
-                                          Stroke="{ThemeResource AccentPurpleBrush}" StrokeThickness="2"
-                                          StrokeDashArray="4,3"
-                                          Points="0,150 60,130 120,140 180,100 240,110 300,70 360,80" />
-                            </Canvas>
+                        <Border Height="220" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8">
+                            <Canvas x:Name="TrendChartCanvas" Margin="16,16" />
                         </Border>
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Border Width="20" Height="3" Background="{ThemeResource PrimaryBlueBrush}" VerticalAlignment="Center" />
                                 <TextBlock Style="{ThemeResource MutedTextStyle}" Text="School Average" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Border Width="20" Height="3" Background="{ThemeResource AccentPurpleBrush}" VerticalAlignment="Center" />
-                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="National Benchmark" />
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
@@ -243,4 +187,3 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
-

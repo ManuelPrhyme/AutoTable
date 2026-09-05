@@ -18,22 +18,31 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Grid.Column="0" Header="Class" MinWidth="120"
                               ItemsSource="{Binding Classes}"
                               SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
-                    <ComboBox Grid.Column="1" Header="Subject" MinWidth="160"
+                    <!-- Stream filter: only appears when the selected class has
+                         stream-scoped assessments (shows the paper's target streams). -->
+                    <ComboBox Grid.Column="1" Header="Stream" MinWidth="140"
+                              ItemsSource="{Binding Streams}"
+                              SelectedItem="{Binding SelectedStream, Mode=TwoWay}"
+                              Visibility="{Binding StreamFilterVisibility}" />
+                    <!-- Subject filter is restricted to the subjects assigned to the class
+                         chosen above (all subjects when "All" classes is selected). -->
+                    <ComboBox Grid.Column="2" Header="Subject" MinWidth="160"
                               ItemsSource="{Binding Subjects}"
                               SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
-                    <Button Grid.Column="2" VerticalAlignment="Bottom"
+                    <Button Grid.Column="3" VerticalAlignment="Bottom"
                             Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding RefreshFilterCommand}" />
-                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                        <Button Content="+ New Assessment"
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                        <Button x:Name="NewAssessmentBtn" Content="+ New Assessment"
                                 Style="{ThemeResource PrimaryButtonStyle}"
-                                Command="{Binding NewAssessmentCommand}" />
+                                Click="NewAssessment_Click" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -76,23 +85,25 @@
 
                     <!-- Column Headers -->
                     <Border Style="{ThemeResource TableHeaderRowStyle}">
-                        <Grid ColumnSpacing="12" Padding="0">
+                        <Grid ColumnSpacing="4" Padding="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="60" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="120" />
-                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="ASSESSMENT" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
                             <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="SUBJECT" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="WT%" />
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="DUE DATE" />
-                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PROGRESS" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="" />
                             <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="AUTHOR" />
                         </Grid>
                     </Border>
 
@@ -100,7 +111,9 @@
                     <ListView
                         ItemsSource="{Binding Assessments}"
                         SelectionMode="None"
-                        IsItemClickEnabled="False">
+                        IsItemClickEnabled="False"
+                        ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="Padding" Value="0" />
@@ -111,29 +124,32 @@
                         </ListView.ItemContainerStyle>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnSpacing="12" Padding="16,10">
+                                <Grid ColumnSpacing="4" Padding="16,8" HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="80" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="60" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="120" />
-                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="0" Style="{ThemeResource TableCellStyle}" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}" Text="{Binding ClassName}" />
-                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}" Text="{Binding Subject}" />
+                                    <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}" Text="{Binding Subject}" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Grid.Column="3" Style="{ThemeResource NumericCellStyle}" Text="{Binding WeightPercent}" />
                                     <TextBlock Grid.Column="4" Style="{ThemeResource TableCellStyle}" Text="{Binding DueDate, Converter={StaticResource DateFormatConverter}}" />
-                                    <StackPanel Grid.Column="5" Spacing="3" VerticalAlignment="Center">
-                                        <ProgressBar Value="{Binding MarksEnteredPercent}" Maximum="100"
-                                                     Height="6" CornerRadius="3"
-                                                     Background="{ThemeResource SurfaceGray2Brush}" />
-                                        <TextBlock Text="{Binding MarksEnteredPercent}" FontSize="11"
-                                                   Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    </StackPanel>
+                                    <Grid Grid.Column="5" Width="36" Height="36" VerticalAlignment="Center">
+                                        <ProgressRing Value="{Binding MarksEnteredPercent}" Maximum="100"
+                                                      Width="36" Height="36" IsIndeterminate="False"
+                                                      Foreground="{ThemeResource PrimaryBlueBrush}" />
+                                        <TextBlock Text="{Binding MarksEnteredPercent, Converter={StaticResource RoundPercentConverter}}"
+                                                   FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    </Grid>
                                     <TextBlock Grid.Column="6" Style="{ThemeResource TableCellStyle}" Text="{Binding StatusLabel}" />
+                                    <TextBlock Grid.Column="7" Style="{ThemeResource TableCellStyle}" Text="{Binding AuthorName}" FontSize="11" Foreground="{ThemeResource TextSecondaryBrush}" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

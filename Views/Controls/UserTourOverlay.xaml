@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="AutoTable.Controls.UserTourOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    IsHitTestVisible="False"
+    Visibility="Collapsed">
+
+    <Grid x:Name="TourRoot" IsHitTestVisible="True">
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             DIMMING SCrim â€” full-screen semi-transparent overlay
+             Dims the background so the spotlight stands out.
+             IsHitTestVisible=False so clicks pass through to the
+             underlying page (the sidebar handles its own clicks).
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <Border x:Name="DimmingScrim"
+                Background="#66000000"
+                IsHitTestVisible="False"
+                Canvas.ZIndex="0"
+                Visibility="Collapsed" />
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             SPOTLIGHT â€” sits above the scrim to "punch through"
+             the dimming. The glow is a soft outer halo; the inner
+             border is the crisp blue accent around the active element.
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <Border x:Name="SpotlightGlow"
+                BorderBrush="#4D2979FF"
+                BorderThickness="2"
+                CornerRadius="12"
+                Background="Transparent"
+                IsHitTestVisible="False"
+                Canvas.ZIndex="1"
+                Visibility="Collapsed" />
+        <Border x:Name="SpotlightBorder"
+                BorderBrush="{ThemeResource PrimaryBlueBrush}"
+                BorderThickness="3"
+                CornerRadius="10"
+                Background="Transparent"
+                IsHitTestVisible="False"
+                Canvas.ZIndex="1"
+                Visibility="Collapsed" />
+
+        <!--â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             TOUR SIDEBAR â€” floating card, centered and lowered
+             Always on top of scrim + spotlight so it's fully
+             readable and clickable.
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <Border x:Name="TourSidebar"
+                Width="320"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,120,0,0"
+                Background="{ThemeResource SurfaceWhiteBrush}"
+                BorderBrush="{ThemeResource BorderLightBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Canvas.ZIndex="10"
+                IsHitTestVisible="True"
+                Visibility="Collapsed">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- â”€â”€ Header â”€â”€ -->
+                <Grid Grid.Row="0" Padding="16,16,12,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Step icon circle -->
+                    <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                            Background="{ThemeResource BlueSubtleBrush}" Margin="0,0,10,0">
+                        <FontIcon x:Name="StepIcon" Glyph="&#xE80F;" FontSize="16"
+                                  Foreground="{ThemeResource PrimaryBlueBrush}"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <!-- Title + step counter -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock x:Name="StepTitle" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource TextPrimaryBrush}" />
+                        <TextBlock x:Name="StepCounter" FontSize="11"
+                                   Foreground="{ThemeResource TextMutedBrush}" />
+                    </StackPanel>
+
+                    <!-- Close (X) button -->
+                    <Button Grid.Column="2" x:Name="CloseBtn" Click="CloseBtn_Click"
+                            Style="{ThemeResource IconButtonStyle}" Padding="4"
+                            ToolTipService.ToolTip="End tour">
+                        <FontIcon Glyph="&#xE8BB;" FontSize="14"
+                                  Foreground="{ThemeResource TextMutedBrush}" />
+                    </Button>
+                </Grid>
+
+                <!-- â”€â”€ Divider â”€â”€ -->
+                <Border Grid.Row="1" Height="1" Background="{ThemeResource BorderLightBrush}" Margin="16,0" />
+
+                <!-- â”€â”€ Description body â”€â”€ -->
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="16,12">
+                    <TextBlock x:Name="StepDescription"
+                               TextWrapping="Wrap"
+                               FontSize="13"
+                               LineHeight="20"
+                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                </ScrollViewer>
+
+                <!-- â”€â”€ Footer: progress + buttons â”€â”€ -->
+                <Grid Grid.Row="3" Padding="16,12" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="0,1,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Progress dots -->
+                    <StackPanel Grid.Column="0" x:Name="ProgressDots"
+                                Orientation="Horizontal" VerticalAlignment="Center"
+                                Spacing="4" />
+
+                    <!-- Step progress text -->
+                    <TextBlock Grid.Column="1" x:Name="ProgressText"
+                               VerticalAlignment="Center" HorizontalAlignment="Center"
+                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}" />
+
+                    <!-- Navigation buttons -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                        <!-- Skip button -->
+                        <Button x:Name="SkipBtn" Click="SkipBtn_Click"
+                                Background="Transparent"
+                                Foreground="{ThemeResource TextMutedBrush}"
+                                BorderThickness="0"
+                                Padding="10,6"
+                                ToolTipService.ToolTip="Skip the tour">
+                            <TextBlock Text="Skip" FontSize="12" />
+                        </Button>
+
+                        <!-- Next / Finish button -->
+                        <Button x:Name="NextBtn" Click="NextBtn_Click"
+                                Background="{ThemeResource PrimaryBlueBrush}"
+                                Foreground="White"
+                                Padding="16,8"
+                                CornerRadius="8">
+                            <StackPanel x:Name="NextBtnContent" Orientation="Horizontal" Spacing="6">
+                                <TextBlock x:Name="NextBtnText" Text="Next" FontSize="13" FontWeight="SemiBold" />
+                                <FontIcon x:Name="NextBtnIcon" Glyph="&#xE72A;" FontSize="12"
+                                          Foreground="White" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

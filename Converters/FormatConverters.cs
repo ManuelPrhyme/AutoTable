@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -52,6 +53,37 @@ namespace AutoTable.Converters
             => throw new NotImplementedException();
     }
 
+    public static class ThemeResourceHelper
+    {
+        /// <summary>
+        /// Resolves a brush from the current theme's ThemeDictionary so converters
+        /// return theme-aware colors at runtime.
+        /// </summary>
+        public static SolidColorBrush GetThemeBrush(string resourceKey)
+        {
+            try
+            {
+                if (Application.Current is Application app &&
+                    app.Resources.ThemeDictionaries.TryGetValue(GetCurrentThemeKey(), out var dictObj) &&
+                    dictObj is ResourceDictionary themeDict &&
+                    themeDict.TryGetValue(resourceKey, out var brushObj) &&
+                    brushObj is SolidColorBrush brush)
+                {
+                    return brush;
+                }
+            }
+            catch { }
+
+            // Fallback neutral gray
+            return new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 158, 158));
+        }
+
+        private static string GetCurrentThemeKey()
+        {
+            return Application.Current?.RequestedTheme == ApplicationTheme.Dark ? "Dark" : "Light";
+        }
+    }
+
     public class GradeColorConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
@@ -59,13 +91,30 @@ namespace AutoTable.Converters
             var grade = value?.ToString() ?? string.Empty;
             return grade switch
             {
-                "A" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — excellent
-                "B" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 33, 150, 243)),  // Blue (#2196F3) — good
-                "C" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — average
-                "D" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — below average
-                "E" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — poor
-                "F" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — fail
-                _ => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 158, 158))    // Gray (#9E9E9E) — muted
+                "A" => ThemeResourceHelper.GetThemeBrush("SuccessGreenBrush"),   // excellent
+                "B" => ThemeResourceHelper.GetThemeBrush("PrimaryBlueBrush"),    // good
+                "C" => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // average
+                "D" => ThemeResourceHelper.GetThemeBrush("WarningOrangeBrush"),  // below average
+                "E" => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // poor
+                "F" => ThemeResourceHelper.GetThemeBrush("DangerRedBrush"),      // fail
+                _ => ThemeResourceHelper.GetThemeBrush("TextMutedBrush")         // muted
+            };
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>Rounds a numeric value to a whole number (no decimals, no % sign) for compact display in the donut.</summary>
+    public class RoundPercentConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return value switch
+            {
+                double d => ((int)Math.Round(d)).ToString(),
+                float f => ((int)Math.Round(f)).ToString(),
+                int i => i.ToString(),
+                _ => value?.ToString() ?? string.Empty
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)
@@ -74,21 +123,54 @@ namespace AutoTable.Converters
 
     public class StatusColorConverter : IValueConverter
     {
+        // Direct color constants so the converter never depends on theme dictionary lookups.
+        private static readonly SolidColorBrush GreenBrush  = new(Windows.UI.Color.FromArgb(255, 39, 174, 96));   // #27AE60
+        private static readonly SolidColorBrush BlueBrush   = new(Windows.UI.Color.FromArgb(255, 41, 128, 185));  // #2980B9
+        private static readonly SolidColorBrush RedBrush    = new(Windows.UI.Color.FromArgb(255, 231, 76, 60));   // #E74C3C
+        private static readonly SolidColorBrush OrangeBrush = new(Windows.UI.Color.FromArgb(255, 243, 156, 18));  // #F39C12
+        private static readonly SolidColorBrush MutedBrush  = new(Windows.UI.Color.FromArgb(255, 158, 158, 158)); // #9E9E9E
+
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             var status = value?.ToString() ?? string.Empty;
             return status switch
             {
-                "Excellent" => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — good
-                "On Track"  => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 33, 150, 243)),  // Blue (#2196F3) — informational
-                "At Risk"   => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — error
-                "Present"   => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — present
-                "Late"      => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — late
-                "Absent"    => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — absent
-                "Pending"   => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 152, 0)),   // Orange (#FF9800) — pending
-                "Approved"  => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 76, 175, 80)),   // Green (#4CAF50) — approved
-                "Rejected"  => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 244, 67, 54)),   // Red (#F44336) — rejected
-                _ => new SolidColorBrush(Windows.UI.Color.FromArgb(255, 158, 158, 158))            // Gray (#9E9E9E) — muted
+                // StatusDotSource values (from Student model)
+                "Active"        => GreenBrush,   // active → green dot
+                "Completed"     => BlueBrush,    // completed course → blue dot
+                "ChangedSchool" => OrangeBrush,  // changed school → orange dot
+                "Expelled"      => RedBrush,     // expelled → red dot
+                "Other"         => RedBrush,     // other termination → red dot
+                // Legacy / other statuses
+                "Excellent"     => GreenBrush,
+                "On Track"      => BlueBrush,
+                "At Risk"       => RedBrush,
+                "Present"       => GreenBrush,
+                "Late"          => OrangeBrush,
+                "Absent"        => RedBrush,
+                "Pending"       => OrangeBrush,
+                "Approved"      => GreenBrush,
+                "Rejected"      => RedBrush,
+                _                => MutedBrush,
+            };
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Converts a Student.StatusDotSource string to a human-readable status label.
+    /// Active students show "Active"; all terminated students show "Inactive"
+    /// with the specific cause displayed separately below.
+    /// </summary>
+    public class StatusLabelConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return value?.ToString() switch
+            {
+                "Active"        => "Active",
+                _                => "Inactive"  // all terminated reasons show as Inactive
             };
         }
         public object ConvertBack(object value, Type targetType, object parameter, string language)

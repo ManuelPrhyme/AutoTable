@@ -17,7 +17,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Vertical">
@@ -26,23 +25,24 @@
                 </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                        <TextBox Width="420" Style="{ThemeResource SearchBoxStyle}" PlaceholderText="Search students, teachers, classes..." />
+                        <AutoSuggestBox x:Name="SearchBox"
+                            Width="420"
+                            PlaceholderText="Search students, teachers, classes..."
+                            QueryIcon="Find"
+                            TextChanged="SearchBox_TextChanged"
+                            SuggestionChosen="SearchBox_SuggestionChosen">
+                            <AutoSuggestBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto" Padding="8,4">
+                                        <TextBlock Text="{Binding Title}" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Type}" FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </DataTemplate>
+                            </AutoSuggestBox.ItemTemplate>
+                        </AutoSuggestBox>
                     </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <Border Background="{ThemeResource SurfaceWhiteBrush}" CornerRadius="12" Padding="10,6" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Offline Mode" />
-                    </Border>
-                    <Border Background="{ThemeResource SurfaceWhiteBrush}" CornerRadius="20" Padding="6" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1">
-                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <Ellipse Width="28" Height="28" Fill="{ThemeResource PrimaryBlueBrush}" />
-                            <StackPanel>
-                                <TextBlock Text="Admin User" FontWeight="SemiBold" />
-                                <TextBlock Text="Administrator" Style="{ThemeResource MutedTextStyle}" FontSize="12" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+
             </Grid>
 
             <!-- ── KPI CARDS ROW ── -->
@@ -103,7 +103,8 @@
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Left"
                                         Style="{ThemeResource SecondaryButtonStyle}"
-                                        Content="{Binding}" />
+                                        Content="{Binding}"
+                                        Click="QuickAction_Click" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -126,9 +127,9 @@
                             <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Performance Trend" />
                             <TextBlock HorizontalAlignment="Right" Style="{ThemeResource MutedTextStyle}" Text="8-week" VerticalAlignment="Center" />
                         </Grid>
-                        <Border Height="160" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                                <!-- Mini bar chart illustration -->
+                        <Border Height="160" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8" Padding="12,8">
+                            <StackPanel x:Name="TrendChartPlaceholder" Spacing="4" VerticalAlignment="Center">
+                                <!-- Static placeholder — replaced at load time with real gradebook data -->
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Bottom">
                                     <Border Width="14" Height="40" Background="{ThemeResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" Opacity="0.6" />
                                     <Border Width="14" Height="62" Background="{ThemeResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" Opacity="0.7" />
@@ -139,7 +140,7 @@
                                     <Border Width="14" Height="68" Background="{ThemeResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" />
                                     <Border Width="14" Height="90" Background="{ThemeResource PrimaryBlueBrush}" CornerRadius="3" VerticalAlignment="Bottom" />
                                 </StackPanel>
-                                <TextBlock HorizontalAlignment="Center" Style="{ThemeResource MutedTextStyle}" Text="Class average over 8 weeks" />
+                                <TextBlock HorizontalAlignment="Center" Style="{ThemeResource MutedTextStyle}" Text="Loading class averages..." />
                             </StackPanel>
                         </Border>
                         <StackPanel Orientation="Horizontal" Spacing="16">
@@ -212,4 +213,3 @@
         </StackPanel>
     </ScrollViewer>
 </Page>
-

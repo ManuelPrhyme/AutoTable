@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>AutoTable.IntegrationTests</RootNamespace>
+    <Nullable>enable</Nullable>
+    <!-- Mirror the main project so linked source files compile identically -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <UseWinUI>false</UseWinUI>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.6.6" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <!-- Include only the data-layer and model source files from the main project (no WinUI/App.xaml) -->
+  <ItemGroup>
+    <!-- Data layer -->
+    <Compile Include="../../AutoTable/Data/AppDbContext.cs" Link="Data/AppDbContext.cs" />
+    <Compile Include="../../AutoTable/Data/Entities/StudentEntity.cs" Link="Data/Entities/StudentEntity.cs" />
+    <Compile Include="../../AutoTable/Services/IDataService.cs" Link="Services/IDataService.cs" />
+    <Compile Include="../../AutoTable/Services/DatabaseDataService.cs" Link="Services/DatabaseDataService.cs" />
+    <!-- Models from AutoTable/Models/ -->
+    <Compile Include="../../AutoTable/Models/Student.cs" Link="Models/Student.cs" />
+    <Compile Include="../../AutoTable/Models/SimpleLookup.cs" Link="Models/SimpleLookup.cs" />
+    <Compile Include="../../AutoTable/Models/TermFee.cs" Link="Models/TermFee.cs" />
+    <Compile Include="../../AutoTable/Models/TerminationLogItem.cs" Link="Models/TerminationLogItem.cs" />
+    <Compile Include="../../AutoTable/Models/Teacher.cs" Link="Models/Teacher.cs" />
+    <Compile Include="../../AutoTable/Models/EnrollmentFormData.cs" Link="Models/EnrollmentFormData.cs" />
+    <Compile Include="../../AutoTable/Models/StudentTerminationReason.cs" Link="Models/StudentTerminationReason.cs" />
+    <!-- Models from root Models/ -->
+    <Compile Include="../../Models/AssessmentItem.cs" Link="Models/AssessmentItem.cs" />
+    <Compile Include="../../Models/FinancialModels.cs" Link="Models/FinancialModels.cs" />
+    <Compile Include="../../Models/GradebookRow.cs" Link="Models/GradebookRow.cs" />
+    <Compile Include="../../Models/PerformanceModels.cs" Link="Models/PerformanceModels.cs" />
+    <Compile Include="../../Models/StudentMarkRow.cs" Link="Models/StudentMarkRow.cs" />
+    <Compile Include="../../Models/StudentPerformanceDetail.cs" Link="Models/StudentPerformanceDetail.cs" />
+    <!-- GradingSystemModels excluded: uses WinUI Visibility; stubs in test -->
+    <Compile Include="../../AutoTable/Models/PromotionModels.cs" Link="Models/PromotionModels.cs" />
+    <Compile Include="../../Models/ReportCardModels.cs" Link="Models/ReportCardModels.cs" />
+    <Compile Include="../../Models/SchoolSettingsModels.cs" Link="Models/SchoolSettingsModels.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ExcludeAppAssets>true</ExcludeAppAssets>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="AutoTable.Views.SchoolSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource SurfaceGrayBrush}">
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="0" Text="School Settings" Style="{ThemeResource PageTitleStyle}" />
+
+        <!-- Two-column content -->
+        <Grid Grid.Row="1" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="408" MaxWidth="484" />
+                <ColumnDefinition Width="*" MinWidth="408" MaxWidth="484" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT COLUMN: School Information + Logo -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="16">
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="SCHOOL INFORMATION" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBox Header="School Name"
+                                     Text="{Binding SchoolName, Mode=TwoWay}"
+                                     PlaceholderText="e.g. AutoTable Academy" />
+
+                            <TextBox Header="School Address"
+                                     Text="{Binding SchoolAddress, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Plot 123, Kampala Road" />
+
+                            <TextBox Header="School Phone"
+                                     Text="{Binding SchoolPhone, Mode=TwoWay}"
+                                     PlaceholderText="e.g. +256 700 123456" />
+
+                            <TextBox Header="School Motto"
+                                     Text="{Binding Motto, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Knowledge is Power" />
+
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="SCHOOL LOGO" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Width="120" Height="120"
+                                        BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
+                                        CornerRadius="8" Background="#F8F8F8">
+                                    <Image x:Name="LogoPreview" Stretch="Uniform" Margin="8" />
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                                    <TextBlock Text="Upload your school logo"
+                                               FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="Supports PNG, JPG, BMP, GIF"
+                                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}" />
+                                    <Button x:Name="PickLogoButton" Content="Choose Logo"
+                                            Click="PickLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
+                                    <Button x:Name="ClearLogoButton" Content="Remove Logo"
+                                            Click="ClearLogo_Click" Style="{ThemeResource SecondaryButtonStyle}" />
+                                </StackPanel>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- RIGHT COLUMN: Invite Codes + Head Teacher -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="16">
+
+                    <!-- Invite Code Generation (admin only) -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="InviteCodeCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="INVITE CODES" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Generate a one-time invite code for a data entrant to sign up."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <TextBox x:Name="InviteLabelBox"
+                                     Header="Label (optional)"
+                                     PlaceholderText="e.g. Term 2 marks entry" />
+
+                            <TextBlock Text="Select pages this user can access:"
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       Margin="0,0,0,4" />
+
+                            <CheckBox x:Name="SelectAllPagesCheck" Content="Select All (Full Access)"
+                                      Margin="0,2,0,6" Checked="SelectAllPagesCheck_Changed"
+                                      Unchecked="SelectAllPagesCheck_Changed" />
+
+                            <Grid x:Name="AccessPagesGrid" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="GenerateCodeButton" Content="Generate Code"
+                                        Click="GenerateInviteCode_Click" Style="{ThemeResource PrimaryButtonStyle}" />
+                            </StackPanel>
+
+                            <Border x:Name="GeneratedCodeBorder" Visibility="Collapsed"
+                                    Background="#F0F9FF" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Code generated!" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock x:Name="GeneratedCodeText" FontSize="18" FontWeight="Bold"
+                                               Foreground="{ThemeResource PrimaryBlueBrush}" FontFamily="Consolas" />
+                                    <TextBlock Text="Share this code with the data entrant. They will enter it during registration."
+                                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}"
+                                               TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Generated Invite Codes List -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="InviteCodeListCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="GENERATED CODES" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock x:Name="NoCodesText"
+                                       Text="No invite codes generated yet."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       Visibility="Collapsed" />
+
+                            <ListView x:Name="InviteCodesList"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="False">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="4,8" ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <FontIcon Grid.Column="0" Glyph="&#xE734;" FontSize="16"
+                                                      Foreground="{ThemeResource TextSecondaryBrush}" VerticalAlignment="Center" />
+
+                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Code}" FontSize="14" FontWeight="SemiBold"
+                                                           FontFamily="Consolas" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextMutedBrush}">
+                                                    <Run Text="{Binding Label}" />
+                                                    <Run Text=" • " />
+                                                    <Run Text="{Binding StatusText}" />
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                                                                                                                                        <Button x:Name="CopyInviteCodeBtn"
+                                            Grid.Column="2"
+                                            Tag="{Binding Code}"
+                                            Click="CopyInviteCode_Click"
+                                            Style="{ThemeResource GhostButtonStyle}" FontSize="12"
+                                            Padding="8,4" MinWidth="50"
+                                            Foreground="White"
+                                            ToolTipService.ToolTip="Copy code">
+                                        <TextBlock x:Name="CopyInviteCodeContent" Text="Copy" FontWeight="SemiBold" />
+                                    </Button>
+
+                                            <Button Grid.Column="3"
+                                                    Content="Revoke"
+                                                    Tag="{Binding Id}"
+                                                    Click="RevokeInviteCode_Click"
+                                                    Visibility="{Binding RevokeVisibility}"
+                                                    Style="{ThemeResource GhostButtonStyle}" FontSize="12"
+                                                    Padding="8,4" MinWidth="60" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active Accounts (admin only) -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="ActiveAccountsCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="ACTIVE ACCOUNTS" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Manage registered users: view roles, promote access, revoke rights, or remove accounts."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <Border Style="{ThemeResource TableHeaderRowStyle}">
+                                <Grid Padding="12,8" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2.5*" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="3*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="NAME" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="1" Text="EMAIL" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="2" Text="ROLE" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="3" Text="ACTIONS" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                </Grid>
+                            </Border>
+
+                            <ListView x:Name="ActiveAccountsList"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="False">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="MinHeight" Value="0" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="12,8" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2.5*" />
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="1.2*" />
+                                                <ColumnDefinition Width="3*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FullName}" FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource TextPrimaryBrush}" TextWrapping="Wrap" />
+                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextMutedBrush}">
+                                                    <Run Text="Joined " />
+                                                    <Run Text="{Binding CreatedAtDisplay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding Email}" FontSize="12"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap" />
+
+                                            <Border Grid.Column="2" CornerRadius="4" Padding="6,2"
+                                                    VerticalAlignment="Center" HorizontalAlignment="Left"
+                                                    Background="{Binding RoleBadgeBackground}">
+                                                <TextBlock Text="{Binding RoleLabel}" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{Binding RoleBadgeForeground}" />
+                                            </Border>
+
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4"
+                                                        VerticalAlignment="Center">
+                                                <Button Content="Promote"
+                                                        Tag="{Binding Id}"
+                                                        Click="PromoteAccess_Click"
+                                                        Visibility="{Binding CanEnhanceVisibility}"
+                                                        Style="{ThemeResource SecondaryButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                                <Button Content="Revoke"
+                                                        Tag="{Binding Id}"
+                                                        Click="RevokeAccess_Click"
+                                                        Visibility="{Binding CanRevokeVisibility}"
+                                                        Style="{ThemeResource DangerGhostButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                                <Button Content="Remove"
+                                                        Tag="{Binding Id}"
+                                                        Click="RemoveAccount_Click"
+                                                        Style="{ThemeResource DangerGhostButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Credential Reset Codes -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="CredentialResetCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="CREDENTIAL RESET CODES" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Generate a reset code for a user. They can use it to recover their account if they forget their username or password."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <ComboBox x:Name="ResetUserCombo" Header="Select User"
+                                      HorizontalAlignment="Stretch" SelectionChanged="ResetUserCombo_SelectionChanged" />
+
+                            <TextBlock x:Name="CurrentResetCodeText" FontSize="12"
+                                       Foreground="{ThemeResource TextSecondaryBrush}"
+                                       TextWrapping="WrapWholeWords" Visibility="Collapsed">
+                                <Run Text="Current reset code: " />
+                                <Run x:Name="CurrentResetCodeRun" FontFamily="Consolas" FontWeight="SemiBold" />
+                            </TextBlock>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="GenerateResetCodeButton" Content="Generate New Code"
+                                        Click="GenerateResetCode_Click" Style="{ThemeResource PrimaryButtonStyle}" />
+                                <Button x:Name="CopyResetCodeButton"
+                                        Click="CopyResetCode_Click" Style="{ThemeResource SecondaryButtonStyle}"
+                                        Visibility="Collapsed">
+                                    <TextBlock x:Name="CopyResetCodeContent" Text="Copy Code" FontWeight="SemiBold" />
+                                </Button>
+                            </StackPanel>
+
+                            <Border x:Name="NewResetCodeBorder" Visibility="Collapsed"
+                                    Background="#F0F9FF" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="New reset code generated!" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock x:Name="NewResetCodeText" FontSize="18" FontWeight="Bold"
+                                               Foreground="{ThemeResource PrimaryBlueBrush}" FontFamily="Consolas" />
+                                    <TextBlock Text="Share this code with the user. It will replace any previous reset code."
+                                               FontSize="11" Foreground="{ThemeResource TextMutedBrush}"
+                                               TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="HEAD TEACHER" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBox Header="Head Teacher Name"
+                                     Text="{Binding HeadTeacherName, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Mrs. Jane Smith" />
+
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="PREVIEW" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <Border BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16" Background="White">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{Binding SchoolName}" FontSize="16" FontWeight="Bold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding SchoolAddress}" FontSize="12"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding SchoolPhone}" FontSize="12"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding Motto}" FontSize="11" FontStyle="Italic"
+                                               Foreground="{ThemeResource TextMutedBrush}" />
+                                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+                                    <TextBlock Text="Head Teacher" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding HeadTeacherName}" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
+
+        <!-- Action Bar -->
+        <Border Grid.Row="2" Style="{ThemeResource FilterBarStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"
+                           Foreground="{ThemeResource SuccessGreenBrush}" FontSize="13" />
+                <Button Grid.Column="1" Content="Save Settings" Style="{ThemeResource PrimaryButtonStyle}"
+                        Click="Save_Click" MinWidth="140" />
+            </Grid>
+        </Border>
+
+    </Grid>
+</Page>

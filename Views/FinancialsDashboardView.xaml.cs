@@ -1,5 +1,12 @@
+using AutoTable.Services;
 using AutoTable.ViewModels;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AutoTable.Views
 {
@@ -10,6 +17,116 @@ namespace AutoTable.Views
         {
             InitializeComponent();
             DataContext = ViewModel;
+            Loaded += FinancialsDashboardView_Loaded;
+        }
+
+        private async void FinancialsDashboardView_Loaded(object sender, RoutedEventArgs e)
+        {
+            await LoadFeeCollectionByClassAsync();
+        }
+
+        private async Task LoadFeeCollectionByClassAsync()
+        {
+            FeeCollectionByClassPanel.Children.Clear();
+            try
+            {
+                var ds = AppServices.DataService;
+                if (ds == null) return;
+
+                var classes = await ds.GetClassesAsync();
+                var students = (await ds.GetStudentsAsync()).Where(s => s.IsActive).ToList();
+                var termFees = await ds.GetTermFeesAsync();
+                var payments = await ds.GetFeePaymentsAsync();
+
+                if (classes.Count == 0)
+                {
+                    FeeCollectionByClassPanel.Children.Add(new TextBlock
+                    {
+                        Text = "No classes found.",
+                        FontSize = 13,
+                        Foreground = (Brush)Application.Current.Resources["TextMutedBrush"]
+                    });
+                    return;
+                }
+
+                // Update the term label with the selected term
+                FeeCollectionTermLabel.Text = ViewModel.SelectedTermName;
+
+                // Build per-class collected vs outstanding data
+                var classData = new List<(string Name, double Collected, double Outstanding)>();
+                foreach (var cls in classes)
+                {
+                    var classStudents = students.Where(s => s.ClassId == cls.Id).ToList();
+                    var classTermFee = termFees.FirstOrDefault(tf => tf.ClassId == cls.Id)?.Amount ?? 0;
+                    var expected = classTermFee * classStudents.Count;
+
+                    // Sum payments for students in this class
+                    var studentIds = classStudents.Select(s => s.Id).ToHashSet();
+                    var collected = payments.Where(p => studentIds.Contains(p.StudentId)).Sum(p => p.Amount);
+                    var outstanding = expected > collected ? expected - collected : 0;
+
+                    classData.Add((cls.Name, collected, outstanding));
+                }
+
+                // Find the max total (collected + outstanding) for scaling
+                double maxTotal = classData.Max(c => c.Collected + c.Outstanding);
+                if (maxTotal == 0) maxTotal = 1; // avoid division by zero
+                const double maxBarHeight = 130; // max pixel height for the tallest bar
+
+                var greenBrush = (Brush)Application.Current.Resources["SuccessGreenBrush"];
+                var redBrush = (Brush)Application.Current.Resources["DangerRedBrush"];
+                var textSecondary = (Brush)Application.Current.Resources["TextSecondaryBrush"];
+
+                foreach (var (name, collected, outstanding) in classData)
+                {
+                    var total = collected + outstanding;
+                    var collectedHeight = total > 0 ? (collected / maxTotal) * maxBarHeight : 0;
+                    var outstandingHeight = total > 0 ? (outstanding / maxTotal) * maxBarHeight : 0;
+
+                    var barGroup = new StackPanel { Spacing = 4 };
+                    var bars = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Bottom };
+
+                    bars.Children.Add(new Border
+                    {
+                        Width = 28,
+                        Height = Math.Max(collectedHeight, 2),
+                        Background = greenBrush,
+                        CornerRadius = new CornerRadius(4),
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        Opacity = 0.85
+                    });
+                    bars.Children.Add(new Border
+                    {
+                        Width = 28,
+                        Height = Math.Max(outstandingHeight, outstanding > 0 ? 2 : 0),
+                        Background = redBrush,
+                        CornerRadius = new CornerRadius(4),
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        Opacity = 0.7
+                    });
+
+                    barGroup.Children.Add(bars);
+                    barGroup.Children.Add(new TextBlock
+                    {
+                        Text = name,
+                        FontSize = 11,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Foreground = textSecondary,
+                        TextTrimming = TextTrimming.CharacterEllipsis
+                    });
+
+                    FeeCollectionByClassPanel.Children.Add(barGroup);
+                }
+            }
+            catch
+            {
+                FeeCollectionByClassPanel.Children.Add(new TextBlock
+                {
+                    Text = "Failed to load class data.",
+                    FontSize = 13,
+                    Foreground = (Brush)Application.Current.Resources["TextMutedBrush"]
+                });
+            }
         }
     }
 }

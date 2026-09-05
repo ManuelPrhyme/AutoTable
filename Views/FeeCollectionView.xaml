@@ -28,7 +28,8 @@
                               ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus, Mode=TwoWay}" />
                     <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                         <Button Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}" Command="{Binding RefreshCommand}" />
-                        <Button Content="Record Payment" Style="{ThemeResource PrimaryButtonStyle}" Command="{Binding RecordPaymentCommand}" />
+                        <Button x:Name="RecordPaymentBtn" Content="Record Payment" Style="{ThemeResource SecondaryButtonStyle}" Click="RecordPayment_Click" />
+                        <Button x:Name="PrintSlipsBtn" Content="Print Slips" Style="{ThemeResource PrimaryButtonStyle}" Click="PrintSlips_Click" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -80,15 +81,19 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
-                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="EXPECTED" />
                             <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PAID" />
                             <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="BALANCE" />
                             <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
+                            <TextBlock Grid.Column="8" Style="{ThemeResource TableHeaderStyle}" Text="ACTION" />
+                            <TextBlock Grid.Column="9" Style="{ThemeResource TableHeaderStyle}" Text="SLIP" />
                         </Grid>
                     </Border>
                     <ListView ItemsSource="{Binding FeeRecords}" SelectionMode="None">
@@ -112,6 +117,8 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="90" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
                                                Text="{Binding RowNumber}" VerticalAlignment="Center" />
@@ -131,12 +138,21 @@
                                                Text="{Binding Balance, Converter={StaticResource CurrencyConverter}}" />
                                     <TextBlock Grid.Column="7" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding PaymentStatus}" />
+                                    <Button Grid.Column="8" Content="Edit"
+                                            Style="{ThemeResource SecondaryButtonStyle}"
+                                            Padding="8,4" FontSize="12" Click="EditFeePayment_Click" />
+                                    <Button Grid.Column="9" Content="Print Slip"
+                                            Style="{ThemeResource SecondaryButtonStyle}"
+                                            Padding="8,4" FontSize="12" Click="PrintSlip_Click" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
                 </StackPanel>
             </Border>
+
+            <TextBlock Text="{Binding StatusMessage}" Style="{ThemeResource MutedTextStyle}"
+                       TextWrapping="Wrap" Margin="4,0" />
 
         </StackPanel>
     </ScrollViewer>

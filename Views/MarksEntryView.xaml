@@ -18,19 +18,29 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <ComboBox Grid.Column="0" Header="Class" MinWidth="100"
                               ItemsSource="{Binding Classes}"
                               SelectedItem="{Binding SelectedClass, Mode=TwoWay}" />
-                    <ComboBox Grid.Column="1" Header="Subject" MinWidth="160"
-                              ItemsSource="{Binding Subjects}"
-                              SelectedItem="{Binding SelectedSubject, Mode=TwoWay}" />
-                    <ComboBox Grid.Column="2" Header="Assessment" MinWidth="150"
+                    <ComboBox Grid.Column="1" Header="Assessment" MinWidth="170"
                               ItemsSource="{Binding Assessments}"
                               SelectedItem="{Binding SelectedAssessment, Mode=TwoWay}" />
-                    <Button Grid.Column="4" VerticalAlignment="Bottom"
+                    <!-- Stream filter: appears before the Subject filter when the selected
+                         assessment is stream-scoped, to pick the stream being marked. -->
+                    <ComboBox Grid.Column="2" Header="Stream" MinWidth="130"
+                              ItemsSource="{Binding Streams}"
+                              SelectedItem="{Binding SelectedStream, Mode=TwoWay}"
+                              Visibility="{x:Bind ViewModel.StreamFilterVisibility, Mode=OneWay}" />
+                    <!-- Subject filter: only visible (spins up) when the selected assessment
+                         is a multi-subject paper, to pick the subject being marked. -->
+                    <ComboBox Grid.Column="3" Header="Subject" MinWidth="160"
+                              ItemsSource="{Binding Subjects}"
+                              SelectedItem="{Binding SelectedSubject, Mode=TwoWay}"
+                              Visibility="{x:Bind ViewModel.SubjectFilterVisibility, Mode=OneWay}" />
+                    <Button x:Name="LoadMarksBtn" Grid.Column="5" VerticalAlignment="Bottom"
                             Content="Load Marks" Style="{ThemeResource SecondaryButtonStyle}"
                             Command="{Binding LoadMarksCommand}" />
                 </Grid>
@@ -100,7 +110,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT NAME" />
-                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="ADM NO." />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
                             <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="MARK (/100)" />
                             <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="GRADE" />
@@ -138,9 +148,10 @@
                                                Text="{Binding AdmissionNumber}" />
                                     <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
                                                Text="{Binding ClassName}" />
-                                    <TextBox Grid.Column="4" Text="{Binding MarkDisplay}"
+                                    <TextBox Grid.Column="4" Text="{Binding MarkText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              IsEnabled="{Binding IsEditable}"
                                              FontSize="14" FontWeight="SemiBold"
+                                             PlaceholderText="-"
                                              VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="5" Style="{ThemeResource NumericCellStyle}"
                                                Text="{Binding Grade}" />

@@ -30,12 +30,21 @@
             <Border Grid.Row="0" Padding="20,24,20,16" BorderBrush="{ThemeResource SidebarBorderBrush}" BorderThickness="0,0,0,1">
                 <StackPanel Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Border Width="32" Height="32" CornerRadius="8" Background="{ThemeResource PrimaryBlueBrush}">
-                            <FontIcon Glyph="&#xE8A5;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel VerticalAlignment="Center" Spacing="1">
-                            <TextBlock Text="AutoTable" FontSize="15" FontWeight="Bold" Foreground="{ThemeResource TextOnDarkBrush}" />
-                            <TextBlock Text="Bright Future Primary" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
+                        <!-- School Logo: shows the settings logo when set, otherwise the blue fallback glyph.
+                             Both are clipped into a perfect circle for a profile/avatar look. -->
+                        <Grid Width="36" Height="36">
+                            <Border x:Name="LogoFallbackBorder" Width="36" Height="36" CornerRadius="18" Background="{ThemeResource PrimaryBlueBrush}">
+                                <FontIcon Glyph="&#xE8A5;" FontSize="18" Foreground="{ThemeResource TextOnDarkBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <!-- Circular Border clips its child into a circle (WinUI only allows
+                                 RectangleGeometry on Clip, so a full-circle CornerRadius is used). -->
+                            <Border Width="36" Height="36" CornerRadius="18" IsHitTestVisible="False">
+                                <Image x:Name="SchoolLogoImage" Width="36" Height="36" Stretch="UniformToFill" Visibility="Collapsed" />
+                            </Border>
+                        </Grid>
+                        <StackPanel VerticalAlignment="Center" Spacing="1" MaxWidth="150">
+                            <TextBlock x:Name="SchoolNameText" Text="AutoTable Academy" FontSize="15" FontWeight="Bold" Foreground="{ThemeResource TextOnDarkBrush}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="SchoolMottoText" Text="Knowledge is Power" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
@@ -46,7 +55,7 @@
                 <StackPanel Padding="12,16,12,8" Spacing="2">
 
                     <!-- MODULE: PERFORMANCE -->
-                    <TextBlock
+                    <TextBlock x:Name="SectionPerformance"
                         Text="PERFORMANCE"
                         FontSize="10"
                         FontWeight="SemiBold"
@@ -108,14 +117,6 @@
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="NavModeration" Tag="Moderation" Style="{ThemeResource IconButtonStyle}"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                            Click="NavItem_Click" Padding="10,9" Visibility="Collapsed">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE72E;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
-                            <TextBlock Text="Moderation" Style="{ThemeResource SidebarItemTextStyle}" />
-                        </StackPanel>
-                    </Button>
 
                     <Button x:Name="NavReportCards" Tag="ReportCards" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
@@ -129,8 +130,74 @@
                     <!-- SEPARATOR -->
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
+                    <!-- MODULE: ADMIN -->
+                    <TextBlock x:Name="SectionAdmin"
+                        Text="ADMINISTRATION"
+                        FontSize="10"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextOnDarkMutedBrush}"
+                        Margin="8,0,0,6"
+                        CharacterSpacing="80" />
+
+                    <Button x:Name="NavStudents" Tag="Students" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE716;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Students" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavTeachers" Tag="Teachers" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE77B;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Teachers" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavTermManagement" Tag="TermManagement" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE7BE;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Term Management" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavClasses" Tag="Classes" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Classes Management" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="NavPromotion" Tag="Promotion" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE9D9;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Promotion / Repeat" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+
+
+                    <Button x:Name="NavAuditLog" Tag="AuditLog" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="NavItem_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE81C;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="Audit Log" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
+
                     <!-- MODULE: FINANCIALS -->
-                    <TextBlock
+                    <TextBlock x:Name="SectionFinancials"
                         Text="FINANCIALS"
                         FontSize="10"
                         FontWeight="SemiBold"
@@ -168,13 +235,39 @@
                     <!-- SEPARATOR -->
                     <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
 
-                    <!-- AI INSIGHTS -->
+                    <!-- AI INSIGHTS (Coming Soon) -->
                     <Button x:Name="NavAiInsights" Tag="AiInsights" Style="{ThemeResource IconButtonStyle}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Click="AiInsights_Click" Padding="10,9">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{ThemeResource AccentPurpleBrush}" />
+                            <TextBlock Style="{ThemeResource SidebarItemTextStyle}">
+                                <Run Text="AI Insights" />
+                                <Run Text=" (Coming Soon)" FontSize="10" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="NavSchoolSettings" Tag="SchoolSettings" Style="{ThemeResource IconButtonStyle}"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                             Click="NavItem_Click" Padding="10,9">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{ThemeResource AccentPurpleBrush}" />
-                            <TextBlock Text="AI Insights" Style="{ThemeResource SidebarItemTextStyle}" />
+                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{ThemeResource TextOnDarkBrush}" />
+                            <TextBlock Text="School Settings" Style="{ThemeResource SidebarItemTextStyle}" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Separator before tour button -->
+                    <Border Height="1" Background="{ThemeResource SidebarBorderBrush}" Margin="8,12,8,12" />
+
+                    <!-- Take Tour button -->
+                    <Button x:Name="TakeTourBtn" Click="TakeTour_Click"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Padding="10,9" CornerRadius="8"
+                            Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE77B;" FontSize="16" Foreground="{ThemeResource InfoBlueBrush}" />
+                            <TextBlock Text="Take Tour" Style="{ThemeResource SidebarItemTextStyle}" Foreground="{ThemeResource InfoBlueBrush}" />
                         </StackPanel>
                     </Button>
 
@@ -189,8 +282,8 @@
                         <TextBlock x:Name="SidebarUserName" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextOnDarkBrush}" />
                         <TextBlock x:Name="SidebarUserRole" FontSize="11" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                     </StackPanel>
-                    <Button Style="{ThemeResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Sign Out" Click="SignOut_Click">
-                        <FontIcon Glyph="&#xE8FB;" FontSize="14" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
+                    <Button Style="{ThemeResource IconButtonStyle}" Margin="0,0,0,0" HorizontalAlignment="Right" ToolTipService.ToolTip="Lock (Sign Out)" Click="SignOut_Click">
+                        <FontIcon Glyph="&#xE72E;" FontSize="14" Foreground="{ThemeResource TextOnDarkMutedBrush}" />
                     </Button>
                 </StackPanel>
             </Border>
@@ -228,11 +321,23 @@
 
                     <!-- Search -->
                     <AutoSuggestBox
+                        x:Name="TopSearchBox"
                         Grid.Column="1"
                         Margin="16,0"
                         VerticalAlignment="Center"
                         PlaceholderText="Search students, classes..."
-                        QueryIcon="Find" />
+                        QueryIcon="Find"
+                        TextChanged="TopSearchBox_TextChanged"
+                        SuggestionChosen="TopSearchBox_SuggestionChosen">
+                        <AutoSuggestBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*,Auto" Padding="8,4">
+                                    <TextBlock Text="{Binding Title}" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Type}" FontSize="12" Foreground="{ThemeResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </DataTemplate>
+                        </AutoSuggestBox.ItemTemplate>
+                    </AutoSuggestBox>
 
                     <!-- Right Controls -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -240,9 +345,10 @@
                             <ComboBoxItem Content="Term 2, 2025" />
                             <ComboBoxItem Content="Term 1, 2025" />
                         </ComboBox>
-                        <Button Style="{ThemeResource IconButtonStyle}" ToolTipService.ToolTip="Notifications">
+                    <Button Style="{ThemeResource IconButtonStyle}" ToolTipService.ToolTip="Notifications">
                             <FontIcon Glyph="&#xE7ED;" FontSize="16" Foreground="{ThemeResource TextSecondaryBrush}" />
                         </Button>
+                    <ToggleSwitch x:Name="ThemeToggle" OffContent="Light" OnContent="Dark" Toggled="ThemeToggle_Toggled" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <TextBlock x:Name="HeaderUserName" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextPrimaryBrush}" />
                     </StackPanel>
                 </Grid>
@@ -254,6 +360,13 @@
             <!-- Status Footer -->
             <controls:StatusFooterBar Grid.Row="2" />
         </Grid>
+        <!-- ═══════════════════════════════════════════════════
+             USER TOUR OVERLAY (renders on top of everything)
+        ═══════════════════════════════════════════════════ -->
+        <controls:UserTourOverlay x:Name="TourOverlay"
+                                  Grid.ColumnSpan="2"
+                                  Canvas.ZIndex="9999"
+                                  TourFinished="TourOverlay_TourFinished" />
     </Grid>
 </Page>
 

@@ -11,8 +11,23 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Padding="24" Spacing="20">
 
-            <!-- KPI CARDS ROW -->
-            <StackPanel Orientation="Horizontal" Spacing="12">
+            <!-- TERM SELECTOR -->
+            <Border Style="{ThemeResource FilterBarStyle}">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Term:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{ThemeResource TextPrimaryBrush}" />
+                    <ComboBox Grid.Column="1" Header="" MinWidth="200"
+                              ItemsSource="{Binding TermNames}" SelectedItem="{Binding SelectedTermName, Mode=TwoWay}" />
+                    <Button Grid.Column="2" Content="Refresh" Style="{ThemeResource SecondaryButtonStyle}" Command="{Binding RefreshCommand}" VerticalAlignment="Bottom" />
+                </Grid>
+            </Border>
+
+            <!-- PRIMARY KPI CARDS ROW -->
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Left">
                 <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -27,7 +42,26 @@
                             </StackPanel>
                             <TextBlock FontSize="22" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
                                        Text="{Binding TotalCollected, Converter={StaticResource CurrencyConverter}}" />
-                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="This term" />
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Payments received" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" CornerRadius="10,0,0,10" Background="{ThemeResource PrimaryBlueBrush}" />
+                        <StackPanel Grid.Column="1" Padding="14,14" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE9D2;" FontSize="15" Foreground="{ThemeResource PrimaryBlueBrush}" />
+                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Expected" />
+                            </StackPanel>
+                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
+                                       Text="{Binding TotalExpected, Converter={StaticResource CurrencyConverter}}" />
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Based on term fees" />
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -57,38 +91,60 @@
                             <ColumnDefinition Width="4" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" CornerRadius="10,0,0,10" Background="{ThemeResource PrimaryBlueBrush}" />
-                        <StackPanel Grid.Column="1" Padding="14,14" Spacing="4">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE8B7;" FontSize="15" Foreground="{ThemeResource PrimaryBlueBrush}" />
-                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Budget Used" />
-                            </StackPanel>
-                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
-                                       Text="{Binding BudgetUsedPercent, Converter={StaticResource PercentConverter}}" />
-                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Of annual budget" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <Border Style="{ThemeResource KpiCardStyle}" MinWidth="180">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="4" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" CornerRadius="10,0,0,10" Background="{ThemeResource AccentPurpleBrush}" />
                         <StackPanel Grid.Column="1" Padding="14,14" Spacing="4">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE77B;" FontSize="15" Foreground="{ThemeResource AccentPurpleBrush}" />
-                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Students Paid" />
+                                <FontIcon Glyph="&#xE8B7;" FontSize="15" Foreground="{ThemeResource AccentPurpleBrush}" />
+                                <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Collection Rate" />
                             </StackPanel>
                             <TextBlock FontSize="22" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
-                                       Text="{Binding StudentsPaidPercent, Converter={StaticResource PercentConverter}}" />
-                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Full payment" />
+                                       Text="{Binding CollectionRate, Converter={StaticResource PercentConverter}}" />
+                            <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Of expected fees" />
                         </StackPanel>
                     </Grid>
                 </Border>
             </StackPanel>
+
+            <!-- SECONDARY KPI CARDS (2x2 Grid) -->
+            <Grid ColumnSpacing="12" RowSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Grid.Column="0" Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Active Students" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
+                                   Text="{Binding ActiveStudentCount}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="0" Grid.Column="1" Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Partial Payments" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource WarningAmberBrush}"
+                                   Text="{Binding PartialCount}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="0" Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Unpaid" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource DangerRedBrush}"
+                                   Text="{Binding UnpaidCount}" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" Style="{ThemeResource KpiCardStyle}" MinWidth="150">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="Total Payments" />
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{ThemeResource TextPrimaryBrush}"
+                                   Text="{Binding TotalPaymentCount}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
 
             <!-- CHARTS ROW -->
             <Grid ColumnSpacing="16">
@@ -102,62 +158,12 @@
                     <StackPanel Spacing="12">
                         <Grid>
                             <TextBlock Style="{ThemeResource SectionTitleStyle}" Text="Fee Collection by Class" />
-                            <TextBlock HorizontalAlignment="Right" Style="{ThemeResource MutedTextStyle}"
-                                       Text="Term 2, 2025" VerticalAlignment="Center" />
+                            <TextBlock x:Name="FeeCollectionTermLabel" HorizontalAlignment="Right" Style="{ThemeResource MutedTextStyle}"
+                                       Text="" VerticalAlignment="Center" />
                         </Grid>
-                        <Border Height="180" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8">
-                            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left"
-                                        Orientation="Horizontal" Spacing="8" Padding="16,16">
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="120" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="40"  Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P1" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="100" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="55"  Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P2" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="90" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="65" Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P3" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="130" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="25"  Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P4" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="110" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="45"  Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P5" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="80" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="70" Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P6" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <StackPanel Spacing="4">
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Bottom">
-                                        <Border Width="28" Height="140" Background="{ThemeResource SuccessGreenBrush}" CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.85" />
-                                        <Border Width="28" Height="15"  Background="{ThemeResource DangerRedBrush}"   CornerRadius="4" VerticalAlignment="Bottom" Opacity="0.7" />
-                                    </StackPanel>
-                                    <TextBlock Text="P7" FontSize="11" HorizontalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" />
-                                </StackPanel>
-                            </StackPanel>
+                        <Border Height="180" Background="{ThemeResource SurfaceGrayBrush}" CornerRadius="8" Padding="16,16">
+                            <StackPanel x:Name="FeeCollectionByClassPanel" VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                                        Orientation="Horizontal" Spacing="8" />
                         </Border>
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <StackPanel Orientation="Horizontal" Spacing="6">
