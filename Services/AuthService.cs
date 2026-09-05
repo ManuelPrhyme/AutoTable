@@ -87,6 +87,20 @@ namespace AutoTable.Services
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 return false;
 
+            // Demo mode (AUTOTABLE_DEMO_MODE=true): no DB connection string is
+            // configured, so there are no stored users. Accept any non-empty
+            // credentials as an Administrator so the demo app stays usable.
+            if (string.IsNullOrEmpty(AppServices.AuthConnectionString))
+            {
+                SessionService.Instance.SetUser(new User
+                {
+                    FullName = username.Trim(),
+                    Email = username.Trim().ToLower(),
+                    Role = UserRole.Administrator
+                });
+                return true;
+            }
+
             using var db = new AppDbContext(GetOptions());
 
             var user = await db.Users

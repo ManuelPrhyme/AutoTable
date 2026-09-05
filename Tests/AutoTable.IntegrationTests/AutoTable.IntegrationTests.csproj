@@ -4,6 +4,8 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>AutoTable.IntegrationTests</RootNamespace>
     <Nullable>enable</Nullable>
+    <!-- Mirror the main project so linked source files compile identically -->
+    <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <EnableMsixTooling>false</EnableMsixTooling>

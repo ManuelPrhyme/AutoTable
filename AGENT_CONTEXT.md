@@ -2,7 +2,7 @@
 
 This file summarizes the current workspace state, recent changes, and run/setup instructions so another agent (or automation) can continue work.
 
-> Paths in this document are relative to the repository root: `C:\Users\manue\Desktop\Desktop_Apps\AutoTable\`
+> Paths in this document are relative to the repository root (checked out on this machine at `C:\Users\manue\Desktop\AutoTable_Prod\AutoTable\`).
 
 ---
 
@@ -11,7 +11,7 @@ This file summarizes the current workspace state, recent changes, and run/setup 
 - OS/IDE: Microsoft Visual Studio Community 2026 (18.7.3)
 - Project target: .NET 8
 - Solution file: `AutoTable.slnx`
-- Active branch: `trans` (origin: https://github.com/ManuelPrhyme/AutoTable)
+- Active branch: `sql_rec` (origin: https://github.com/ManuelPrhyme/AutoTable) — carries the Sep 4 auth-system work; `trans` is 6 commits behind
 - UI framework: WinUI 3 (Windows App SDK 2.3.x)
 - Build command: `dotnet build AutoTable.csproj -p:Platform=x64` → **0 errors**
 - Test command: `dotnet test Tests/AutoTable.IntegrationTests -p:Platform=x64` → **9/9 passing**
@@ -24,7 +24,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 
 ---
 
-## Current State (2 Sep 2026)
+## Current State (5 Sep 2026)
 
 ### Build: 0 errors, clean
 
@@ -81,11 +81,20 @@ AutoTable is a single-source-of-truth desktop school management app where every 
   - **Manual re-access** — "Take Tour" button in the sidebar below School Settings
   - **First-launch setup integration** — after the tour finishes, the grading system → class → term setup sequence runs automatically if the database is empty
   - **Smooth entrance animation** — popup slides up with opacity fade via Composition APIs
+- **🆕 Authentication & role-based access (4 Sep)** — full auth system:
+  - First-run admin registration (`AdminRegistrationView` — auto-shown when no Administrator exists) with SHA-256 + salt hashing (`PasswordHelper`)
+  - Invite-code data-entrant sign-up (`DataEntrantRegistrationView`) with `InviteCodeEntity` storage, expiry, and single-use enforcement
+  - DB-backed sign-in (`AuthService.SignInAsync`) — username = stored email, verified against the password hash
+  - Role-based sidebar: admin-only pages (Term Management, Promotion, Audit Log, Budget, School Settings) hidden for non-admins
+  - Per-user page restrictions: invites carry `AllowedPages`; persisted on `UserEntity` (schema patch) and enforced in the sidebar + on every route
+  - School Settings invite-code generation (label + access-level presets), copy-to-clipboard, revocation, and a generated-codes list
+  - Route guards centralized in `NavigationService.AdminOnlyRouteTags` + `CurrentUserMayAccess` (5 Sep)
+- **Auth hardening (5 Sep)** — restricted entrants now land on the first page their invite grants instead of a blank frame + "Access Restricted" dialog; `NavigateToShellPage` refuses disallowed routes (top search / quick actions / setup flows can no longer bypass gating); the tour auto-start and "Take Tour" button are hidden for restricted users whose `AllowedPages` exclude tour pages; demo mode (no DB) accepts any credentials as Administrator so it stays usable
 
 ### What's Next (P5 backlog)
 | # | Feature | Status |
 |---|---------|--------|
-| P5.4 | Admin role-gating | 📋 **PLANNED** — documented in WAY_FORWARD_PLAN.md |
+| P5.4 | Admin role-gating | ✅ **DONE (4 Sep)** — full auth system + role gating, see Authentication section below |
 | P5.5 | Defaulters / cohort analytics | 🔴 Not started |
 | P5.6 | Mid-term slips | 🔴 Not started |
 | P5.7 | Active-term enforcement | 🔴 Not started |
@@ -95,7 +104,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 ## Key Files
 
 ### Data Layer
-- `AutoTable/Data/Entities/StudentEntity.cs` — ALL EF entities (Student, Class, Stream, Subject, Term, AcademicYear, Assessment, Mark, FeePayment, User, ClassSubject, ClassStream, TermFee, BudgetLine, GradingSystem, GradeBand, TerminationLog, Enrollment)
+- `AutoTable/Data/Entities/StudentEntity.cs` — ALL EF entities (Student, Class, Stream, Subject, Term, AcademicYear, Assessment, Mark, FeePayment, User, ClassSubject, ClassStream, TermFee, BudgetLine, GradingSystem, GradeBand, TerminationLog, Enrollment, InviteCode); `UserEntity` carries `AllowedPages`
 - `AutoTable/Data/AppDbContext.cs` — EF Core DbContext with ForeignKeyInterceptor
 - `AutoTable/Data/SeedData.cs` — NOT called at startup (by design)
 
@@ -105,6 +114,7 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 - `AutoTable/AppServices.cs` — global static IDataService holder (`Toasts` property commented out in dev)
 - `AutoTable/Services/ToastService.cs` / `NotificationStore.cs` — dead types (toast infra, all call sites commented for dev)
 - **🆕 `Services/UserTourService.cs`** — singleton managing tour state, step definitions, and first-launch persistence via `Windows.Storage.ApplicationData.LocalSettings`
+- **🆕 `Services/AuthService.cs` / `IAuthService.cs`** — DB-backed admin registration, sign-in, and invite-code sign-up; `Services/PasswordHelper.cs` — SHA-256 + per-user salt; `Services/SessionService.cs` — current user, `IsAdministrator`, `AllowedPages`, first-launch flags
 
 ### Models
 - `Models/AssessmentItem.cs` — `AssessmentScope` enum, `AssessmentPromotionRole` enum, `AssessmentItem` DTO
@@ -132,6 +142,50 @@ AutoTable is a single-source-of-truth desktop school management app where every 
 
 ### Startup
 - `App.xaml.cs` — DB init, connection string, schema patches (ALTER TABLE for legacy DBs, TermFees table creation), ForeignKeyInterceptor registration
+
+---
+
+## Authentication & Access Control (4–5 Sep)
+
+```
+Startup (App.xaml.cs)
+  └─ no Administrator in Users? → AdminRegistrationView (first-run setup)
+  └─ else → LoginView (SignInAsync → SessionService.SetUser)
+
+School Settings (admin)
+  └─ Generate Code → InviteCodes row (Role=DataEntrant, AllowedPages preset, 30-day expiry)
+  └─ entrant registers → UserEntity row with AllowedPages copied from invite; invite marked used
+
+ShellView sidebar gating (per session)
+  ├─ Admin: everything visible
+  ├─ Data entrant + AllowedPages set: only granted nav items visible (Dashboard etc.)
+  └─ Data entrant without AllowedPages: all non-admin pages
+
+Route enforcement (defense in depth)
+  ├─ NavigationService.CurrentUserMayAccess(tag) — checked in NavigateToShellPage
+  │   (top search, dashboard quick actions, setup flows) BEFORE the frame switches
+  ├─ ShellView.NavigateTo (sidebar clicks) — dialog + refuse for admin-only / not-granted tags
+  └─ ShellView.OnExternalShellNavigated — chrome-sync guard after external navigation
+
+Landing page: admins/unrestricted → Dashboard; restricted entrants → first page their
+AllowedPages grant (PreferredStartTags order), so login never yields a blank frame.
+
+Demo mode (AUTOTABLE_DEMO_MODE=true): no DB users; sign-in accepts any non-empty
+credentials as Administrator.
+```
+
+### Files
+| File | Role |
+|------|------|
+| `Services/AuthService.cs` | Admin registration, sign-in, invite-code sign-up; sets the session |
+| `Services/PasswordHelper.cs` | `salt:hash` via SHA-256 + 16-byte random salt |
+| `Services/SessionService.cs` | `CurrentUser`, `IsAdministrator`, sign-out, first-launch flags |
+| `Services/NavigationService.cs` | Central route guard (`AdminOnlyRouteTags`, `CurrentUserMayAccess`) enforced before any shell navigation |
+| `Views/AdminRegistrationView.xaml(.cs)` | First-run admin creation |
+| `Views/DataEntrantRegistrationView.xaml(.cs)` | Invite-code sign-up for data entrants |
+| `Views/LoginView.xaml(.cs)` | Username/password sign-in; link to data-entrant registration |
+| `Views/SchoolSettingsView.xaml(.cs)` | Invite-code generate / copy / revoke + access-level presets (admin only) |
+| `Views/ShellView.xaml(.cs)` | Sidebar role gating, AllowedPages visibility, landing-page selection, tour gating |
 
 ---
 
@@ -258,4 +312,4 @@ See **IMPLEMENTATION_LOG.md** for a detailed, up-to-date log of what's being imp
 
 ---
 
-*Last updated: 2 Sep 2026 — Buffy (Codebuff agent)*
+*Last updated: 5 Sep 2026 — Buffy (Codebuff agent)*

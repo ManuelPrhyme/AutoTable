@@ -109,12 +109,30 @@
                                      Header="Label (optional)"
                                      PlaceholderText="e.g. Term 2 marks entry" />
 
-                            <ComboBox x:Name="InviteAccessCombo" Header="Access Level" HorizontalAlignment="Stretch">
-                                <ComboBoxItem Content="Full access (all pages)" Tag="" IsSelected="True" />
-                                <ComboBoxItem Content="Marks entry only" Tag="MarksEntry" />
-                                <ComboBoxItem Content="Marks + Gradebook" Tag="MarksEntry,Gradebook" />
-                                <ComboBoxItem Content="Fee collection only" Tag="FeeCollection" />
-                            </ComboBox>
+                            <TextBlock Text="Select pages this user can access:"
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       Margin="0,0,0,4" />
+
+                            <CheckBox x:Name="SelectAllPagesCheck" Content="Select All (Full Access)"
+                                      Margin="0,2,0,6" Checked="SelectAllPagesCheck_Changed"
+                                      Unchecked="SelectAllPagesCheck_Changed" />
+
+                            <ListView x:Name="AccessPagesList"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="False"
+                                      MaxHeight="220"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding DisplayName}"
+                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                  IsEnabled="{Binding IsEnabled}"
+                                                  Checked="PageCheckBox_Changed"
+                                                  Unchecked="PageCheckBox_Changed"
+                                                  Margin="0,2" />
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
 
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button x:Name="GenerateCodeButton" Content="Generate Code"
@@ -176,7 +194,7 @@
                                             </StackPanel>
 
                                             <Button Grid.Column="2"
-                                                    Content="&#xE8C8;"
+                                                    Content="✓"
                                                     Tag="{Binding Code}"
                                                     Click="CopyInviteCode_Click"
                                                     Style="{ThemeResource GhostButtonStyle}" FontSize="14"
@@ -190,6 +208,105 @@
                                                     Visibility="{Binding RevokeVisibility}"
                                                     Style="{ThemeResource GhostButtonStyle}" FontSize="12"
                                                     Padding="8,4" MinWidth="60" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active Accounts (admin only) -->
+                    <Border Style="{ThemeResource TableCardStyle}" x:Name="ActiveAccountsCard">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="ACTIVE ACCOUNTS" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Manage registered users: view roles, enhance access, revoke rights, or remove accounts."
+                                       FontSize="12" Foreground="{ThemeResource TextMutedBrush}"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <Border Style="{ThemeResource TableHeaderRowStyle}">
+                                <Grid Padding="12,8" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2.5*" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="3*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="NAME" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="1" Text="EMAIL" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="2" Text="ROLE" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="3" Text="ACTIONS" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                </Grid>
+                            </Border>
+
+                            <ListView x:Name="ActiveAccountsList"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="False">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="MinHeight" Value="0" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Padding="12,8" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2.5*" />
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="1.2*" />
+                                                <ColumnDefinition Width="3*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding FullName}" FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource TextPrimaryBrush}" TextWrapping="Wrap" />
+                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextMutedBrush}">
+                                                    <Run Text="Joined " />
+                                                    <Run Text="{Binding CreatedAtDisplay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding Email}" FontSize="12"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap" />
+
+                                            <Border Grid.Column="2" CornerRadius="4" Padding="6,2"
+                                                    VerticalAlignment="Center" HorizontalAlignment="Left"
+                                                    Background="{Binding RoleBadgeBackground}">
+                                                <TextBlock Text="{Binding RoleLabel}" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{Binding RoleBadgeForeground}" />
+                                            </Border>
+
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4"
+                                                        VerticalAlignment="Center">
+                                                <Button Content="Enhance"
+                                                        Tag="{Binding Id}"
+                                                        Click="EnhanceAccess_Click"
+                                                        Visibility="{Binding CanEnhanceVisibility}"
+                                                        Style="{ThemeResource SecondaryButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                                <Button Content="Revoke"
+                                                        Tag="{Binding Id}"
+                                                        Click="RevokeAccess_Click"
+                                                        Visibility="{Binding CanRevokeVisibility}"
+                                                        Style="{ThemeResource DangerGhostButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                                <Button Content="Remove"
+                                                        Tag="{Binding Id}"
+                                                        Click="RemoveAccount_Click"
+                                                        Style="{ThemeResource DangerGhostButtonStyle}"
+                                                        Padding="8,3" FontSize="11" MinWidth="64" />
+                                            </StackPanel>
                                         </Grid>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>

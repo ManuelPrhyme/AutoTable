@@ -1,4 +1,4 @@
-namespace AutoTable.Models
+﻿namespace AutoTable.Models
 {
     /// <summary>
     /// Defines a single step in the user interface tour.
@@ -38,6 +38,18 @@ namespace AutoTable.Models
         /// Where to position the popup relative to the target element.
         /// </summary>
         public TourPopupPosition PopupPosition { get; set; } = TourPopupPosition.Right;
+
+        /// <summary>
+        /// Optional X offset (in pixels) applied to the spotlight border position.
+        /// Positive values move the spotlight to the right.
+        /// </summary>
+        public double SpotlightXOffset { get; set; } = 0;
+
+        /// <summary>
+        /// Optional Y offset (in pixels) applied to the spotlight border position.
+        /// Positive values move the spotlight down; negative values move it up.
+        /// </summary>
+        public double SpotlightYOffset { get; set; } = 0;
     }
 
     public enum TourPopupPosition

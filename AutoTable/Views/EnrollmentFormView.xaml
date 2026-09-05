@@ -47,8 +47,11 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <DatePicker Grid.Column="0" Header="Date of birth" HorizontalAlignment="Stretch"
-                                    Date="{Binding DateOfBirth, Mode=TwoWay}" />
+                        <CalendarDatePicker Grid.Column="0" Header="Date of birth"
+                                            PlaceholderText="Pick date of birth"
+                                            Description="Tap to open the calendar"
+                                            HorizontalAlignment="Stretch"
+                                            Date="{Binding DateOfBirth, Mode=TwoWay}" />
                         <ComboBox Grid.Column="1" Header="Gender" HorizontalAlignment="Stretch"
                                   SelectedItem="{Binding Gender, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <ComboBoxItem Content="Male" />

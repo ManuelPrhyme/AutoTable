@@ -102,7 +102,6 @@ namespace AutoTable.ViewModels
             KpiMetrics.Add(new KpiMetric { Title = "Total Students", Value = studentCount.ToString("N0"), Subtitle = "registered", IconGlyph = "\uE77B", AccentColor = "#007BFF" });
             KpiMetrics.Add(new KpiMetric { Title = "Avg Score", Value = gradebookRows > 0 ? $"{avgScore:F1}%" : "—", Subtitle = gradebookRows > 0 ? $"across {gradebookRows} records" : "no marks entered", IconGlyph = "\uE9D2", AccentColor = "#28A745" });
             KpiMetrics.Add(new KpiMetric { Title = "Assessments", Value = assessmentCount.ToString("N0"), Subtitle = "created", IconGlyph = "\uE9F9", AccentColor = "#FD7E14" });
-            KpiMetrics.Add(new KpiMetric { Title = "Attendance", Value = "—", Subtitle = "tracking not yet implemented", IconGlyph = "\uE7E7", AccentColor = "#6610F2" });
             KpiMetrics.Add(new KpiMetric { Title = "Revenue", Value = revenue > 0 ? $"UGX {revenue:N0}" : "—", Subtitle = revenue > 0 ? "collected" : "no payments recorded", IconGlyph = "\uE929", AccentColor = "#20C997" });
         }
 

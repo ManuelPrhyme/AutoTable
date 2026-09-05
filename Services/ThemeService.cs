@@ -30,8 +30,7 @@ namespace AutoTable.Services
                     if (_mainWindow?.Content is FrameworkElement rootElement)
                     {
                         rootElement.RequestedTheme = theme == ApplicationTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
-                    }
-                }
+                    }           }
             }
             catch { }
         }

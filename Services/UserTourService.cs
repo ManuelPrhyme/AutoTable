@@ -61,7 +61,9 @@ namespace AutoTable.Services
                     Title = "Dashboard — At a Glance",
                     Description = "Your home page shows KPI cards with total students, assessments, and fees. Everything you need to know at a glance.",
                     IconGlyph = "\uE80F",
-                    PopupPosition = TourPopupPosition.Bottom
+                    PopupPosition = TourPopupPosition.Bottom,
+                    SpotlightXOffset = 80,  // Move spotlight right to surround the cards
+                    SpotlightYOffset = -30  // Move spotlight up to surround the cards
                 },
                 new TourStep
                 {

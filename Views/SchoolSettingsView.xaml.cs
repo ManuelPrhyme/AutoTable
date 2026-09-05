@@ -6,6 +6,7 @@ using AutoTable.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,8 @@ namespace AutoTable.Views
     {
         public SchoolSettingsViewModel ViewModel { get; } = new();
         private readonly ObservableCollection<InviteCodeDisplayItem> _inviteCodes = new();
+        private readonly ObservableCollection<ActiveAccountDisplayItem> _activeAccounts = new();
+        private readonly ObservableCollection<AccessPageOption> _accessPageOptions = new();
 
         public SchoolSettingsView()
         {
@@ -28,17 +31,41 @@ namespace AutoTable.Views
             this.DataContext = ViewModel;
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             InviteCodesList.ItemsSource = _inviteCodes;
+            ActiveAccountsList.ItemsSource = _activeAccounts;
 
             // Hide invite code section for non-admins
             if (!SessionService.Instance.IsAdministrator)
             {
                 InviteCodeCard.Visibility = Visibility.Collapsed;
                 InviteCodeListCard.Visibility = Visibility.Collapsed;
+                ActiveAccountsCard.Visibility = Visibility.Collapsed;
             }
             else
             {
                 _ = LoadInviteCodesAsync();
+                _ = LoadActiveAccountsAsync();
             }
+
+            // Populate the access page checkboxes (non-admin-only sidebar pages)
+            var options = new List<AccessPageOption>
+            {
+                new() { DisplayName = "Dashboard", RouteTag = "Dashboard" },
+                new() { DisplayName = "Assessments", RouteTag = "Assessments" },
+                new() { DisplayName = "Marks Entry", RouteTag = "MarksEntry" },
+                new() { DisplayName = "Gradebook", RouteTag = "Gradebook" },
+                new() { DisplayName = "Student Performance", RouteTag = "StudentPerformance" },
+                new() { DisplayName = "Analytics", RouteTag = "Analytics" },
+                new() { DisplayName = "Report Cards", RouteTag = "ReportCards" },
+                new() { DisplayName = "Students", RouteTag = "Students" },
+                new() { DisplayName = "Teachers", RouteTag = "Teachers" },
+                new() { DisplayName = "Classes Management", RouteTag = "Classes" },
+                new() { DisplayName = "Fin. Dashboard", RouteTag = "FinDashboard" },
+                new() { DisplayName = "Fee Collection", RouteTag = "FeeCollection" },
+            };
+            foreach (var opt in options)
+                _accessPageOptions.Add(opt);
+
+            AccessPagesList.ItemsSource = _accessPageOptions;
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -128,7 +155,15 @@ namespace AutoTable.Views
             {
                 var code = GenerateRandomCode();
                 var label = InviteLabelBox.Text?.Trim();
-                var allowedPages = (InviteAccessCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+
+                // Build the comma-selected list of allowed pages from checked boxes.
+                // If all or none are selected, treat as full access (null).
+                var selected = _accessPageOptions.Where(p => p.IsSelected).Select(p => p.RouteTag).ToList();
+                string? allowedPages;
+                if (selected.Count == 0 || selected.Count == _accessPageOptions.Count)
+                    allowedPages = null; // full access
+                else
+                    allowedPages = string.Join(",", selected);
 
                 var options = GetDbOptions();
                 if (options == null) return;
@@ -234,6 +269,226 @@ namespace AutoTable.Views
             catch { }
         }
 
+        // ── Load Active Accounts ────────────────────────────────────
+
+        private async System.Threading.Tasks.Task LoadActiveAccountsAsync()
+        {
+            try
+            {
+                var options = GetDbOptions();
+                if (options == null) return;
+
+                using var db = new AppDbContext(options);
+                var users = await db.Users
+                    .OrderBy(u => u.FullName)
+                    .ToListAsync();
+
+                var currentUserId = SessionService.Instance.CurrentUser?.UserId;
+
+                _activeAccounts.Clear();
+                foreach (var u in users)
+                {
+                    var isAdmin = string.Equals(u.Role, "Administrator", StringComparison.OrdinalIgnoreCase);
+                    _activeAccounts.Add(new ActiveAccountDisplayItem
+                    {
+                        Id = u.Id,
+                        FullName = u.FullName,
+                        Email = u.Email ?? "(no email)",
+                        Role = u.Role ?? "DataEntrant",
+                        CreatedAtDisplay = u.CreatedAt.ToString("dd MMM yyyy"),
+                        // Can't enhance or revoke yourself, and can't modify other admins
+                        CanEnhanceVisibility = (!isAdmin && u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed,
+                        CanRevokeVisibility = (!isAdmin && u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed,
+                        // Always show Remove, except don't let admin remove themselves
+                        CanRemoveVisibility = (u.Id != currentUserId) ? Visibility.Visible : Visibility.Collapsed
+                    });
+                }
+            }
+            catch { }
+        }
+
+        // ── Active Account Actions ───────────────────────────────────
+
+        private async void EnhanceAccess_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not int userId) return;
+
+            var account = _activeAccounts.FirstOrDefault(a => a.Id == userId);
+            if (account == null) return;
+
+            // Build a list of possible access levels
+            var options = GetDbOptions();
+            if (options == null) return;
+
+            var enhanceChoices = new[]
+            {
+                "Promote to Administrator",
+                "Full Access (all pages)",
+                "Marks Entry + Gradebook",
+                "Fee Collection Only",
+                "Marks Entry Only"
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Enhance Access — {account.FullName}",
+                Content = "Select the new access level for this account.",
+                PrimaryButtonText = "Apply",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+
+            // Use a ComboBox inside a StackPanel for the dialog content
+            var panel = new StackPanel { Spacing = 8 };
+            var combo = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+            foreach (var choice in enhanceChoices)
+                combo.Items.Add(choice);
+            combo.SelectedIndex = 1; // default to Full Access
+            panel.Children.Add(combo);
+            dialog.Content = panel;
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                using var db = new AppDbContext(options);
+                var user = await db.Users.FindAsync(userId);
+                if (user == null) return;
+
+                var selected = combo.SelectedItem?.ToString();
+                if (selected == "Promote to Administrator")
+                {
+                    user.Role = "Administrator";
+                    user.AllowedPages = null;
+                }
+                else if (selected == "Full Access (all pages)")
+                {
+                    user.Role = "DataEntrant";
+                    user.AllowedPages = null;
+                }
+                else
+                {
+                    user.Role = "DataEntrant";
+                    user.AllowedPages = selected switch
+                    {
+                        "Marks Entry + Gradebook" => "MarksEntry,Gradebook",
+                        "Fee Collection Only" => "FeeCollection",
+                        "Marks Entry Only" => "MarksEntry",
+                        _ => null
+                    };
+                }
+
+                await db.SaveChangesAsync();
+                await LoadActiveAccountsAsync();
+            }
+            catch { }
+        }
+
+        private async void RevokeAccess_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not int userId) return;
+
+            var account = _activeAccounts.FirstOrDefault(a => a.Id == userId);
+            if (account == null) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Revoke Access — {account.FullName}",
+                Content = $"Are you sure you want to revoke all access for '{account.FullName}'? " +
+                          "They will no longer be able to sign in to the application.",
+                PrimaryButtonText = "Revoke",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                var options = GetDbOptions();
+                if (options == null) return;
+                using var db = new AppDbContext(options);
+                var user = await db.Users.FindAsync(userId);
+                if (user == null) return;
+
+                // Downgrade to DataEntrant with no allowed pages (effectively locked out)
+                user.Role = "DataEntrant";
+                user.AllowedPages = "__NONE__"; // no page grants access
+                await db.SaveChangesAsync();
+
+                await LoadActiveAccountsAsync();
+            }
+            catch { }
+        }
+
+        private async void RemoveAccount_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not int userId) return;
+
+            var account = _activeAccounts.FirstOrDefault(a => a.Id == userId);
+            if (account == null) return;
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Remove Account — {account.FullName}",
+                Content = $"Are you sure you want to permanently delete the account for '{account.FullName}'? " +
+                          "This action cannot be undone. Existing marks and fee records entered by this user will be preserved.",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel",
+                XamlRoot = this.XamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
+            try
+            {
+                var options = GetDbOptions();
+                if (options == null) return;
+                using var db = new AppDbContext(options);
+                var user = await db.Users.FindAsync(userId);
+                if (user == null) return;
+
+                db.Users.Remove(user);
+                await db.SaveChangesAsync();
+
+                await LoadActiveAccountsAsync();
+            }
+            catch (Exception ex)
+            {
+                var errDialog = new ContentDialog
+                {
+                    Title = "Cannot Remove Account",
+                    Content = $"The account could not be removed: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errDialog.ShowAsync();
+            }
+        }
+
+        // ── Access Page Checkbox Events ─────────────────────────────
+
+        private void SelectAllPagesCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox chk) return;
+            bool check = chk.IsChecked == true;
+            foreach (var opt in _accessPageOptions)
+                opt.IsSelected = check;
+        }
+
+        private void PageCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            // Sync the "Select All" checkbox state based on individual items.
+            int selectedCount = _accessPageOptions.Count(p => p.IsSelected);
+            if (selectedCount == 0)
+                SelectAllPagesCheck.IsChecked = false;
+            else if (selectedCount == _accessPageOptions.Count)
+                SelectAllPagesCheck.IsChecked = true;
+            else
+                SelectAllPagesCheck.IsChecked = null; // indeterminate
+        }
+
         // ── Helpers ─────────────────────────────────────────────
 
         private static DbContextOptions<AppDbContext>? GetDbOptions()
@@ -266,5 +521,51 @@ namespace AutoTable.Views
         public string Label { get; set; } = string.Empty;
         public string StatusText { get; set; } = string.Empty;
         public Visibility RevokeVisibility { get; set; }
+    }
+
+    /// <summary>
+    /// Display-friendly representation of a registered user account for the Active Accounts ListView.
+    /// </summary>
+    public class ActiveAccountDisplayItem
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string CreatedAtDisplay { get; set; } = string.Empty;
+        public Visibility CanEnhanceVisibility { get; set; }
+        public Visibility CanRevokeVisibility { get; set; }
+        public Visibility CanRemoveVisibility { get; set; }
+
+        public string RoleLabel => string.Equals(Role, "Administrator", StringComparison.OrdinalIgnoreCase)
+            ? "Admin"
+            : "Staff";
+
+        public Brush RoleBadgeBackground => string.Equals(Role, "Administrator", StringComparison.OrdinalIgnoreCase)
+            ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 220, 230, 255)) // light blue
+            : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 230, 230, 230)); // light gray
+
+        public Brush RoleBadgeForeground => string.Equals(Role, "Administrator", StringComparison.OrdinalIgnoreCase)
+            ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 40, 80, 160)) // dark blue
+            : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 100, 100, 100)); // dark gray
+    }
+
+    /// <summary>
+    /// Represents a selectable page in the invite-code access-level checkbox list.
+    /// </summary>
+    public class AccessPageOption : INotifyPropertyChanged
+    {
+        public string DisplayName { get; set; } = string.Empty;
+        public string RouteTag { get; set; } = string.Empty;
+        public bool IsEnabled { get; set; } = true;
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set { _isSelected = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected))); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

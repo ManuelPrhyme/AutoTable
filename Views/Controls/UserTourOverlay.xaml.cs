@@ -160,6 +160,10 @@ namespace AutoTable.Controls
             double tW = target.ActualWidth;
             double tH = target.ActualHeight;
 
+            // Apply optional spotlight offsets from the step definition
+            tX += step.SpotlightXOffset;
+            tY += step.SpotlightYOffset;
+
             // If target is off-screen, skip spotlight
             if (tX + tW < 0 || tY + tH < 0 || tX > containerW || tY > containerH)
                 return;

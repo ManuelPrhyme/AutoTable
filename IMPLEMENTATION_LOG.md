@@ -691,7 +691,9 @@ public ReportCardsView() {
 | 27 Aug | **Crash fixes + UI layout + schema consolidation** | Report Cards crash fix (3 root causes), schema patches consolidation, head teacher termId fix, batch progress indicator, filter bar redesign, assessment column balancing, term management layout, classes & subjects layout fixes |
 | 28 Aug | **5-state promotion roles + multi-subject assessments** | PromotionRole 5-state model, report-card/promotion classification rework, multi-subject assessments (link table, subject-aware marks, dynamic subject filter at marks entry), print hardening (PDF/any printer), active-term user control, UI polish |
 | 30 Aug | **Build fixes + Student status + PDF export + UI** | XAML compiler/Binding/crash fixes, nullable warnings, student status system (inactive display/restore/colors), filter bar layout, term management enhancements, shift stream filtering, teachers table spec, assessments independent filters, ReportCards PDF export (QuestPDF), Print All individual PDFs, moderation removed |
+| 4 Sep | **Authentication system + role-based access** | Admin first-run registration, invite-code data-entrant sign-up (single-use, 30-day expiry), SHA-256 salted password hashing, DB-backed sign-in, role-based sidebar gating, per-user AllowedPages restrictions persisted on UserEntity (schema patch), invite-code generate/copy/revoke UI in School Settings, registration nullability/resource fixes |
+| 5 Sep | **Auth hardening + test-project fix** | Restricted entrants land on first granted page (no blank frame/dialog on login); NavigateToShellPage central guard (AdminOnlyRouteTags + CurrentUserMayAccess) closes top-search/quick-action bypass; tour auto-start + Take Tour hidden for restricted users; demo mode signs in any credentials as Administrator; IntegrationTests.csproj now ImplicitUsings=enable (test project compiles linked sources — was broken since SimpleLookup gained DateTime? EndDate); build 0 errors, 9/9 tests passing |
 
 ---
 
-*Last updated: 30 Aug 2026 — Buffy (Codebuff agent)*
+*Last updated: 5 Sep 2026 — Buffy (Codebuff agent)*

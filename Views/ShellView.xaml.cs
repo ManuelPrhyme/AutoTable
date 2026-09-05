@@ -39,7 +39,7 @@ namespace AutoTable.Views
             ["FinDashboard"]       = ("Financial Dashboard", "Overview of fee collection, budget, and expenditure."),
             ["FeeCollection"]      = ("Fee Collection", "Track and manage student fee payments."),
             ["Budget"]             = ("Budget & Expenditure", "School budget planning and expenditure tracking."),
-            ["AiInsights"]         = ("AI Insights", "AI-assisted recommendations and workflow automations."),
+
         };
 
         private static readonly Dictionary<string, System.Type> Routes = new()
@@ -60,9 +60,21 @@ namespace AutoTable.Views
             ["FinDashboard"]       = typeof(FinancialsDashboardView),
             ["FeeCollection"]      = typeof(FeeCollectionView),
             ["Budget"]             = typeof(BudgetView),
-            ["AiInsights"]         = typeof(AiInsightsView),
+
             ["SchoolSettings"]     = typeof(SchoolSettingsView),
-            ["Defaulters"]         = typeof(DefaultersAnalyticsView),
+        };
+
+        /// <summary>
+        /// Landing-page preference for restricted data entrants: the shell opens
+        /// the first of these routes their AllowedPages grants (Dashboard when
+        /// unrestricted), instead of showing an "Access Restricted" dialog and
+        /// a blank content frame.
+        /// </summary>
+        private static readonly string[] PreferredStartTags =
+        {
+            "Dashboard", "MarksEntry", "Gradebook", "Assessments", "Students", "Teachers",
+            "ReportCards", "FeeCollection", "FinDashboard", "Classes", "StudentPerformance",
+            "Analytics"
         };
 
         public ShellView()
@@ -126,7 +138,7 @@ namespace AutoTable.Views
                 NavClasses.Visibility = allowedSet.Contains("Classes") ? Visibility.Visible : Visibility.Collapsed;
                 NavFinDashboard.Visibility = allowedSet.Contains("FinDashboard") ? Visibility.Visible : Visibility.Collapsed;
                 NavFeeCollection.Visibility = allowedSet.Contains("FeeCollection") ? Visibility.Visible : Visibility.Collapsed;
-                NavDefaulters.Visibility = allowedSet.Contains("Defaulters") ? Visibility.Visible : Visibility.Collapsed;
+
                 NavBudget.Visibility = allowedSet.Contains("Budget") ? Visibility.Visible : Visibility.Collapsed;
                 NavAiInsights.Visibility = allowedSet.Contains("AiInsights") ? Visibility.Visible : Visibility.Collapsed;
                 NavSchoolSettings.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
@@ -146,7 +158,16 @@ namespace AutoTable.Views
             NavigationService.Instance.ShellNavigated += OnExternalShellNavigated;
             Unloaded += (_, _) => NavigationService.Instance.ShellNavigated -= OnExternalShellNavigated;
 
-            NavigateTo("Dashboard", NavDashboard);
+            // Land restricted users on the first page their AllowedPages grant,
+            // falling back to Dashboard for admins and unrestricted users.
+            var startTag = "Dashboard";
+            if (hasPageRestrictions && allowedSet != null)
+            {
+                var granted = allowedSet.Where(Routes.ContainsKey).ToList();
+                startTag = PreferredStartTags.FirstOrDefault(granted.Contains) ?? granted.FirstOrDefault() ?? string.Empty;
+            }
+            if (!string.IsNullOrEmpty(startTag))
+                NavigateTo(startTag, FindNavButtonByTag(startTag) ?? NavDashboard);
 
             // ── AUTO-START USER TOUR ON NEW INSTALLATION ─────────
             // The tour auto-starts when the database is empty (no classes
@@ -173,7 +194,12 @@ namespace AutoTable.Views
             }
             catch { }
 
-            if (shouldStartTour)
+            // Restricted data entrants don't get the tour: its steps visit pages
+            // outside their AllowedPages scope.
+            var canTour = isAdmin || string.IsNullOrWhiteSpace(allowedPages);
+            TakeTourBtn.Visibility = canTour ? Visibility.Visible : Visibility.Collapsed;
+
+            if (shouldStartTour && canTour)
             {
                 // Small delay so the UI has time to render before
                 // we calculate spotlight positions.
@@ -225,7 +251,7 @@ namespace AutoTable.Views
             if (!Routes.ContainsKey(tag)) return;
 
             // ── ROLE-BASED ROUTE GUARD ─────────────────────────────────
-            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+            if (NavigationService.AdminOnlyRouteTags.Contains(tag) && !_vm.IsAdministrator)
                 return;
 
             // ── INVITE-CODE PAGE RESTRICTION ───────────────────────────
@@ -270,17 +296,12 @@ namespace AutoTable.Views
             NavigateTo(tag, btn);
         }
 
-        private static readonly HashSet<string> AdminOnlyRoutes = new()
-        {
-            "Budget", "Promotion", "TermManagement", "AuditLog", "SchoolSettings"
-        };
-
         private async void NavigateTo(string tag, Button btn)
         {
             if (!Routes.TryGetValue(tag, out var pageType)) return;
 
             // ── ROLE-BASED ROUTE GUARD ─────────────────────────────────
-            if (AdminOnlyRoutes.Contains(tag) && !_vm.IsAdministrator)
+            if (NavigationService.AdminOnlyRouteTags.Contains(tag) && !_vm.IsAdministrator)
             {
                 try
                 {
@@ -298,7 +319,8 @@ namespace AutoTable.Views
             }
 
             // ── INVITE-CODE PAGE RESTRICTION GUARD ──────────────────────
-            var currentUser = SessionService.Instance.CurrentUser;            if (currentUser != null && currentUser.Role != UserRole.Administrator
+            var currentUser = SessionService.Instance.CurrentUser;
+            if (currentUser != null && currentUser.Role != UserRole.Administrator
                 && !string.IsNullOrWhiteSpace(currentUser.AllowedPages))
             {
                 var allowed = new HashSet<string>(currentUser.AllowedPages.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -449,6 +471,22 @@ namespace AutoTable.Views
         /// for named elements inside the currently loaded page.
         /// </summary>
         internal Frame GetContentFrame() => ContentFrame;
+
+        private async void AiInsights_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new ContentDialog
+                {
+                    Title = "AI Insights",
+                    Content = "This feature is coming soon! AI-powered recommendations and workflow automations will be available in a future update.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await dlg.ShowAsync();
+            }
+            catch { }
+        }
 
         private async void TourOverlay_TourFinished()
         {

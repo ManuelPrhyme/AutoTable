@@ -20,7 +20,7 @@ namespace AutoTable.Views
             Loaded += DashboardView_Loaded;
         }
 
-        private void DashboardView_Loaded(object sender, RoutedEventArgs e)
+        private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             // KPI Cards
             KpiPanel.Children.Clear();
@@ -31,27 +31,153 @@ namespace AutoTable.Views
                 KpiPanel.Children.Add(card);
             }
 
-            // Assessment Progress rows
-            var assessments = new[]
-            {
-                ("Mid Term I — P5 Maths",  "P5", 100, true),
-                ("CAT 2 — P4 Science",     "P4",  78, false),
-                ("End Term — P6 English",  "P6",  45, false),
-                ("CAT 1 — P3 Mathematics", "P3", 100, true),
-                ("Mid Term I — P7 SST",    "P7",  92, true),
-            };
-
-            bool alt = false;
-            foreach (var (name, cls, pct, verified) in assessments)
-            {
-                var row = BuildAssessmentRow(name, cls, pct, verified, alt);
-                AssessmentProgressPanel.Children.Add(row);
-                alt = !alt;
-            }
-
             QuickActionsList.ItemsSource = _vm.QuickActions;
             AiInsightsList.ItemsSource = _vm.AiInsights;
             RecentActivityList.ItemsSource = _vm.RecentActivity;
+
+            // Load real data for Assessment Progress and Performance Trend
+            await LoadAssessmentProgressAsync();
+            await LoadPerformanceTrendAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadAssessmentProgressAsync()
+        {
+            AssessmentProgressPanel.Children.Clear();
+            try
+            {                var ds = AppServices.DataService;
+                if (ds == null) return;
+
+                var assessments = await ds.GetAssessmentsAsync();
+                if (assessments.Count == 0)
+                {
+                    AssessmentProgressPanel.Children.Add(new TextBlock
+                    {
+                        Text = "No assessments created yet.",
+                        FontSize = 13,
+                        Foreground = ThemeResourceHelper.GetThemeBrush("TextMutedBrush"),
+                        Padding = new Thickness(16, 12, 16, 12)
+                    });
+                    return;
+                }
+
+                // Show the most recent assessments first, up to 8
+                var sorted = assessments.OrderByDescending(a => a.DueDate).Take(8).ToList();
+                bool alt = false;
+                foreach (var a in sorted)                {
+                    var displayName = string.IsNullOrEmpty(a.Subject)
+                        ? a.Name
+                        : $"{a.Name} — {a.Subject}";
+                    var row = BuildAssessmentRow(displayName, a.ClassName, a.MarksEnteredPercent, a.IsVerified, alt);
+                    AssessmentProgressPanel.Children.Add(row);
+                    alt = !alt;
+                }
+            }
+            catch
+            {
+                AssessmentProgressPanel.Children.Add(new TextBlock
+                {
+                    Text = "Failed to load assessments.",
+                    FontSize = 13,
+                    Foreground = ThemeResourceHelper.GetThemeBrush("TextMutedBrush"),
+                    Padding = new Thickness(16, 12, 16, 12)
+                });
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadPerformanceTrendAsync()
+        {
+            // Replace the static placeholder bars with real gradebook averages.
+            // Compute per-class averages across all subjects and render as a bar chart.
+            try
+            {
+                var ds = AppServices.DataService;
+                if (ds == null) return;
+
+                var classes = await ds.GetClassesAsync();
+                var subjects = await ds.GetSubjectsAsync();
+                if (classes.Count == 0) return;
+
+                var classAverages = new List<(string Name, double Avg)>();
+                foreach (var cls in classes)
+                {
+                    double totalAvg = 0;
+                    int count = 0;
+                    foreach (var subj in subjects)
+                    {
+                        var rows = await ds.GetGradebookAsync(cls.Name, subj.Name);
+                        if (rows.Count > 0)
+                        {
+                            totalAvg += rows.Average(r => r.Average);
+                            count++;
+                        }
+                    }
+                    if (count > 0)
+                        classAverages.Add((cls.Name, totalAvg / count));
+                }
+
+                if (classAverages.Count == 0) return;
+
+                // Find the placeholder panel inside the Performance Trend card and replace its content
+                var trendPanel = FindName("TrendChartPlaceholder") as Microsoft.UI.Xaml.Controls.StackPanel;
+                if (trendPanel == null) return;
+
+                trendPanel.Children.Clear();
+                foreach (var (name, avg) in classAverages.OrderByDescending(x => x.Avg))
+                {
+                    var grid = new Grid { Height = 22 };
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
+
+                    grid.Children.Add(new TextBlock
+                    {
+                        Text = name,
+                        FontSize = 11,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = ThemeResourceHelper.GetThemeBrush("TextSecondaryBrush"),
+                        TextTrimming = TextTrimming.CharacterEllipsis
+                    });
+
+                    var pct = Math.Min(avg, 100);
+                    var barFill = new Border
+                    {
+                        Height = 10,
+                        CornerRadius = new CornerRadius(5),
+                        Background = ThemeResourceHelper.GetThemeBrush("PrimaryBlueBrush"),
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        Width = pct / 100.0 * 200
+                    };
+                    var barBg = new Border
+                    {
+                        Height = 10,
+                        CornerRadius = new CornerRadius(5),
+                        Background = ThemeResourceHelper.GetThemeBrush("SurfaceGray2Brush"),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(6, 0, 6, 0),
+                        Child = barFill
+                    };
+
+                    grid.Children.Add(barBg);
+                    grid.Children.Add(new TextBlock
+                    {
+                        Text = $"{avg:F1}%",
+                        FontSize = 11,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Foreground = ThemeResourceHelper.GetThemeBrush("TextPrimaryBrush")
+                    });
+
+                    Grid.SetColumn((Microsoft.UI.Xaml.FrameworkElement)grid.Children[0], 0);
+                    Grid.SetColumn((Microsoft.UI.Xaml.FrameworkElement)grid.Children[1], 1);
+                    Grid.SetColumn((Microsoft.UI.Xaml.FrameworkElement)grid.Children[2], 2);
+                    trendPanel.Children.Add(grid);
+                }
+            }
+            catch
+            {
+                // Gracefully degrade — keep the static placeholder if data load fails
+            }
         }
 
         private static Border BuildAssessmentRow(string name, string cls, int pct, bool verified, bool alt)

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <UserControl
     x:Class="AutoTable.Controls.UserTourOverlay"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -11,23 +11,23 @@
 
     <Grid x:Name="TourRoot" IsHitTestVisible="True">
 
-        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-             DIMMING SCrim â€” full-screen semi-transparent overlay
+        <!-- ══════════════════════════════════════════════════════════
+             DIMMING SCrim — full-screen semi-transparent overlay
              Dims the background so the spotlight stands out.
              IsHitTestVisible=False so clicks pass through to the
              underlying page (the sidebar handles its own clicks).
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        ══════════════════════════════════════════════════════════ -->
         <Border x:Name="DimmingScrim"
                 Background="#66000000"
                 IsHitTestVisible="False"
                 Canvas.ZIndex="0"
                 Visibility="Collapsed" />
 
-        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-             SPOTLIGHT â€” sits above the scrim to "punch through"
+        <!-- ══════════════════════════════════════════════════════════
+             SPOTLIGHT — sits above the scrim to "punch through"
              the dimming. The glow is a soft outer halo; the inner
              border is the crisp blue accent around the active element.
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        ══════════════════════════════════════════════════════════ -->
         <Border x:Name="SpotlightGlow"
                 BorderBrush="#4D2979FF"
                 BorderThickness="2"
@@ -45,11 +45,11 @@
                 Canvas.ZIndex="1"
                 Visibility="Collapsed" />
 
-        <!--â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-             TOUR SIDEBAR â€” floating card, centered and lowered
+                                        <!-- ══════════════════════════════════════════════════════════
+             TOUR SIDEBAR — floating card, centered and lowered
              Always on top of scrim + spotlight so it's fully
              readable and clickable.
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        ══════════════════════════════════════════════════════════ -->
         <Border x:Name="TourSidebar"
                 Width="320"
                 HorizontalAlignment="Center"
@@ -71,7 +71,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- â”€â”€ Header â”€â”€ -->
+                <!-- ── Header ── -->
                 <Grid Grid.Row="0" Padding="16,16,12,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -104,10 +104,10 @@
                     </Button>
                 </Grid>
 
-                <!-- â”€â”€ Divider â”€â”€ -->
+                <!-- ── Divider ── -->
                 <Border Grid.Row="1" Height="1" Background="{ThemeResource BorderLightBrush}" Margin="16,0" />
 
-                <!-- â”€â”€ Description body â”€â”€ -->
+                <!-- ── Description body ── -->
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="16,12">
                     <TextBlock x:Name="StepDescription"
                                TextWrapping="Wrap"
@@ -116,7 +116,7 @@
                                Foreground="{ThemeResource TextSecondaryBrush}" />
                 </ScrollViewer>
 
-                <!-- â”€â”€ Footer: progress + buttons â”€â”€ -->
+                <!-- ── Footer: progress + buttons ── -->
                 <Grid Grid.Row="3" Padding="16,12" BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="0,1,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
