@@ -708,6 +708,22 @@ namespace AutoTable.Views
             var service = AppServices.DataService;
             if (service == null) return;
 
+            // Guard: marks slips require a specific class and term (not "All").
+            var slipClassName = ViewModel.SelectedClass;
+            var slipTerm = ViewModel.SelectedTerm;
+            if (string.IsNullOrWhiteSpace(slipClassName) || string.Equals(slipClassName, "All", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(slipTerm) || string.Equals(slipTerm, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                await new ContentDialog
+                {
+                    Title = "Select Filters First",
+                    Content = "Pick a specific class and term before printing marks slips. \"All\" is not supported.",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                }.ShowAsync();
+                return;
+            }
+
             // 1) Let the user choose which assessments to put on the marks slips (max 2).
             var selectedIds = await PromptMarksSlipAssessmentSelectionAsync();
             if (selectedIds == null) return; // cancelled
@@ -717,7 +733,7 @@ namespace AutoTable.Views
                 stream = null;
 
             var slips = await service.GetMidTermSlipsAsync(
-                ViewModel.SelectedClass, ViewModel.SelectedTerm, stream, selectedIds);
+                slipClassName, slipTerm, stream, selectedIds);
 
             if (slips.Count == 0)
             {
@@ -777,11 +793,14 @@ namespace AutoTable.Views
             catch { all = new List<AssessmentItem>(); }
 
             var className = ViewModel.SelectedClass;
+            var termName = ViewModel.SelectedTerm;
             var candidates = all
                 .Where(a =>
-                    string.IsNullOrWhiteSpace(className) || string.Equals(className, "All", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(a.ClassName, className, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(a.ClassName, "All Classes", StringComparison.OrdinalIgnoreCase))
+                    (string.IsNullOrWhiteSpace(className) || string.Equals(className, "All", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(a.ClassName, className, StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(a.ClassName, "All Classes", StringComparison.OrdinalIgnoreCase)) &&
+                    (string.IsNullOrWhiteSpace(termName) || string.Equals(termName, "All", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(a.TermName, termName, StringComparison.OrdinalIgnoreCase)))
                 .OrderBy(a => a.Subject)
                 .ThenBy(a => a.Name)
                 .ToList();
@@ -795,7 +814,7 @@ namespace AutoTable.Views
                     CloseButtonText = "OK",
                     XamlRoot = this.XamlRoot
                 }.ShowAsync();
-                return new List<string>();
+                return null;
             }
 
                                     var checkboxes = new List<CheckBox>();

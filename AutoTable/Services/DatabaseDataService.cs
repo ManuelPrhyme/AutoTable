@@ -810,6 +810,7 @@ namespace AutoTable.Services
                 .Include(a => a.Subject)
                 .Include(a => a.Stream)
                 .Include(a => a.AssessmentSubjects).ThenInclude(ass => ass.Subject)
+                .Include(a => a.Term)
                 .Include(a => a.AuthorUser)
                 // Sort by creation date (newest first); Id breaks the tie for assessments
                 // created in the same instant.
@@ -842,6 +843,7 @@ namespace AutoTable.Services
                     IsClassWide = a.IsClassWide,
                     SubjectNames = multiNames,
                     IsSchoolWide = a.IsSchoolWide,
+                    TermName = a.Term?.Name ?? string.Empty,
                     WeightPercent = a.WeightPercent,
                     DueDate = a.DueDate ?? DateTime.MinValue,
                     MarksEnteredPercent = a.MarksEnteredPercent,

@@ -70,6 +70,8 @@ namespace AutoTable.Models
         public List<string> SubjectNames { get; set; } = new();
         /// <summary>True for school-wide (AllInSchool) assessments that apply to every class.</summary>
         public bool IsSchoolWide { get; set; }
+        /// <summary>The term this assessment belongs to (for display and filtering).</summary>
+        public string TermName { get; set; } = string.Empty;
         /// <summary>True when this is a multi-subject assessment (single shared paper covering several subjects).</summary>
         public bool IsMultiSubject => Scope != AssessmentScope.Single || SubjectNames.Count > 0;
         public string StatusLabel => IsPublished ? "Published" : IsVerified ? "Verified" : MarksEnteredPercent >= 100 ? "Complete" : "In Progress";
