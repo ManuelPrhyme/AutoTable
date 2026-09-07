@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using AutoTable.Models;
 using System.Threading.Tasks;
@@ -453,14 +454,27 @@ var promoRoleHint = new TextBlock
                     }
                     ViewModel.RefreshCounts();
 
-                    ViewModel.StatusMessage = createdItems.Count == 1
+                    var msg = createdItems.Count == 1
                         ? $"Assessment '{createdItems[0].Name}' created for {createdItems[0].Subject}."
                         : $"Created {createdItems.Count} assessments for '{assessmentName}'.";
+                    ViewModel.StatusMessage = msg;
+                    AppServices.Toasts.Show("Assessment Created", msg);
+
+                    // Audit log
+                    await AppServices.Audit.LogAsync("Assessment", "Create", "Assessment",
+                        createdItems.Count > 0 ? createdItems[0].Id : null,
+                        assessmentName,
+                        JsonSerializer.Serialize(new { scope, weight, dueDate }),
+                        isSuccess: true);
                 }
                 catch (Exception ex)
                 {
                     var err = new ContentDialog { Title = "Unable to create assessment", Content = ex.Message, CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                     await err.ShowAsync();
+
+                    // Audit log failure
+                    await AppServices.Audit.LogAsync("Assessment", "Create", "Assessment",
+                        null, nameBox.Text?.Trim() ?? string.Empty, null, isSuccess: false, errorMessage: ex.Message);
                 }
             }
         }

@@ -54,6 +54,7 @@ namespace AutoTable.Data
         public DbSet<SchoolSettingsEntity> SchoolSettings => Set<SchoolSettingsEntity>();
         public DbSet<HeadTeacherCommentEntity> HeadTeacherComments => Set<HeadTeacherCommentEntity>();
         public DbSet<InviteCodeEntity> InviteCodes => Set<InviteCodeEntity>();
+        public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

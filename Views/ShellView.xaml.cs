@@ -445,6 +445,10 @@ namespace AutoTable.Views
 
         private void SignOut_Click(object sender, RoutedEventArgs e)
         {
+            var cu = SessionService.Instance.CurrentUser;
+            if (cu != null)
+                _ = AppServices.Audit.LogAsync("Authentication", "Logout", "User",
+                    cu.UserId?.ToString(), cu.FullName, "User signed out.", isSuccess: true);
             SessionService.Instance.SignOut();
             // Navigate back to the appropriate login page based on admin existence
             NavigationService.Instance.Navigate(typeof(LoginView));

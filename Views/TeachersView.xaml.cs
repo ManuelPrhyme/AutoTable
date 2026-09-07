@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace AutoTable.Views
@@ -312,7 +313,19 @@ namespace AutoTable.Views
                     IsStudentTeacher = studentToggle.IsOn
                 };
 
-                try { await _vm.AddTeacherAsync(teacher); }
+                try
+                {
+                    await _vm.AddTeacherAsync(teacher);
+
+                    // Toast
+                    AppServices.Toasts.Show("Teacher Registered", $"Teacher '{teacher.FullName}' has been added.");
+
+                    // Audit log
+                    await AppServices.Audit.LogAsync("People", "Create", "Teacher", teacher.Id.ToString(),
+                        teacher.FullName,
+                        JsonSerializer.Serialize(new { teacher.Email, teacher.Phone, teacher.SubjectsTaught }),
+                        isSuccess: true);
+                }
                 catch (Exception ex)
                 {
                     var errDialog = new ContentDialog
@@ -323,6 +336,10 @@ namespace AutoTable.Views
                         XamlRoot = this.XamlRoot
                     };
                     await errDialog.ShowAsync();
+
+                    // Audit log failure
+                    await AppServices.Audit.LogAsync("People", "Create", "Teacher", null,
+                        teacher.FullName, null, isSuccess: false, errorMessage: ex.Message);
                 }
             }
         }
@@ -457,7 +474,19 @@ namespace AutoTable.Views
                 teacher.IsRegisteredTeacher = regToggle.IsOn;
                 teacher.IsStudentTeacher = studentToggle.IsOn;
 
-                try { await _vm.UpdateTeacherAsync(teacher); }
+                try
+                {
+                    await _vm.UpdateTeacherAsync(teacher);
+
+                    // Toast
+                    AppServices.Toasts.Show("Teacher Updated", $"Teacher '{teacher.FullName}' information saved.");
+
+                    // Audit log
+                    await AppServices.Audit.LogAsync("People", "Update", "Teacher", teacher.Id.ToString(),
+                        teacher.FullName,
+                        JsonSerializer.Serialize(new { teacher.Email, teacher.Phone, teacher.SubjectsTaught }),
+                        isSuccess: true);
+                }
                 catch (Exception ex)
                 {
                     var errDialog = new ContentDialog
@@ -468,6 +497,10 @@ namespace AutoTable.Views
                         XamlRoot = this.XamlRoot
                     };
                     await errDialog.ShowAsync();
+
+                    // Audit log failure
+                    await AppServices.Audit.LogAsync("People", "Update", "Teacher", teacher.Id.ToString(),
+                        teacher.FullName, null, isSuccess: false, errorMessage: ex.Message);
                 }
             }
         }
@@ -476,7 +509,14 @@ namespace AutoTable.Views
         {
             if (sender is Button btn && btn.Tag is int teacherId)
             {
+                var teacher = _vm.Teachers.FirstOrDefault(t => t.Id == teacherId);
                 _vm.DeleteTeacherCommand.Execute(teacherId);
+                if (teacher != null)
+                {
+                    _ = AppServices.Audit.LogAsync("People", "Delete", "Teacher",
+                        teacherId.ToString(), teacher.FullName,
+                        $"Teacher '{teacher.FullName}' deleted.", isSuccess: true);
+                }
             }
         }
 

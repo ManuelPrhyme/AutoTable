@@ -194,6 +194,11 @@ namespace AutoTable.Views
                 // after the class exists.
                 var createdClass = await _vm.CreateClassAsync(name, null, gradingSystemId);
 
+                _ = AppServices.Audit.LogAsync("Academic", "Create", "Class",
+                    createdClass.Id.ToString(), createdClass.Name,
+                    $"Class '{createdClass.Name}' created (grading system: {gsPicker.SelectedItem?.ToString() ?? "default"}).",
+                    isSuccess: true);
+
                 // Attach pending streams/subjects to the freshly created class.
                 // Stream teachers default to the class teacher (none yet at this
                 // point — the class teacher is assigned below, after creation).
@@ -344,6 +349,11 @@ namespace AutoTable.Views
             try
             {
                 await _vm.DeleteClassAsync(cls.Id);
+
+                _ = AppServices.Audit.LogAsync("Academic", "Delete", "Class",
+                    cls.Id.ToString(), cls.Name,
+                    $"Class '{cls.Name}' permanently deleted after password verification.", isSuccess: true);
+
                 await _vm.LoadAsync();
             }
             catch (Exception ex)
@@ -499,6 +509,10 @@ namespace AutoTable.Views
                         double.TryParse(gsPassMarkBox.Text, out var pm) ? pm : null)).Id;
 
                 await _vm.UpdateClassAsync(cls.Id, newName, newTeacherId, newGsId);
+
+                _ = AppServices.Audit.LogAsync("Academic", "Update", "Class",
+                    cls.Id.ToString(), newName,
+                    $"Class '{newName}' updated (name/teacher/grading system).", isSuccess: true);
 
                 // --- Reconcile streams ---
                 var originalStreams = (await AppServices.DataService.GetStreamsForClassAsync(cls.Id)).ToList();
@@ -666,7 +680,13 @@ namespace AutoTable.Views
                 throw new InvalidOperationException("Pass mark must be between 0 and 100.");
 
             _bandRows.Clear();
-            return await _vm.CreateGradingSystemWithBandsAsync(name, isDefault, bands, parsedPass);
+            var gs = await _vm.CreateGradingSystemWithBandsAsync(name, isDefault, bands, parsedPass);
+
+            _ = AppServices.Audit.LogAsync("Assessment", "Create", "GradingSystem",
+                gs.Id.ToString(), gs.Name,
+                $"Grading system '{gs.Name}' created (pass mark: {parsedPass}%).", isSuccess: true);
+
+            return gs;
         }
 
         /// <summary>

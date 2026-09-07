@@ -161,6 +161,9 @@ namespace AutoTable
 
                         // Expose connection string for AuthService (user/invite-code lookups)
                         AppServices.AuthConnectionString = connStr;
+
+                        // Initialize AuditService with the connection string
+                        AppServices.Audit.Initialize(connStr);
                     }
                 }
                 catch (Exception initEx)

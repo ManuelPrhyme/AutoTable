@@ -83,14 +83,24 @@
                         Content="Sign In"
                         Style="{ThemeResource PrimaryButtonStyle}" />
 
-                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
-                        <TextBlock Style="{ThemeResource MutedTextStyle}" Text="New data entrant?" />
-                        <HyperlinkButton x:Name="SignUpLink" Content="Register with invite code" />
-                    </StackPanel>
-
                     <HyperlinkButton x:Name="ForgotCredentialsLink" Content="Forgot Username / Password?"
                                      Click="ForgotCredentialsLink_Click" HorizontalAlignment="Center"
-                                     Margin="0,8,0,0" FontSize="12" />
+                                     FontSize="12" />
+
+                    <Border x:Name="SignUpContainer"
+                        HorizontalAlignment="Center"
+                        CornerRadius="18"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource PrimaryBlueBrush}"
+                        Background="Transparent"
+                        Padding="14,6"
+                        PointerEntered="SignUpContainer_PointerEntered"
+                        PointerExited="SignUpContainer_PointerExited">
+                        <HyperlinkButton x:Name="SignUpLink" Content="Register with invite code"
+                                         HorizontalAlignment="Center" FontSize="14"
+                                         Foreground="{ThemeResource PrimaryBlueBrush}"
+                                         Margin="0" Padding="0" />
+                    </Border>
                     </StackPanel>
                 </Border>
             </ScrollViewer>

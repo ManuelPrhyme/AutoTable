@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoTable.Models;
 using AutoTable.ViewModels;
@@ -119,6 +120,10 @@ namespace AutoTable.Views
                 // enrollment — the report card is generated later from the Report Cards page.
                 dialog?.Hide();
                 AppServices.Toasts.Show("Student Enrolled", $"{createdStudent?.FullName} was enrolled successfully.");
+                if (createdStudent != null)
+                    _ = AppServices.Audit.LogAsync("People", "Enroll", "Student",
+                        createdStudent.Id.ToString(), createdStudent.FullName,
+                        $"Student enrolled (LIN: {createdStudent.LIN}, Class: {createdStudent.ClassName}).", isSuccess: true);
             };
 
             // Modal-size.md standard: 1040 x 577 dialog. WinUI clamps ContentDialog width
@@ -480,11 +485,21 @@ namespace AutoTable.Views
                 await AppServices.DataService!.UpdateStudentAsync(student);
                 _vm.ApplyFilters();
                 _vm.StatusMessage = $"{student.FullName} updated.";
-                // AppServices.Toasts.Show("Student Updated", $"{student.FullName}'s information was updated.");
+                AppServices.Toasts.Show("Student Updated", $"{student.FullName}'s information was updated.");
+
+                // Audit log
+                await AppServices.Audit.LogAsync("People", "Update", "Student", student.Id.ToString(),
+                    student.FullName,
+                    JsonSerializer.Serialize(new { student.LIN, student.ClassId, student.StreamId }),
+                    isSuccess: true);
             }
             catch (Exception ex)
             {
                 await ShowMessageAsync("Unable to update student", ex.Message);
+
+                // Audit log failure
+                await AppServices.Audit.LogAsync("People", "Update", "Student", student.Id.ToString(),
+                    student.FullName, null, isSuccess: false, errorMessage: ex.Message);
             }
         }
 

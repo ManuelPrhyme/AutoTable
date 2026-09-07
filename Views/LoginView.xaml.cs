@@ -42,6 +42,19 @@ namespace AutoTable.Views
             };
             SignUpLink.Click += (_, _) => NavigationService.Instance.Navigate(typeof(Views.DataEntrantRegistrationView));
             ForgotCredentialsLink.Click += ForgotCredentialsLink_Click;
+
+            SignUpContainer.PointerEntered += SignUpContainer_PointerEntered;
+            SignUpContainer.PointerExited += SignUpContainer_PointerExited;
+        }
+
+        private void SignUpContainer_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            SignUpContainer.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightBlue);
+        }
+
+        private void SignUpContainer_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            SignUpContainer.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
         }
 
         private async void ForgotCredentialsLink_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

@@ -10,7 +10,7 @@
 
 - Replace the **placeholders** (`{TABLE_NAME}`, `{COLUMN_COUNT}`, …) with the values for your table.
 - §1–§6 are the **generic recipe** (apply to any table).
-- §7 / §7b are **worked examples** — the All Assessments and Students tables — showing filled-in instances.
+- §7 / §7b / §7d are **worked examples** — the All Assessments, Students, and Fee Collection Register tables — showing filled-in instances.
 - §8 is a **fill-in checklist** for applying the recipe to a new table.
 
 **The core guarantee:** the header-row grid and the data-row grid must share *identical
@@ -358,6 +358,42 @@ proportional column, rely on `TextWrapping`:
 `GRADING SYSTEM` and `CLASS TEACHER` headers use the StackPanel pattern above, so the
 words sit one over the other ("GRADING", then "SYSTEM"; "CLASS", then "TEACHER"),
 fitting their columns without colliding with `SUBJECTS` / `STUDENTS`.
+
+---
+
+## 7d. Worked example — the Fee Collection Register
+
+Instantiation of the template for `Views\FeeCollectionView.xaml`:
+
+- `{TABLE_NAME}` = `Fee Collection Register`, `{COLUMN_COUNT}` = `10`,
+  `{ITEMS_SOURCE}` = `FeeRecords`, scrolling via outer `ScrollViewer` (no `MaxHeight`).
+
+| Col | Header label | Cell content / style | Width |
+|-----|--------------|----------------------|-------|
+| 0 | `#` | `RowNumber` — `MutedTextStyle` | `36` |
+| 1 | `STUDENT NAME` | `StudentName` — `TableCellStyle` + `SemiBold` | `2*` |
+| 2 | `ADM NO` | `AdmissionNumber` — `TableCellStyle` | `90` |
+| 3 | `CLASS` | `ClassName` — `TableCellStyle` | `80` |
+| 4 | `EXPECTED` | `ExpectedAmount` — `NumericCellStyle` + `CurrencyConverter` | `1.5*` |
+| 5 | `PAID` | `PaidAmount` — `FontSize=14`, `Bold`, `SuccessGreenBrush` + `CurrencyConverter` | `1.3*` |
+| 6 | `BALANCE` | `Balance` — `FontSize=14`, `Bold`, `BalanceColorConverter` + `BalanceTextConverter` | `1.8*` |
+| 7 | `STATUS` | `PaymentStatus` — `TableCellStyle` | `100` |
+| 8 | `EDIT` | Edit button — `SecondaryButtonStyle` | `80` |
+| 9 | `PRINT SLIP` | Print Slip button — `SecondaryButtonStyle` | `90` |
+
+Concrete wiring that instantiates the contract:
+- Header grid: `<Grid ColumnSpacing="4">` inside `TableHeaderRowStyle` — `36, 2*, 90, 80, 1.5*, 1.3*, 1.8*, 100, 80, 90`.
+- Row grid: `<Grid ColumnSpacing="4" Padding="16,8">` in item template — same `36, 2*, 90, 80, 1.5*, 1.3*, 1.8*, 100, 80, 90`.
+- `ListView.ItemContainerStyle`: `HorizontalContentAlignment=Stretch`, `Padding=0`,
+  `Margin=0`, `MinHeight=0`.
+- Card: `TableCardStyle`; title band `CardHeaderBorderStyle`; band `TableHeaderRowStyle`
+  (`Padding=16,10`).
+- **Alignment:** All header `TextBlock` elements use `HorizontalAlignment="Left"`
+  (updated 6 Sept 2026), matching the left-aligned data cells so each title sits
+  directly above its column content.
+- **PAID column:** Widened from `*` to `1.3*` (6 Sept 2026) to accommodate larger
+  currency amounts (e.g. `UGX 2,500,000`), pushing the BALANCE column rightward.
+  Both header and row grids were updated identically to preserve the geometry rule.
 
 ---
 

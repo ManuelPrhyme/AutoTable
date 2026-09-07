@@ -83,6 +83,10 @@ namespace AutoTable.Services
                 UserId = user.Id
             });
 
+            await AppServices.Audit.LogAsync("Authentication", "Register", "User",
+                user.Id.ToString(), user.FullName,
+                "Administrator account created during first-time setup.", isSuccess: true);
+
             return (true, resetCode);
         }
 
@@ -104,6 +108,8 @@ namespace AutoTable.Services
                     Email = username.Trim().ToLower(),
                     Role = UserRole.Administrator
                 });
+                await AppServices.Audit.LogAsync("Authentication", "Login", "User", null,
+                    username.Trim(), "Demo-mode sign-in.", isSuccess: true);
                 return true;
             }
 
@@ -112,14 +118,27 @@ namespace AutoTable.Services
             var user = await db.Users
                 .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == username.Trim().ToLower());
 
-            if (user == null) return false;
+            if (user == null)
+            {
+                await AppServices.Audit.LogAsync("Authentication", "LoginFailed", "User", null,
+                    username.Trim(), "Sign-in attempt with unknown username.", isSuccess: false);
+                return false;
+            }
 
             // Verify password
             if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                await AppServices.Audit.LogAsync("Authentication", "LoginFailed", "User",
+                    user.Id.ToString(), user.FullName, "No password hash stored.", isSuccess: false);
                 return false;
+            }
 
             if (!PasswordHelper.VerifyPassword(password, user.PasswordHash))
+            {
+                await AppServices.Audit.LogAsync("Authentication", "LoginFailed", "User",
+                    user.Id.ToString(), user.FullName, "Incorrect password.", isSuccess: false);
                 return false;
+            }
 
             // Map role
             var role = string.Equals(user.Role, "Administrator", StringComparison.OrdinalIgnoreCase)
@@ -134,6 +153,9 @@ namespace AutoTable.Services
                 UserId = user.Id,
                 AllowedPages = user.AllowedPages
             });
+
+            await AppServices.Audit.LogAsync("Authentication", "Login", "User",
+                user.Id.ToString(), user.FullName, $"Successful sign-in (role: {role}).", isSuccess: true);
 
             return true;
         }
@@ -230,6 +252,11 @@ namespace AutoTable.Services
                 AllowedPages = invite.AllowedPages
             });
 
+            await AppServices.Audit.LogAsync("Authentication", "Register", "User",
+                user.Id.ToString(), user.FullName,
+                $"Account created via invite code (role: {role}). Allowed pages: {(string.IsNullOrWhiteSpace(invite.AllowedPages) ? "full access (all pages)" : invite.AllowedPages)}",
+                isSuccess: true);
+
             return (true, null);
         }
 
@@ -248,6 +275,11 @@ namespace AutoTable.Services
             var code = GenerateRandomCode();
             user.CredentialResetCode = code;
             await db.SaveChangesAsync();
+
+            await AppServices.Audit.LogAsync("Authentication", "ResetCodeGenerated", "User",
+                user.Id.ToString(), user.FullName,
+                "A new credential reset code was generated.", isSuccess: true);
+
             return code;
         }
 
@@ -272,7 +304,11 @@ namespace AutoTable.Services
                 u => u.CredentialResetCode == resetCode.Trim().ToUpper());
 
             if (user == null)
+            {
+                await AppServices.Audit.LogAsync("Authentication", "ResetFailed", "User", null,
+                    resetCode.Trim(), "Credential reset attempt with an invalid code.", isSuccess: false);
                 return (false, "Invalid reset code. Contact your administrator.");
+            }
 
             // Check for duplicate username (excluding current user)
             if (await db.Users.AnyAsync(u =>
@@ -285,6 +321,10 @@ namespace AutoTable.Services
             user.PasswordHash = PasswordHelper.HashPassword(newPassword);
             user.CredentialResetCode = GenerateRandomCode(); // rotate code after use
             await db.SaveChangesAsync();
+
+            await AppServices.Audit.LogAsync("Authentication", "ResetCredentials", "User",
+                user.Id.ToString(), user.FullName,
+                $"Credentials were reset. New username: {user.Email}", isSuccess: true);
 
             return (true, null);
         }

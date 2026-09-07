@@ -29,8 +29,10 @@ namespace AutoTable.Services
         /// administrators may open everything; non-admins are blocked from
         /// AdminOnlyRouteTags and, when their account carries AllowedPages,
         /// from any page outside that list. Null/empty AllowedPages = full access.
+        /// Public so UI surfaces that list/emit actions (e.g. Dashboard quick actions)
+        /// can hide options the current user is not allowed to open.
         /// </summary>
-        private static bool CurrentUserMayAccess(string tag)
+        public static bool CurrentUserMayAccess(string tag)
         {
             var user = SessionService.Instance.CurrentUser;
             if (user == null) return true;

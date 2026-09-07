@@ -90,8 +90,9 @@ namespace AutoTable.ViewModels
                 }
                 if (classSubjectCount > 0) avgScore = totalAvg / classSubjectCount;
 
-                // Revenue from fee payments
-                var payments = await _dataService.GetFeePaymentsAsync();
+                // Revenue from fee payments — scoped to the active term only
+                var activeTerm = await _dataService.GetActiveTermAsync();
+                var payments = await _dataService.GetFeePaymentsAsync(null, activeTerm?.Id);
                 revenue = (decimal)payments.Sum(p => p.Amount);
             }
             catch
@@ -108,12 +109,26 @@ namespace AutoTable.ViewModels
         private void LoadQuickActions()
         {
             QuickActions.Clear();
-            QuickActions.Add("Create Term");
-            QuickActions.Add("Enter Marks");
-            QuickActions.Add("Add Assessment");
-            QuickActions.Add("View Gradebook");
-            QuickActions.Add("Generate Report Card");
-            QuickActions.Add("Record Fees Payment");
+
+            // Each quick action maps to a shell route tag. Only show the action if
+            // the current user is allowed to open that route (admin-only routes and
+            // invite-code AllowedPages restrictions are enforced by the same rule
+            // set used at navigation time, so the buttons match real access).
+            var actions = new (string Action, string RouteTag)[]
+            {
+                ("Create Term",          "TermManagement"),
+                ("Enter Marks",          "MarksEntry"),
+                ("Add Assessment",       "Assessments"),
+                ("View Gradebook",       "Gradebook"),
+                ("Generate Report Card", "ReportCards"),
+                ("Record Fees Payment",  "FeeCollection"),
+            };
+
+            foreach (var (action, routeTag) in actions)
+            {
+                if (NavigationService.CurrentUserMayAccess(routeTag))
+                    QuickActions.Add(action);
+            }
         }
 
         private async Task LoadAiInsightsAsync()

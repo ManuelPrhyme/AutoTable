@@ -102,7 +102,7 @@
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="36" />
-                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="1.5*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="80" />
@@ -110,14 +110,14 @@
                         <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="120" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
-                    <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
-                    <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" />
-                    <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
-                    <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="AVERAGE" />
-                    <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
-                    <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="FEES" />
-                    <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="ACTIONS" />
+                    <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="Class" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="Average" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="Status" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="FEES" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="Actions" HorizontalAlignment="Left" />
                 </Grid>
             </Border>
 
@@ -137,7 +137,7 @@
                         <Grid ColumnSpacing="8" Padding="16,9">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="36" />
-                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="80" />
@@ -146,23 +146,23 @@
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Style="{ThemeResource MutedTextStyle}"
-                                       Text="{Binding Rank}" VerticalAlignment="Center" />
+                                       Text="{Binding Rank}" VerticalAlignment="Center" HorizontalAlignment="Left" />
                             <TextBlock Grid.Column="1" Style="{ThemeResource TableCellStyle}"
-                                       Text="{Binding StudentName}" FontWeight="SemiBold" />
+                                       Text="{Binding StudentName}" FontWeight="SemiBold" HorizontalAlignment="Left" />
                             <TextBlock Grid.Column="2" Style="{ThemeResource TableCellStyle}"
-                                       Text="{Binding AdmissionNumber}" />
+                                       Text="{Binding AdmissionNumber}" HorizontalAlignment="Left" />
                             <TextBlock Grid.Column="3" Style="{ThemeResource TableCellStyle}"
-                                       Text="{Binding ClassName}" />
+                                       Text="{Binding ClassName}" HorizontalAlignment="Left" />
                             <TextBlock Grid.Column="4" FontSize="14" FontWeight="Bold"
                                        Foreground="{ThemeResource PrimaryBlueBrush}"
                                        VerticalAlignment="Center"
-                                       Text="{Binding Average, Converter={StaticResource PercentConverter}}" />
+                                       Text="{Binding Average, Converter={StaticResource PercentConverter}}" HorizontalAlignment="Left" />
                             <TextBlock Grid.Column="5" Style="{ThemeResource TableCellStyle}"
-                                       Text="{Binding Status}" />
+                                       Text="{Binding Status}" HorizontalAlignment="Left" />
                             <TextBlock Grid.Column="6" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Text="{Binding FeeStatus}"
+                                       VerticalAlignment="Center" Text="{Binding FeeStatus}" HorizontalAlignment="Left"
                                        Foreground="{ThemeResource TextSecondaryBrush}" />
-                            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6">
+                            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Left">
                                 <Button Content="View" Style="{ThemeResource SecondaryButtonStyle}"
                                         Padding="8,4" FontSize="12" Click="ViewReport_Click" />
                                 <Button Content="Print" Style="{ThemeResource PrimaryButtonStyle}"

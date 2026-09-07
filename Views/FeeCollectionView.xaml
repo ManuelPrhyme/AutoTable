@@ -77,23 +77,23 @@
                                 <ColumnDefinition Width="2*" />
                                 <ColumnDefinition Width="90" />
                                 <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="1.3*" />
                                 <ColumnDefinition Width="1.8*" />
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition Width="80" />
                                 <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" Text="#" />
-                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" Text="STUDENT" />
-                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" Text="LIN" />
-                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" Text="CLASS" />
-                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" Text="EXPECTED" />
-                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" Text="PAID" />
-                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" Text="BALANCE" />
-                            <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" Text="STATUS" />
-                            <TextBlock Grid.Column="8" Style="{ThemeResource TableHeaderStyle}" Text="ACTION" />
-                            <TextBlock Grid.Column="9" Style="{ThemeResource TableHeaderStyle}" Text="SLIP" />
+                            <TextBlock Grid.Column="0" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="#" />
+                            <TextBlock Grid.Column="1" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="STUDENT" />
+                            <TextBlock Grid.Column="2" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="LIN" />
+                            <TextBlock Grid.Column="3" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="CLASS" />
+                            <TextBlock Grid.Column="4" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="EXPECTED" />
+                            <TextBlock Grid.Column="5" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="PAID" />
+                            <TextBlock Grid.Column="6" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="BALANCE" />
+                            <TextBlock Grid.Column="7" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="STATUS" />
+                            <TextBlock Grid.Column="8" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="ACTION" />
+                            <TextBlock Grid.Column="9" Style="{ThemeResource TableHeaderStyle}" HorizontalAlignment="Left" Text="SLIP" />
                         </Grid>
                     </Border>
                     <ListView ItemsSource="{Binding FeeRecords}" SelectionMode="None">
@@ -113,8 +113,8 @@
                                         <ColumnDefinition Width="2*" />
                                         <ColumnDefinition Width="90" />
                                         <ColumnDefinition Width="80" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="1.3*" />
                                         <ColumnDefinition Width="1.8*" />
                                         <ColumnDefinition Width="100" />
                                         <ColumnDefinition Width="80" />

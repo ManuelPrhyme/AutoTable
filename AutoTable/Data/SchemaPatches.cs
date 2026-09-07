@@ -41,6 +41,7 @@ namespace AutoTable.Data
             PatchUsersCredentialResetCode(connection);
             PatchUsersLegacyTeacherColumns(connection);
             PatchTeachersTable(connection);
+            PatchAuditLogTable(connection);
         }
 
         // ── Terms ──────────────────────────────────────────────────────────
@@ -609,6 +610,44 @@ namespace AutoTable.Data
         private static void PatchAssessmentsStreamIds(SqliteConnection conn)
         {
             AddColumnIfMissing(conn, "Assessments", "StreamIdsCsv", "ALTER TABLE Assessments ADD COLUMN StreamIdsCsv TEXT;");
+        }
+
+        // ── AuditLog ──────────────────────────────────────────────────────────
+        /// <summary>
+        /// Creates the AuditLog table if it doesn't exist.
+        /// Records every operation by every user for auditing and analytics.
+        /// </summary>
+        private static void PatchAuditLogTable(SqliteConnection conn)
+        {
+            if (TableExists(conn, "AuditLog")) return;
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                CREATE TABLE AuditLog (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Timestamp TEXT NOT NULL,
+                    UserId INTEGER NOT NULL,
+                    UserName TEXT NOT NULL,
+                    UserEmail TEXT,
+                    UserRole TEXT,
+                    Category TEXT NOT NULL,
+                    Operation TEXT NOT NULL,
+                    EntityType TEXT NOT NULL,
+                    EntityId TEXT,
+                    EntityName TEXT,
+                    Details TEXT,
+                    IsSuccess INTEGER NOT NULL DEFAULT 1,
+                    ErrorMessage TEXT,
+                    IpAddress TEXT,
+                    SessionId TEXT
+                );
+                CREATE INDEX idx_audit_timestamp ON AuditLog(Timestamp);
+                CREATE INDEX idx_audit_user ON AuditLog(UserId);
+                CREATE INDEX idx_audit_category ON AuditLog(Category);
+                CREATE INDEX idx_audit_entity ON AuditLog(EntityType, EntityId);
+                CREATE INDEX idx_audit_success ON AuditLog(IsSuccess);
+            ";
+            cmd.ExecuteNonQuery();
         }
 
         private static bool TableExists(SqliteConnection conn, string tableName)

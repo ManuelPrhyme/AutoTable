@@ -181,6 +181,11 @@ namespace AutoTable.Views
                 db.InviteCodes.Add(invite);
                 await db.SaveChangesAsync();
 
+                _ = AppServices.Audit.LogAsync("UserManagement", "GenerateInviteCode", "InviteCode",
+                    invite.Id.ToString(), string.IsNullOrWhiteSpace(label) ? "Unlabelled code" : label,
+                    $"Invite code generated; allowed pages: {allowedPages ?? "full access (all pages)"}.",
+                    isSuccess: true);
+
                 GeneratedCodeText.Text = code;
                 GeneratedCodeBorder.Visibility = Visibility.Visible;
 
@@ -432,6 +437,11 @@ namespace AutoTable.Views
 
                 user.AllowedPages = string.Join(",", updatedPages);
                 await db.SaveChangesAsync();
+
+                _ = AppServices.Audit.LogAsync("UserManagement", "Promote", "User",
+                    user.Id.ToString(), user.FullName,
+                    $"Granted access to: {string.Join(", ", selectedPages)}.", isSuccess: true);
+
                 await LoadActiveAccountsAsync();
             }
             catch { }
@@ -550,6 +560,14 @@ namespace AutoTable.Views
                     user.AllowedPages = string.Join(",", remainingPages);
                 }
                 await db.SaveChangesAsync();
+
+                _ = AppServices.Audit.LogAsync("UserManagement", "Demote", "User",
+                    user.Id.ToString(), user.FullName,
+                    remainingPages.Count == 0
+                        ? "All page access revoked (account locked out)."
+                        : $"Access reduced to: {string.Join(", ", remainingPages)}.",
+                    isSuccess: true);
+
                 await LoadActiveAccountsAsync();
             }
             catch { }
@@ -595,6 +613,10 @@ namespace AutoTable.Views
                 user.AllowedPages = "__NONE__"; // no page grants access
                 await db.SaveChangesAsync();
 
+                _ = AppServices.Audit.LogAsync("UserManagement", "RevokeAccess", "User",
+                    user.Id.ToString(), user.FullName,
+                    "All access revoked — account locked out.", isSuccess: true);
+
                 await LoadActiveAccountsAsync();
             }
             catch { }
@@ -630,6 +652,10 @@ namespace AutoTable.Views
                 db.Users.Remove(user);
                 await db.SaveChangesAsync();
 
+                _ = AppServices.Audit.LogAsync("UserManagement", "Delete", "User",
+                    user.Id.ToString(), user.FullName,
+                    "User account permanently deleted.", isSuccess: true);
+
                 await LoadActiveAccountsAsync();
             }
             catch (Exception ex)
@@ -651,12 +677,35 @@ namespace AutoTable.Views
         {
             if (sender is not CheckBox chk) return;
             bool check = chk.IsChecked == true;
+
+            // Sync both the model AND the visual checkboxes so the grid stays in
+            // sync with the "Select All (Full Access)" toggle. The per-page
+            // Checked/Unchecked handlers keep AccessPageOption.IsSelected in sync.
             foreach (var opt in _accessPageOptions)
                 opt.IsSelected = check;
+
+            foreach (var child in AccessPagesGrid.Children)
+            {
+                if (child is CheckBox cb && cb.Tag is AccessPageOption pageOpt)
+                {
+                    if (cb.IsChecked != check)
+                        cb.IsChecked = check;
+                    // Belt-and-braces: the event may not fire if value was already set;
+                    // force the model property to match regardless.
+                    pageOpt.IsSelected = check;
+                }
+            }
         }
 
         private void PageCheckBox_Changed(object sender, RoutedEventArgs e)
         {
+            // Sync the individual checkbox's IsChecked back to the AccessPageOption.IsSelected
+            // property so that GenerateInviteCode_Click reads the correct selected pages.
+            if (sender is CheckBox cb && cb.Tag is AccessPageOption opt)
+            {
+                opt.IsSelected = cb.IsChecked == true;
+            }
+
             // Sync the "Select All" checkbox state based on individual items.
             int selectedCount = _accessPageOptions.Count(p => p.IsSelected);
             if (selectedCount == 0)
@@ -715,6 +764,10 @@ namespace AutoTable.Views
                 if (user == null) return;
                 user.CredentialResetCode = code;
                 await db.SaveChangesAsync();
+
+                _ = AppServices.Audit.LogAsync("UserManagement", "GenerateResetCode", "User",
+                    user.Id.ToString(), user.FullName,
+                    "A new credential reset code was generated for this account.", isSuccess: true);
 
                 NewResetCodeText.Text = code;
                 NewResetCodeBorder.Visibility = Visibility.Visible;

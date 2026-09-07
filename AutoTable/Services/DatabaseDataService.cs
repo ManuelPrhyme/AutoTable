@@ -664,7 +664,56 @@ namespace AutoTable.Services
                 throw;
             }
 
+            // Carry forward any unapplied student surplus credits from earlier terms
+            // into the new term: each surplus is registered as an entry in the new
+            // term's fee collection (so it appears in the register) and the source
+            // credit is marked as applied to this term.
+            await CarryForwardSurplusesToNewTermAsync(db, t.Id);
+
             return new SimpleLookup { Id = t.Id, Name = t.Name };
+        }
+
+        /// <summary>
+        /// When a new term is created, any student surplus credit carried forward
+        /// from a previous term is registered as an entry in the new term's fee
+        /// collection (a FeePayment row) and the credit is marked as applied to the
+        /// new term. This makes the carried surplus visible in the register and in
+        /// the term's collection totals.
+        /// </summary>
+        private async Task CarryForwardSurplusesToNewTermAsync(AppDbContext db, int newTermId)
+        {
+            var unappliedCredits = await db.StudentCredits
+                .Where(c => !c.AppliedAt.HasValue && c.FromTermId != newTermId)
+                .Include(c => c.Student)
+                .ToListAsync();
+            if (unappliedCredits.Count == 0) return;
+
+            var now = DateTime.UtcNow;
+
+            foreach (var group in unappliedCredits.GroupBy(c => c.StudentId))
+            {
+                double surplus = group.Sum(c => c.Amount);
+                if (surplus <= 0) continue;
+
+                // Register the surplus as an entry in the new term's fee collection.
+                db.FeePayments.Add(new FeePaymentEntity
+                {
+                    StudentId = group.Key,
+                    Amount = surplus,
+                    PaymentDate = now,
+                    TermId = newTermId,
+                    Description = "Carried-forward surplus credit"
+                });
+
+                // Mark the source credits as applied to the new term.
+                foreach (var credit in group)
+                {
+                    credit.AppliedToTermId = newTermId;
+                    credit.AppliedAt = now;
+                }
+            }
+
+            await db.SaveChangesAsync();
         }
 
         public async Task<SimpleLookup?> UpdateTermAsync(int termId, string name, DateTime? startDate = null, DateTime? endDate = null)

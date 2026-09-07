@@ -423,6 +423,9 @@ namespace AutoTable.Views
                     }
                     ViewModel.StatusMessage = msg;
                     AppServices.Toasts.Show("Payment Recorded", msg);
+                    _ = AppServices.Audit.LogAsync("Financial", "RecordPayment", "FeePayment",
+                        null, selectedStudent.FullName,
+                        $"Recorded {amt:N0} for {selectedStudent.FullName} ({termLabel}).", isSuccess: true);
                 }
                 catch (Exception ex)
                 {
@@ -906,6 +909,10 @@ namespace AutoTable.Views
                     ? $"{record.StudentName} has a surplus of {amount:N0} (paid in excess of the expected amount)."
                     : $"{record.StudentName}'s payment status is now \"{status}\".";
                 AppServices.Toasts.Show("Status Updated", ViewModel.StatusMessage);
+                _ = AppServices.Audit.LogAsync("Financial", "UpdatePaymentStatus", "FeePayment",
+                    null, record.StudentName,
+                    $"Payment status set to \"{status}\" for {record.StudentName} (LIN: {record.AdmissionNumber}).",
+                    isSuccess: true);
 
                 var ok = new ContentDialog
                 {

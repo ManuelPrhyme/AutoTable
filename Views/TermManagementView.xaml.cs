@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Linq;
+using System.Text.Json;
 
 namespace AutoTable.Views
 {
@@ -198,6 +199,13 @@ namespace AutoTable.Views
                 var dlg = new ContentDialog { Title = "Term created", Content = $"Term '{name}' created successfully.", CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                 await dlg.ShowAsync();
                 UpdateActiveIndicators();
+
+                // Toast
+                AppServices.Toasts.Show("Term Created", $"Term '{name}' created successfully.");
+
+                // Audit log
+                await AppServices.Audit.LogAsync("Academic", "Create", "Term", null, name,
+                    JsonSerializer.Serialize(new { start, end }), isSuccess: true);
             }
             catch (System.Exception ex)
             {
@@ -262,6 +270,16 @@ namespace AutoTable.Views
                     {
                         await _vm.SetTermFeeAsync(term.Id, cls.Id, amt);
                         _vm.StatusMessage = $"Fee {amt:N0} set for {cls.Name} in {term.Name}.";
+
+                        // Toast
+                        AppServices.Toasts.Show("Fee Set", $"Fee {amt:N0} UGX set for {cls.Name} in {term.Name}.");
+
+                        // Audit log
+                        await AppServices.Audit.LogAsync("Financial", "Set", "TermFee", null,
+                            $"{cls.Name} - {term.Name}",
+                            JsonSerializer.Serialize(new { amount = amt, classId = cls.Id, termId = term.Id }),
+                            isSuccess: true);
+
                         // Refresh school-wide KPIs since expected amounts changed
                         await _vm.RefreshSchoolKpisAsync(term.Id, term.Name);
                     }
@@ -269,6 +287,10 @@ namespace AutoTable.Views
                     {
                         var dlg = new ContentDialog { Title = "Unable to set fee", Content = ex.Message, CloseButtonText = "OK", XamlRoot = this.XamlRoot };
                         await dlg.ShowAsync();
+
+                        // Audit log failure
+                        await AppServices.Audit.LogAsync("Financial", "Set", "TermFee", null,
+                            $"{cls.Name} - {term.Name}", null, isSuccess: false, errorMessage: ex.Message);
                     }
                 }
                 else

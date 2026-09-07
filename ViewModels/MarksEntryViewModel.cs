@@ -296,6 +296,10 @@ namespace AutoTable.ViewModels
                 StatusMessage = IsAdministrator
                     ? $"Submitted {enteredCount} mark(s) and marked for verification. {CompletionPercent}% complete."
                     : $"Submitted {enteredCount} mark(s) for admin review. {CompletionPercent}% complete.";
+                _ = AppServices.Audit.LogAsync("Marks", IsAdministrator ? "Submit" : "SubmitDraft", "Marks", null,
+                    $"{SelectedClass} - {SelectedSubject}",
+                    $"Submitted {enteredCount} mark(s) for assessment '{SelectedAssessment}' ({(IsAdministrator ? "verification" : "admin review")}).",
+                    isSuccess: true);
             }
         }
 

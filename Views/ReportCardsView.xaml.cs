@@ -314,10 +314,12 @@ namespace AutoTable.Views
             {
                 try
                 {
-                    // Let the user pick which assessments to include before building the sheet.
                     if (!await PromptReportCardAssessmentSelectionAsync()) return;
                     var sheets = await BuildSheetsAsync(new[] { row });
                     await ShowPreviewAndPrintAsync(sheets, $"Report Card — {row.StudentName}", new[] { row });
+                    _ = AppServices.Audit.LogAsync("Reporting", "Print", "ReportCard",
+                        row.StudentId.ToString(), row.StudentName,
+                        $"Report card print flow opened for {row.StudentName}.", isSuccess: true);
                 }
                 finally { HideProgress(); }
             }
