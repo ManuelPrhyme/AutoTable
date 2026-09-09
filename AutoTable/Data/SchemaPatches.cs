@@ -282,6 +282,11 @@ namespace AutoTable.Data
             {
                 AddColumnIfMissing(conn, "SchoolSettings", "LogoBytes", "ALTER TABLE SchoolSettings ADD COLUMN LogoBytes BLOB;");
             }
+
+            // Add new columns for blockchain licensing
+            AddColumnIfMissing(conn, "SchoolSettings", "AdminEmail", "ALTER TABLE SchoolSettings ADD COLUMN AdminEmail TEXT;");
+            AddColumnIfMissing(conn, "SchoolSettings", "InstanceAddress", "ALTER TABLE SchoolSettings ADD COLUMN InstanceAddress TEXT;");
+            AddColumnIfMissing(conn, "SchoolSettings", "CreatedAt", "ALTER TABLE SchoolSettings ADD COLUMN CreatedAt TEXT;");
         }
 
         // ── HeadTeacherComments ────────────────────────────────────────────

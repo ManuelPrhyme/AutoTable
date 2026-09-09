@@ -382,6 +382,9 @@ namespace AutoTable.Data.Entities
         public string SchoolPhone { get; set; } = string.Empty;
         public string HeadTeacherName { get; set; } = string.Empty;
         public string Motto { get; set; } = string.Empty;
+        public string AdminEmail { get; set; } = string.Empty;
+        public string InstanceAddress { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         /// <summary>Raw image bytes for the school logo (stored as BLOB in SQLite).</summary>
         public byte[]? LogoBytes { get; set; }
     }

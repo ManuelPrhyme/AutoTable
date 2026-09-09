@@ -36,21 +36,45 @@ namespace AutoTable
         /// <summary>Public accessor for the main window (used by file pickers).</summary>
         public static Window? MainWindow => ((App)Current)._window;
 
+        /// <summary>Path to the log file on the user's Desktop.</summary>
+        private static readonly string LogPath = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            "AutoTable_logs.txt");
+
+        /// <summary>
+        /// Appends a timestamped entry to the Desktop log file. Safe to call from any context.
+        /// </summary>
+        private static void LogToFile(string message)
+        {
+            try
+            {
+                var entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]{Environment.NewLine}{message}{Environment.NewLine}{new string('-', 60)}{Environment.NewLine}";
+                System.IO.File.AppendAllText(LogPath, entry);
+            }
+            catch { /* logging must never crash the app */ }
+        }
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such it is the logical equivalent of main() or WinMain().
         /// </summary>
         public App()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
 
-            // QuestPDF community licence — must be set before any PDF generation.
-            QuestPDF.Settings.License = LicenseType.Community;
+                // QuestPDF community licence — must be set before any PDF generation.
+                QuestPDF.Settings.License = LicenseType.Community;
 
-            // Global exception handlers to capture runtime errors during startup and at runtime
-            this.UnhandledException += App_UnhandledException;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            
+                // Global exception handlers to capture runtime errors during startup and at runtime
+                this.UnhandledException += App_UnhandledException;
+                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            }
+            catch (Exception ex)
+            {
+                LogToFile($"[App Constructor] {ex}");
+            }
         }
 
         /// <summary>
@@ -164,6 +188,62 @@ namespace AutoTable
 
                         // Initialize AuditService with the connection string
                         AppServices.Audit.Initialize(connStr);
+
+                        // Initialize blockchain licensing services
+                        AppServices.Key.Initialize();
+                        AppServices.LicenseTracker.Initialize();
+                        AppServices.License.Initialize(
+                            "0x0000000000000000000000000000000000000000", // licenseContractAddress - Replace after deployment
+                            "0x0000000000000000000000000000000000000000"  // registrationContractAddress - Replace after deployment
+                        );
+
+                        // First launch flow:
+                        // 1. Check if school info exists → if not, show SchoolInfoEntryView
+                        // 2. Check if admin exists → if not, show AdminRegistrationView
+                        // 3. Otherwise → normal login view
+                        bool needsSchoolInfo = false;
+                        bool needsAdminSetup = false;
+                        if (!demoMode)
+                        {
+                            try
+                            {
+                                using var ctx = new Data.AppDbContext(options);
+                                var settings = ctx.SchoolSettings.FirstOrDefault();
+                                needsSchoolInfo = settings == null || string.IsNullOrEmpty(settings.SchoolName) || settings.SchoolName == "AutoTable Academy";
+                            }
+                            catch { /* If DB check fails, fall back to login view */ }
+
+                            if (!needsSchoolInfo)
+                            {
+                                try
+                                {
+                                    needsAdminSetup = !AuthService.Instance.HasAdministratorAsync().GetAwaiter().GetResult();
+                                }
+                                catch { /* If DB check fails, fall back to login view */ }
+                            }
+                        }
+
+                        _window = new MainWindow();
+                        ThemeService.Initialize(_window);
+                        var root = new Frame();
+                        _window.Content = root;
+                        NavigationService.Instance.Initialize(root);
+
+                        System.Type firstView;
+                        if (needsSchoolInfo)
+                        {
+                            firstView = typeof(Views.SchoolInfoEntryView);
+                        }
+                        else if (needsAdminSetup)
+                        {
+                            firstView = typeof(Views.AdminRegistrationView);
+                        }
+                        else
+                        {
+                            firstView = typeof(Views.LoginView);
+                        }
+                        root.Navigate(firstView);
+                        _window.Activate();
                     }
                 }
                 catch (Exception initEx)
@@ -194,35 +274,11 @@ namespace AutoTable
                     errWin.Activate();
                     return;
                 }
-
-                _window = new MainWindow();
-                ThemeService.Initialize(_window);
-                var root = new Frame();
-                _window.Content = root;
-                NavigationService.Instance.Initialize(root);
-                // First launch with no administrator → show admin registration.
-                // Otherwise → normal login view.
-                bool needsAdminSetup = false;
-                if (!demoMode)
-                {
-                    try
-                    {
-                        needsAdminSetup = !AuthService.Instance.HasAdministratorAsync().GetAwaiter().GetResult();
-                    }
-                    catch { /* If DB check fails, fall back to login view */ }
-                }
-                root.Navigate(needsAdminSetup ? typeof(Views.AdminRegistrationView) : typeof(Views.LoginView));
-                _window.Activate();
             }
             catch (Exception ex)
             {
-                // Log and show a minimal window with the error so app doesn't exit silently
-                try
-                {
-                    var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "AutoTable_startup_error.txt");
-                    System.IO.File.WriteAllText(path, ex.ToString());
-                }
-                catch { }
+                // Log to Desktop and show a minimal window with the error so app doesn't exit silently
+                LogToFile($"[OnLaunched] {ex}");
 
                 var w = new Window();
                 var tb = new TextBlock
@@ -240,9 +296,8 @@ namespace AutoTable
         {
             try
             {
-                var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "AutoTable_unhandled_ui_exception.txt");
                 var sb = new System.Text.StringBuilder();
-                sb.AppendLine($"=== {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
+                sb.AppendLine($"[App_UnhandledException]");
                 sb.AppendLine($"Exception: {e.Exception.GetType().FullName}");
                 sb.AppendLine($"Message: {e.Exception.Message}");
                 sb.AppendLine($"HRESULT: 0x{e.Exception.HResult:X8}");
@@ -255,7 +310,7 @@ namespace AutoTable
                     sb.AppendLine("--- Inner Exception ---");
                     sb.AppendLine(e.Exception.InnerException.ToString());
                 }
-                System.IO.File.WriteAllText(path, sb.ToString());
+                LogToFile(sb.ToString());
             }
             catch { }
             // Don't rethrow — keep the app alive for diagnostics
@@ -266,8 +321,7 @@ namespace AutoTable
         {
             try
             {
-                var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "AutoTable_unhandled_exception.txt");
-                System.IO.File.WriteAllText(path, (e.ExceptionObject as Exception)?.ToString() ?? "Unknown error");
+                LogToFile($"[CurrentDomain_UnhandledException]{Environment.NewLine}{(e.ExceptionObject as Exception)?.ToString() ?? "Unknown error"}");
             }
             catch { }
         }

@@ -29,8 +29,8 @@ namespace AutoTable.Views
                 ViewModel.FullName = FullNameBox.Text;
                 ViewModel.Username = UsernameBox.Text;
                 ViewModel.Password = PasswordBox.Password;
-                ViewModel.SelectedRole = RoleBox.SelectedIndex == 0
-                    ? UserRole.Administrator : UserRole.DataEntrant;
+                ViewModel.ConfirmPassword = ConfirmPasswordBox.Password;
+                ViewModel.SelectedRole = UserRole.Administrator;
                 ViewModel.CreateAccountCommand.Execute(null);
             };
             CancelButton.Click += (_, _) => ViewModel.GoToLoginCommand.Execute(null);

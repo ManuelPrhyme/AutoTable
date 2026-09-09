@@ -56,7 +56,7 @@
                         Text="Create account" />
                     <TextBlock
                         Style="{ThemeResource MutedTextStyle}"
-                        Text="Choose your role and set up access." />
+                        Text="Set up your administrator credentials to get started." />
 
                     <TextBox
                         x:Name="FullNameBox"
@@ -74,14 +74,10 @@
                         Header="Password"
                         PlaceholderText="Create a password" />
 
-                    <ComboBox
-                        x:Name="RoleBox"
-                        Header="Role"
-                        HorizontalAlignment="Stretch"
-                        SelectedIndex="1">
-                        <ComboBoxItem Content="Administrator" Tag="Administrator" />
-                        <ComboBoxItem Content="Data Entrant" Tag="DataEntrant" />
-                    </ComboBox>
+                    <PasswordBox
+                        x:Name="ConfirmPasswordBox"
+                        Header="Confirm password"
+                        PlaceholderText="Re-enter your password" />
 
                     <TextBlock
                         x:Name="ErrorText"

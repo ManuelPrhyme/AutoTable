@@ -11,7 +11,8 @@ namespace AutoTable.ViewModels
         [ObservableProperty] private string _fullName = string.Empty;
         [ObservableProperty] private string _username = string.Empty;
         [ObservableProperty] private string _password = string.Empty;
-        [ObservableProperty] private UserRole _selectedRole = UserRole.DataEntrant;
+        [ObservableProperty] private string _confirmPassword = string.Empty;
+        [ObservableProperty] private UserRole _selectedRole = UserRole.Administrator;
         [ObservableProperty] private string _errorMessage = string.Empty;
         [ObservableProperty] private bool _isBusy;
 
@@ -20,6 +21,25 @@ namespace AutoTable.ViewModels
         {
             IsBusy = true;
             ErrorMessage = string.Empty;
+
+            // Validate all fields
+            if (string.IsNullOrWhiteSpace(FullName) ||
+                string.IsNullOrWhiteSpace(Username) ||
+                string.IsNullOrWhiteSpace(Password))
+            {
+                IsBusy = false;
+                ErrorMessage = "Please fill in all fields to create an account.";
+                return;
+            }
+
+            // Validate password confirmation
+            if (Password != ConfirmPassword)
+            {
+                IsBusy = false;
+                ErrorMessage = "Passwords do not match. Please re-enter your password.";
+                return;
+            }
+
             var ok = await AuthService.Instance.SignUpAsync(FullName, Username, Password, SelectedRole);
             IsBusy = false;
 

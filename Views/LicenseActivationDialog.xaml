@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="AutoTable.Views.LicenseActivationDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Activate License"
+    PrimaryButtonText="Activate"
+    CloseButtonText="Cancel"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    CloseButtonClick="ContentDialog_CloseButtonClick">
+
+    <StackPanel Spacing="12" Padding="0,8,0,0">
+        <TextBlock Text="Enter your activation code to activate AutoTable." TextWrapping="WrapWholeWords" FontSize="14"/>
+
+        <TextBox x:Name="ActivationCodeBox" PlaceholderText="e.g. ACT-SPRING-7X9K-PL2M" FontSize="14"/>
+
+        <InfoBar x:Name="InfoBar" IsOpen="False" Severity="Informational" Title="Status" Message=""/>
+
+        <ProgressBar x:Name="ProgressBar" IsIndeterminate="False" Visibility="Collapsed"/>
+
+        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="WrapWholeWords">
+            <Run Text="Instance ID: "/>
+            <Run x:Name="InstanceIdRun" FontFamily="Consolas"/>
+        </TextBlock>
+
+        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="WrapWholeWords">
+            <Run Text="Balance: "/>
+            <Run x:Name="BalanceRun"/>
+        </TextBlock>
+
+        <HyperlinkButton Content="Request gas tokens (free)" Click="RequestGas_Click" FontSize="12"/>
+    </StackPanel>
+</ContentDialog>
