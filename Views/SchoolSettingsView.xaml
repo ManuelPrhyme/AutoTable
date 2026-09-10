@@ -15,8 +15,31 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <TextBlock Grid.Row="0" Text="School Settings" Style="{ThemeResource PageTitleStyle}" />
+        <!-- Title + Instance summary -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="School Settings" Style="{ThemeResource PageTitleStyle}"
+                       VerticalAlignment="Center" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                <TextBlock Text="Instance" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{ThemeResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                <TextBlock x:Name="InstanceIdText" FontSize="13" FontFamily="Consolas"
+                           VerticalAlignment="Center" />
+                <Button x:Name="CopyInstanceIdButton"
+                        Click="CopyInstanceId_Click"
+                        Style="{ThemeResource SecondaryButtonStyle}"
+                        VerticalAlignment="Center" Padding="12,4">
+                    <TextBlock x:Name="CopyInstanceIdContent" Text="Copy" FontWeight="SemiBold" />
+                </Button>
+                <TextBlock x:Name="InstanceBalanceText" FontSize="12"
+                           Foreground="{ThemeResource TextMutedBrush}" VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
 
         <!-- Two-column content -->
         <Grid Grid.Row="1" ColumnSpacing="24">
@@ -25,7 +48,7 @@
                 <ColumnDefinition Width="*" MinWidth="408" MaxWidth="484" />
             </Grid.ColumnDefinitions>
 
-            <!-- LEFT COLUMN: School Information + Logo -->
+            <!-- LEFT COLUMN: School settings (info, head teacher, logo, preview) -->
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="16">
 
@@ -50,6 +73,19 @@
                             <TextBox Header="School Motto"
                                      Text="{Binding Motto, Mode=TwoWay}"
                                      PlaceholderText="e.g. Knowledge is Power" />
+
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="HEAD TEACHER" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <TextBox Header="Head Teacher Name"
+                                     Text="{Binding HeadTeacherName, Mode=TwoWay}"
+                                     PlaceholderText="e.g. Mrs. Jane Smith" />
 
                         </StackPanel>
                     </Border>
@@ -87,10 +123,38 @@
                         </StackPanel>
                     </Border>
 
+                    <Border Style="{ThemeResource TableCardStyle}">
+                        <StackPanel Spacing="12" Padding="16">
+
+                            <TextBlock Text="PREVIEW" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
+
+                            <Border BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16" Background="White">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{Binding SchoolName}" FontSize="16" FontWeight="Bold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                    <TextBlock Text="{Binding SchoolAddress}" FontSize="12"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding SchoolPhone}" FontSize="12"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding Motto}" FontSize="11" FontStyle="Italic"
+                                               Foreground="{ThemeResource TextMutedBrush}" />
+                                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
+                                    <TextBlock Text="Head Teacher" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding HeadTeacherName}" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{ThemeResource TextPrimaryBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- RIGHT COLUMN: Invite Codes + Head Teacher -->
+            <!-- RIGHT COLUMN: User management (invite codes, accounts, credential resets) -->
             <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="16">
 
@@ -365,47 +429,6 @@
                                     <TextBlock Text="Share this code with the user. It will replace any previous reset code."
                                                FontSize="11" Foreground="{ThemeResource TextMutedBrush}"
                                                TextWrapping="WrapWholeWords" />
-                                </StackPanel>
-                            </Border>
-
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{ThemeResource TableCardStyle}">
-                        <StackPanel Spacing="12" Padding="16">
-
-                            <TextBlock Text="HEAD TEACHER" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
-
-                            <TextBox Header="Head Teacher Name"
-                                     Text="{Binding HeadTeacherName, Mode=TwoWay}"
-                                     PlaceholderText="e.g. Mrs. Jane Smith" />
-
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{ThemeResource TableCardStyle}">
-                        <StackPanel Spacing="12" Padding="16">
-
-                            <TextBlock Text="PREVIEW" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{ThemeResource TextSecondaryBrush}" Margin="0,0,0,4" />
-
-                            <Border BorderBrush="{ThemeResource BorderLightBrush}" BorderThickness="1"
-                                    CornerRadius="8" Padding="16" Background="White">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="{Binding SchoolName}" FontSize="16" FontWeight="Bold"
-                                               Foreground="{ThemeResource TextPrimaryBrush}" />
-                                    <TextBlock Text="{Binding SchoolAddress}" FontSize="12"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding SchoolPhone}" FontSize="12"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding Motto}" FontSize="11" FontStyle="Italic"
-                                               Foreground="{ThemeResource TextMutedBrush}" />
-                                    <Border Height="1" Background="{ThemeResource BorderLightBrush}" />
-                                    <TextBlock Text="Head Teacher" FontSize="11" FontWeight="SemiBold"
-                                               Foreground="{ThemeResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding HeadTeacherName}" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="{ThemeResource TextPrimaryBrush}" />
                                 </StackPanel>
                             </Border>
 

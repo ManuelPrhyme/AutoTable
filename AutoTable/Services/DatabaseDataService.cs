@@ -3039,6 +3039,7 @@ namespace AutoTable.Services
                 SchoolPhone = entity.SchoolPhone,
                 HeadTeacherName = entity.HeadTeacherName,
                 Motto = entity.Motto,
+                InstanceAddress = entity.InstanceAddress,
                 LogoBytes = entity.LogoBytes
             };
         }
@@ -3057,6 +3058,7 @@ namespace AutoTable.Services
             entity.SchoolPhone = settings.SchoolPhone;
             entity.HeadTeacherName = settings.HeadTeacherName;
             entity.Motto = settings.Motto;
+            // InstanceAddress is set at first-run and must never be overwritten from settings edits
             entity.LogoBytes = settings.LogoBytes;
             await db.SaveChangesAsync();
             return settings;

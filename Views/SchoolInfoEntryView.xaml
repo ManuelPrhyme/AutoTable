@@ -72,6 +72,7 @@
                         <ProgressBar x:Name="ProgressBar" IsIndeterminate="False" Visibility="Collapsed" />
 
                         <Button x:Name="ContinueButton" Content="Continue" HorizontalAlignment="Stretch" Click="ContinueButton_Click" />
+                        <Button x:Name="RequestTokensAgainButton" Content="Request Tokens Again" HorizontalAlignment="Stretch" Visibility="Collapsed" Click="RequestTokensAgain_Click" />
                         <Button x:Name="CancelButton" Content="Cancel" HorizontalAlignment="Stretch" Style="{ThemeResource GhostButtonStyle}" Click="CancelButton_Click" />
 
                     </StackPanel>

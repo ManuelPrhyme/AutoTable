@@ -24,7 +24,8 @@ library StringLib {
 
     function _hex(uint256 v) internal pure returns (bytes memory) {
         if (v == 0) return "0";
-        uint256 t = v, l = 0;
+        uint256 t = v; 
+        uint256 l = 0;
         while (t != 0) { l++; t >>= 4; }
         bytes memory r = new bytes(l);
         t = v;

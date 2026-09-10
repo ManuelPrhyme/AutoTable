@@ -43,12 +43,30 @@ namespace AutoTable.Services
 
         private string DeriveAddress(Org.BouncyCastle.Crypto.Parameters.ECPublicKeyParameters pub)
         {
+            return DeriveAddressFromUncompressedHex("0x" + Convert.ToHexString(pub.Q.GetEncoded(false)).ToLower());
+        }
+
+        /// <summary>Derives the 20-byte Ethereum-style address (0x-prefixed) from a 0x-prefixed uncompressed public key.</summary>
+        private string DeriveAddressFromUncompressedHex(string pubHex)
+        {
+            var full = Convert.FromHexString(pubHex.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? pubHex.Substring(2) : pubHex);
             var pubNoPrefix = new byte[64];
-            Array.Copy(pub.Q.GetEncoded(false), 1, pubNoPrefix, 0, 64);
+            Array.Copy(full, 1, pubNoPrefix, 0, 64);
             var hash = Keccak256(pubNoPrefix);
             var addr = new byte[20];
             Array.Copy(hash, 12, addr, 0, 20);
             return "0x" + Convert.ToHexString(addr).ToLower();
+        }
+
+        /// <summary>Derives the 0x-prefixed uncompressed public key from a 0x-padded private key hex string.</summary>
+        private string DerivePublicKeyHex(string privateKeyHex)
+        {
+            var ec = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256k1");
+            var dp = new Org.BouncyCastle.Crypto.Parameters.ECDomainParameters(ec.Curve, ec.G, ec.N, ec.H);
+            var pk = new Org.BouncyCastle.Crypto.Parameters.ECPrivateKeyParameters(
+                new Org.BouncyCastle.Math.BigInteger(1, Convert.FromHexString(privateKeyHex)), dp);
+            var q = ec.G.Multiply(pk.D);
+            return "0x" + Convert.ToHexString(q.GetEncoded(false)).ToLower();
         }
 
         private byte[] Keccak256(byte[] data)
@@ -106,6 +124,24 @@ namespace AutoTable.Services
                 var kd = JsonSerializer.Deserialize<KeyData>(Encoding.UTF8.GetString(dec));
                 if (kd == null || string.IsNullOrEmpty(kd.PrivateKey)) return false;
                 PrivateKey = kd.PrivateKey; PublicKey = kd.PublicKey; InstanceAddress = kd.InstanceAddress;
+
+                // Backfill: key files saved by older app versions do not contain the
+                // derived instance address (and possibly not the public key either).
+                // Re-derive them from the stored private key so first-run setup is not blocked.
+                if (string.IsNullOrEmpty(InstanceAddress) || string.IsNullOrEmpty(PublicKey))
+                {
+                    try
+                    {
+                        PublicKey = DerivePublicKeyHex(PrivateKey);
+                        InstanceAddress = DeriveAddressFromUncompressedHex(PublicKey);
+                        SaveKey(); // persist the backfilled fields for future launches
+                    }
+                    catch
+                    {
+                        // Corrupt key material — treat as "no key" so a fresh one is generated.
+                        return false;
+                    }
+                }
                 return true;
             }
             catch { return false; }

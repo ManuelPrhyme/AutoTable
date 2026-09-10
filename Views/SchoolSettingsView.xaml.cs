@@ -46,6 +46,22 @@ namespace AutoTable.Views
                 _ = LoadActiveAccountsAsync();
             }
 
+            // Instance ID (truncated, full address in tooltip) + Sepolia balance
+            var instanceId = AppServices.Key.InstanceAddress;
+            if (string.IsNullOrEmpty(instanceId))
+            {
+                InstanceIdText.Text = "Not set";
+                CopyInstanceIdButton.IsEnabled = false;
+                InstanceBalanceText.Text = "";
+            }
+            else
+            {
+                InstanceIdText.Text = FormatInstanceAddress(instanceId);
+                ToolTipService.SetToolTip(InstanceIdText, instanceId);
+                CopyInstanceIdButton.Tag = instanceId;
+                _ = LoadInstanceBalanceAsync();
+            }
+
             // Populate the access page checkboxes (non-admin-only sidebar pages)
             var options = new List<AccessPageOption>
             {
@@ -796,6 +812,35 @@ namespace AutoTable.Views
             }
             catch { }
         }
+
+        private void CopyInstanceId_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not string address) return;
+            var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            package.SetText(address);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+            if (btn.Content is TextBlock tb)
+                tb.Text = "✓";
+        }
+
+        /// <summary>Formats a full 0x… address as 0x0222…3423 (first 4 + last 4 hex chars).</summary>
+        private static string FormatInstanceAddress(string address)
+            => address.Length <= 12 ? address : $"{address[..6]}...{address[^4..]}";
+
+        /// <summary>Fetches the instance's Sepolia balance (GetBalanceAsync already returns ETH, not Wei).</summary>
+        private async System.Threading.Tasks.Task LoadInstanceBalanceAsync()
+        {
+            try
+            {
+                var balance = await AppServices.License.GetBalanceAsync();
+                InstanceBalanceText.Text = $"{balance:F6} ETH";
+            }
+            catch
+            {
+                InstanceBalanceText.Text = "Balance unavailable";
+            }
+        }
+
 
         // ── Helpers ─────────────────────────────────────────────
 

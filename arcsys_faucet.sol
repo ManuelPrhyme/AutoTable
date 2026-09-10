@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.29;
+pragma solidity ^0.8.19;
 
-contract AutoTableFaucet {
+/// @title AutoSchool360Faucet
+/// @notice Standalone test-ETH faucet — self-contained, no StringLib, no hex.
+/// @dev Clients request test ETH by address. The backend server wallet can also
+///      call requestFunds(instance) on a client's behalf — the client never pays
+///      gas; the backend pays and the drip goes straight to the client.
+contract AutoSchool360Faucet {
     address public owner;
     uint256 public dripAmount;
     uint256 public cooldown;
@@ -21,7 +26,7 @@ contract AutoTableFaucet {
 
     constructor() {
         owner = msg.sender;
-        dripAmount = 0.01 ether;
+        dripAmount = 0.05 ether;
         cooldown = 1 days;
     }
 
@@ -40,6 +45,9 @@ contract AutoTableFaucet {
         emit FundsRequested(instance, dripAmount, block.timestamp);
     }
 
+    /// @dev Backend-delivery uses this same public requestFunds: the backend
+    ///      wallet calls it with the client's address as the argument, paying
+    ///      the gas while the drip is credited to the client.
     function batchRequestFunds(address[] calldata instances) external {
         for (uint256 i = 0; i < instances.length; i++) {
             address instance = instances[i];

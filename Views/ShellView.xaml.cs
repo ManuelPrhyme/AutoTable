@@ -94,7 +94,7 @@ namespace AutoTable.Views
             SidebarAvatar.DisplayName = user?.FullName ?? "U";
             HeaderUserName.Text = user?.FullName ?? "User";
 
-            // Load school branding (name, motto, logo) from settings
+            // ── LOAD SCHOOL BRANDING ────────────────────────────────────
             try
             {
                 var ds = AppServices.DataService;
@@ -109,6 +109,29 @@ namespace AutoTable.Views
                 }
             }
             catch { }
+
+            // ── OFFLINE LICENSE VALIDATION (every startup, no internet) ──
+            try
+            {
+                var licenseCheck = AppServices.LicenseManager.Validate();
+                if (licenseCheck.NotActivated)
+                {
+                    // No local license yet → prompt for activation (needs internet once).
+                    await TryShowLicenseActivationAsync();
+                }
+                else if (licenseCheck.SignatureInvalid ||
+                         licenseCheck.CounterRegression ||
+                         licenseCheck.ClockRollback)
+                {
+                    await ShowLicenseBlockedAsync(licenseCheck.Message);
+                }
+                else if (licenseCheck.IsGrace)
+                {
+                    AppServices.Toasts.Show("License Expired — Grace Period",
+                        licenseCheck.Message + " You can view data but editing is disabled until you renew.");
+                }
+            }
+            catch { /* licensing must never block the shell from loading */ }
 
             // ── ROLE-BASED SIDEBAR GATING ─────────────────────────────
             var isAdmin = _vm.IsAdministrator;
@@ -252,6 +275,49 @@ namespace AutoTable.Views
             }
             SchoolLogoImage.Visibility = Visibility.Collapsed;
             LogoFallbackBorder.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Prompts the user to activate their license when no local license file
+        /// exists (first run after setup). Requires internet once.
+        /// </summary>
+        private async Task TryShowLicenseActivationAsync()
+        {
+            // Only prompt on the dashboard landing, once.
+            if (ContentFrame != null && ContentFrame.CurrentSourcePageType != null &&
+                ContentFrame.CurrentSourcePageType.Name != "DashboardView")
+            {
+                return;
+            }
+
+            var dialog = new LicenseActivationDialog { XamlRoot = this.XamlRoot };
+            await dialog.ShowAsync();
+            if (dialog.Activated)
+            {
+                AppServices.Toasts.Show("License Active", "Your license is now active. Enjoy AutoTable!");
+            }
+        }
+
+        /// <summary>
+        /// Shows a blocking dialog when the license was tampered with or
+        /// the hard-lock period has passed.
+        /// </summary>
+        private async Task ShowLicenseBlockedAsync(string message)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "License Issue",
+                Content = new TextBlock
+                {
+                    Text = message + "\n\nContact your vendor to resolve this before continuing.",
+                    TextWrapping = TextWrapping.WrapWholeWords,
+                    Margin = new Thickness(0, 8, 0, 0)
+                },
+                PrimaryButtonText = "OK",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
         }
 
         /// <summary>

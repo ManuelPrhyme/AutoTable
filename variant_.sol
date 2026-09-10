@@ -1,0 +1,1 @@
+// SPDX-License-Identifier: MIT`npragma solidity ^0.8.19;`n`ncontract T { function f(uint256 v) public pure returns (uint256) { `n`n`nreturn t + l + a;`n} }`n

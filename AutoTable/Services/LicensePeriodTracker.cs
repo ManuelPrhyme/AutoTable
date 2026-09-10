@@ -96,7 +96,6 @@ namespace AutoTable.Services
                 _ => "Unknown license status."
             };
         }
-
         private string GetPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AutoTable");
 
         private string GetLicensePath() => Path.Combine(GetPath(), LicenseFileName);

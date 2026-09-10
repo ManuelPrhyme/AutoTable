@@ -55,20 +55,32 @@ namespace AutoTable.Views
 
             try
             {
-                // Replace with your faucet API URL
-                var success = await AppServices.License.RequestGasTokensAsync("https://your-faucet-api.com");
+                                var faucetUrl = AppServices.FaucetApiUrl;
+                if (string.IsNullOrEmpty(faucetUrl))
+                {
+                    InfoBar.Severity = InfoBarSeverity.Error;
+                    InfoBar.Title = "No Faucet";
+                    InfoBar.Message = "Faucet server URL is not configured.";
+                    ProgressBar.Visibility = Visibility.Collapsed;
+                    return;
+                }
 
-                if (success)
+                // RequestGasTokensAsync AWAITS the faucet server's confirmation —
+                // the server only responds 2xx AFTER its drip transaction is mined
+                // with status 'success', so Ok=true means the funds were SENT.
+                var faucetResult = await AppServices.License.RequestGasTokensAsync(faucetUrl);
+
+                if (faucetResult.Ok)
                 {
                     InfoBar.Severity = InfoBarSeverity.Success;
                     InfoBar.Title = "Success";
-                    InfoBar.Message = "Gas tokens requested. Please wait for confirmation.";
+                    InfoBar.Message = "Gas tokens sent (confirmed on-chain). Balance will update shortly.";
                 }
                 else
                 {
                     InfoBar.Severity = InfoBarSeverity.Error;
                     InfoBar.Title = "Failed";
-                    InfoBar.Message = "Failed to request gas tokens. Please try again later.";
+                    InfoBar.Message = faucetResult.Detail ?? "Failed to request gas tokens. Please try again later.";
                 }
             }
             catch (Exception ex)
@@ -103,17 +115,38 @@ namespace AutoTable.Views
                 ProgressBar.IsIndeterminate = true;
                 InfoBar.IsOpen = true;
                 InfoBar.Severity = InfoBarSeverity.Informational;
+                InfoBar.Title = "Verifying";
+                InfoBar.Message = "Verifying code against the blockchain...";
+
+                var instanceAddress = AppServices.Key.InstanceAddress ?? "";
+                if (string.IsNullOrEmpty(instanceAddress))
+                    throw new InvalidOperationException("No instance address available. Restart the app and try again.");
+
+                // 1. Static verification (no gas): is this code active + assigned to this school?
+                var (isValid, periodSeconds, graceSeconds, _) = await AppServices.License.VerifyCodeAsync(code, instanceAddress);
+                if (!isValid)
+                {
+                    InfoBar.Severity = InfoBarSeverity.Error;
+                    InfoBar.Title = "Invalid Code";
+                    InfoBar.Message = "This code is not active, is expired, or was not issued for this school instance.";
+                    return;
+                }
+
+                // 2. Activate on-chain (signed transaction) — waits for tx to be mined
+                //    and parses the LicenseActivated event to get on-chain parameters.
                 InfoBar.Title = "Activating";
-                InfoBar.Message = "Activating license on blockchain...";
+                InfoBar.Message = "Submitting activation transaction...";
+                var result = await AppServices.License.ActivateLicenseAsync(code);
 
-                // Activate on blockchain
-                var txHash = await AppServices.License.ActivateLicenseAsync(code);
-
-                // Get expiry from blockchain
-                var expiry = await AppServices.License.GetExpiryAsync();
-
-                // Update local license tracker
-                AppServices.LicenseTracker.Activate(code, expiry ?? DateTime.UtcNow.AddYears(1), AppServices.Key.InstanceAddress ?? "");
+                // 3. Create the local license file with the on-chain period + grace
+                //    (parsed from the LicenseActivated event, not from verifyCode —
+                //    these are the authoritative vendor-assigned values).
+                AppServices.LicenseManager.Activate(
+                    periodMinutes: Math.Max(1, result.PeriodSeconds / 60L),
+                    graceMinutes: Math.Max(1, result.GraceSeconds / 60L),
+                    activationCode: code,
+                    schoolCode: instanceAddress,
+                    instanceAddress: instanceAddress);
 
                 InfoBar.Severity = InfoBarSeverity.Success;
                 InfoBar.Title = "Activated";

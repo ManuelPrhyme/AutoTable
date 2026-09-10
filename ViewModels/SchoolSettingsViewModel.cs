@@ -14,6 +14,7 @@ namespace AutoTable.ViewModels
         [ObservableProperty] private string _schoolPhone = "";
         [ObservableProperty] private string _headTeacherName = "";
         [ObservableProperty] private string _motto = "";
+        [ObservableProperty] private string _instanceAddress = "";
         [ObservableProperty] private byte[]? _logoBytes;
         [ObservableProperty] private string _statusMessage = "";
 
@@ -31,6 +32,7 @@ namespace AutoTable.ViewModels
             SchoolPhone = settings.SchoolPhone;
             HeadTeacherName = settings.HeadTeacherName;
             Motto = settings.Motto;
+            InstanceAddress = settings.InstanceAddress;
             LogoBytes = settings.LogoBytes;
         }
 

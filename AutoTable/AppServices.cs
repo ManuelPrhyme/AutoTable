@@ -27,9 +27,25 @@ namespace AutoTable
         public static AutoTable.Services.LicensePeriodTracker LicenseTracker { get; } = AutoTable.Services.LicensePeriodTracker.Instance;
 
         /// <summary>
+        /// Core offline licensing engine (AES-256-GCM + ECDSA + monotonic counter + UTC).
+        /// </summary>
+        public static AutoTable.Services.LicenseManager LicenseManager { get; } = AutoTable.Services.LicenseManager.Instance;
+
+        /// <summary>
+        /// Monotonic forward-only counter used by licensing (file-based; TPM-ready).
+        /// </summary>
+        public static AutoTable.Services.MonotonicCounter Counter { get; } = AutoTable.Services.MonotonicCounter.Instance;
+
+        /// <summary>
         /// SQLite connection string used by AuthService for user/invite-code lookups.
         /// Set during app startup in App.xaml.cs, before any auth view is navigated to.
         /// </summary>
         public static string? AuthConnectionString { get; set; }
+
+        /// <summary>
+        /// Vendor faucet API base URL (e.g. https://your-faucet-api.com).
+        /// Set when the faucet backend is deployed; null/empty disables the faucet call.
+        /// </summary>
+        public static string? FaucetApiUrl { get; set; }
     }
 }

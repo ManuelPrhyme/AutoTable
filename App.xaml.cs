@@ -191,11 +191,13 @@ namespace AutoTable
 
                         // Initialize blockchain licensing services
                         AppServices.Key.Initialize();
+                        AppServices.Counter.Initialize();
                         AppServices.LicenseTracker.Initialize();
                         AppServices.License.Initialize(
-                            "0x0000000000000000000000000000000000000000", // licenseContractAddress - Replace after deployment
-                            "0x0000000000000000000000000000000000000000"  // registrationContractAddress - Replace after deployment
+                            "0x3b03c89b28f41dc49061083ee42f2d34f1df492a", // AutoSchool360 (license) — Sepolia
+                            "0x3b03c89b28f41dc49061083ee42f2d34f1df492a"  // AutoSchool360 also handles school registration — Sepolia
                         );
+                        AppServices.FaucetApiUrl = "http://localhost:3000"; // Faucet server running locally
 
                         // First launch flow:
                         // 1. Check if school info exists → if not, show SchoolInfoEntryView
