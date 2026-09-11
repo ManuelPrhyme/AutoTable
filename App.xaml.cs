@@ -197,7 +197,7 @@ namespace AutoTable
                             "0x3b03c89b28f41dc49061083ee42f2d34f1df492a", // AutoSchool360 (license) — Sepolia
                             "0x3b03c89b28f41dc49061083ee42f2d34f1df492a"  // AutoSchool360 also handles school registration — Sepolia
                         );
-                        AppServices.FaucetApiUrl = "http://localhost:3000"; // Faucet server running locally
+                        AppServices.FaucetApiUrl = "https://autoschoo360-faucetserver.onrender.com"; // Faucet server running locally
 
                         // First launch flow:
                         // 1. Check if school info exists → if not, show SchoolInfoEntryView
