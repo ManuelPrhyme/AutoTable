@@ -283,9 +283,10 @@ namespace AutoTable.Views
         /// Shows the license activation dialog, then proceeds to admin account
         /// creation. Shared by the Continue flow and the manual-override retry.
         ///
-        /// IMPORTANT: On first-run (no school yet registered via blockchain), the
-        /// activation dialog skips back to school entry if the code is invalid.
-        /// This is safe because we stored school info locally at step 1.
+        /// The dialog is MANDATORY and blocking: the user must enter a valid
+        /// activation code (verified on-chain) before they can reach admin
+        /// account creation. There is no cancel path, and the loop re-shows the
+        /// dialog if it is closed by any other means.
         /// </summary>
         private async Task ProceedToActivationAsync()
         {
@@ -295,27 +296,25 @@ namespace AutoTable.Views
 
             _completed = true;
 
-            // Show the license activation dialog before proceeding to admin registration
-            // (Window.Current is null in WinUI 3 — always use the page's own XamlRoot).
-            var activationDialog = new LicenseActivationDialog
+            // The license-activation dialog is MANDATORY and blocking: there is no
+            // cancel button, close-button clicks are cancelled, light-dismiss is
+            // disabled, and the loop re-shows the dialog if it is closed by any
+            // other path. It only returns after a successful activation — the user
+            // cannot bypass this step to reach admin account creation.
+            while (true)
             {
-                XamlRoot = this.XamlRoot
-            };
-            var result = await activationDialog.ShowAsync();
+                var activationDialog = new LicenseActivationDialog
+                {
+                    XamlRoot = this.XamlRoot
+                };
+                await activationDialog.ShowAsync();
+                if (activationDialog.Activated)
+                    break;
+            }
 
-            if (result == ContentDialogResult.None)
-            {
-                // User cancelled activation - still allow admin registration for offline use
-                InfoBar.Severity = InfoBarSeverity.Warning;
-                InfoBar.Title = "Skipped Activation";
-                InfoBar.Message = "Activation skipped. Proceeding to admin account creation...";
-            }
-            else
-            {
-                InfoBar.Severity = InfoBarSeverity.Success;
-                InfoBar.Title = "Activated";
-                InfoBar.Message = "License activated. Proceeding to admin account creation...";
-            }
+            InfoBar.Severity = InfoBarSeverity.Success;
+            InfoBar.Title = "Activated";
+            InfoBar.Message = "License activated. Proceeding to admin account creation...";
 
             await Task.Delay(1000);
             Frame.Navigate(typeof(AdminRegistrationView));

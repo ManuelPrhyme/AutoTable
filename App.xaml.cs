@@ -246,6 +246,18 @@ namespace AutoTable
                         }
                         root.Navigate(firstView);
                         _window.Activate();
+
+                        // Mandatory license activation: if the school is already
+                        // registered (school info saved) but there is no active
+                        // license, show the license-activation modal on top of the
+                        // first view. It is blocking — no cancel, close-button and
+                        // light-dismiss are disabled in the dialog, and it re-appears
+                        // if the user still finds a way to close it. The only way
+                        // past is a successful activation.
+                        if (!needsSchoolInfo && !demoMode)
+                        {
+                            MaybeShowMandatoryActivationAsync(root);
+                        }
                     }
                 }
                 catch (Exception initEx)
@@ -326,6 +338,58 @@ namespace AutoTable
                 LogToFile($"[CurrentDomain_UnhandledException]{Environment.NewLine}{(e.ExceptionObject as Exception)?.ToString() ?? "Unknown error"}");
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Returns true when the app must show the license-activation modal:
+        /// the school is already registered (info saved locally) but there is
+        /// no valid or grace-period license on this instance.
+        /// </summary>
+        private bool IsLicenseActivationRequired()
+        {
+            try
+            {
+                if (!AppServices.LicenseManager.HasLicenseFile)
+                    return true;
+                var validation = AppServices.LicenseManager.Validate();
+                return !validation.IsValid && !validation.IsGrace;
+            }
+            catch
+            {
+                // No license file, or it cannot be read/decrypted — activation is required.
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Shows the mandatory license-activation modal on top of the current view.
+        /// The user cannot close or dismiss it (CloseButtonClick cancels dismissal,
+        /// LightDismissEnabled=False, and this loop re-shows the dialog if it is
+        /// closed by any other path). It only returns once the license is activated.
+        /// </summary>
+        private async void MaybeShowMandatoryActivationAsync(Frame root)
+        {
+            try
+            {
+                if (!IsLicenseActivationRequired())
+                    return;
+
+                // Let the first view lay out before the modal shows on top of it.
+                await Task.Delay(300);
+
+                while (true)
+                {
+                    var dialog = new Views.LicenseActivationDialog { XamlRoot = root.XamlRoot };
+                    await dialog.ShowAsync();
+                    if (dialog.Activated)
+                        break;
+                    // Any dismissal path still lands here — re-show until activated.
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFile($"[Mandatory Activation] {ex}");
+            }
         }
     }
 }

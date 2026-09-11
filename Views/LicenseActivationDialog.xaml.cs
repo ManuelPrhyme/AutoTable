@@ -55,7 +55,7 @@ namespace AutoTable.Views
 
             try
             {
-                                var faucetUrl = AppServices.FaucetApiUrl;
+                var faucetUrl = AppServices.FaucetApiUrl;
                 if (string.IsNullOrEmpty(faucetUrl))
                 {
                     InfoBar.Severity = InfoBarSeverity.Error;
@@ -173,7 +173,10 @@ namespace AutoTable.Views
 
         private void ContentDialog_CloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
-            // User cancelled
+            // This dialog is mandatory — the user must enter an activation code to proceed.
+            // Cancel any close-button (X / system-dismiss) attempt so the dialog stays open
+            // until activation succeeds.
+            args.Cancel = true;
         }
     }
 }
